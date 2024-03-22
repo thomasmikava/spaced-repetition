@@ -14,11 +14,11 @@ const CoursePage = () => {
   }, []);
 
   const handleLessonClick = (lessonId: number) => {
-    navigate(`/course/${courseId}/lesson/${lessonId}`);
+    navigate(`/spaced-repetition/course/${courseId}/lesson/${lessonId}`);
   };
 
   const goToMainPage = () => {
-    navigate(`/`);
+    navigate(`/spaced-repetition/`);
   };
 
   if (!myCourse) return <div>Course not found</div>;

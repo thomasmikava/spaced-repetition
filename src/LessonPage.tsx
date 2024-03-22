@@ -25,7 +25,7 @@ const LessonPage = () => {
   };
 
   const goToCourse = () => {
-    navigate(`/course/${courseId}`);
+    navigate(`/spaced-repetition/course/${courseId}`);
   };
 
   if (!myCourse) return <div>Course not found</div>;

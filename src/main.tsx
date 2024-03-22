@@ -9,19 +9,19 @@ import ReviewPage from './ReviewPage.tsx';
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/spaced-repetition/',
     element: <App />,
   },
   {
-    path: '/course/:courseId',
+    path: '/spaced-repetition/course/:courseId',
     element: <CoursePage />,
   },
   {
-    path: '/course/:courseId/lesson/:lessonId',
+    path: '/spaced-repetition/course/:courseId/lesson/:lessonId',
     element: <LessonPage />,
   },
   {
-    path: '/review',
+    path: '/spaced-repetition/review',
     element: <ReviewPage />,
   },
 ]);
