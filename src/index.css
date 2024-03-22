@@ -40,3 +40,9 @@ body {
   justify-content: center;
   flex-direction: column;
 }
+
+@media screen and (max-width: 600px) {
+  .body {
+    padding: 10px;
+  }
+}

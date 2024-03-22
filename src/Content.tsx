@@ -133,6 +133,7 @@ const Input = ({
         autoFocus={autoFocus}
         style={style}
         autoComplete='off'
+        autoCapitalize='none'
         readOnly={mode === 'readonly'}
       />
       {lastResult && lastResult.isCorrect && (
@@ -151,7 +152,7 @@ const Input = ({
   );
 };
 
-const Voice = ({ text, language, autoplay, size }: ContentVoice) => {
+const Voice = ({ text, language, autoplay, size, style }: ContentVoice) => {
   const handleSound = useCallback(() => {
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = language;
@@ -172,12 +173,14 @@ const Voice = ({ text, language, autoplay, size }: ContentVoice) => {
   }, [autoplay, handleSound]);
 
   return (
-    <div
+    <button
+      type='button'
       className={cssModule.voiceButton + ' ' + (size === 'mini' ? cssModule.miniVoiceButton : '')}
       onClick={handleSound}
+      style={style}
     >
       🔊
-    </div>
+    </button>
   );
 };
 

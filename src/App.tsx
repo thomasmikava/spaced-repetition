@@ -7,7 +7,7 @@ const App = () => {
   const navigate = useNavigate();
 
   const handleCourseClick = (courseId: number) => {
-    navigate(`/spaced-repetition/course/${courseId}`);
+    navigate(`/course/${courseId}`);
   };
   return (
     <div className='body'>

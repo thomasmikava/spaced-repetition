@@ -7,24 +7,29 @@ import CoursePage from './CoursePage.tsx';
 import LessonPage from './LessonPage.tsx';
 import ReviewPage from './ReviewPage.tsx';
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <App />,
+    },
+    {
+      path: '/course/:courseId',
+      element: <CoursePage />,
+    },
+    {
+      path: '/course/:courseId/lesson/:lessonId',
+      element: <LessonPage />,
+    },
+    {
+      path: '/review',
+      element: <ReviewPage />,
+    },
+  ],
   {
-    path: '/spaced-repetition/',
-    element: <App />,
+    basename: '/spaced-repetition',
   },
-  {
-    path: '/spaced-repetition/course/:courseId',
-    element: <CoursePage />,
-  },
-  {
-    path: '/spaced-repetition/course/:courseId/lesson/:lessonId',
-    element: <LessonPage />,
-  },
-  {
-    path: '/spaced-repetition/review',
-    element: <ReviewPage />,
-  },
-]);
+);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

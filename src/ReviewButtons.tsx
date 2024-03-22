@@ -21,7 +21,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
     if (courseId) params.push(`courseId=${courseId}`);
     if (lessonId) params.push(`lessonId=${lessonId}`);
     if (endless) params.push('mode=endless');
-    navigate(params.length ? `/spaced-repetition/review?${params.join('&')}` : '/spaced-repetition/review');
+    navigate(params.length ? `/review?${params.join('&')}` : '/review');
   };
 
   return (

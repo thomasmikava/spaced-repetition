@@ -27,6 +27,7 @@ export interface ContentVoice {
   text: string;
   language: string;
   autoplay?: boolean;
+  style?: React.CSSProperties;
   size?: 'mini' | 'normal';
 }
 
