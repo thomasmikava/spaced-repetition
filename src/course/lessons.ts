@@ -31,12 +31,12 @@ export const courses: Course[] = [
             value: 'der',
           },
           {
-            type: CardType.ARTICLE,
-            value: 'dieF',
-          },
-          {
             type: CardType.VERB,
             value: 'sein',
+          },
+          {
+            type: CardType.ARTICLE,
+            value: 'dieF',
           },
           {
             type: CardType.NOUN,
