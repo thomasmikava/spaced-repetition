@@ -87,7 +87,7 @@ export class Reviewer {
         isCriticalForReview: historyRecord && isCriticalToBeReviewed(probability),
         isReadyForReview: historyRecord && isReadyToBeReviewed(probability),
         reviewCoefficient: historyRecord
-          ? calculateReviewCoefficient(historyRecord, probability)
+          ? calculateReviewCoefficient(probability)
           : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode),
         isTested: !!historyRecord,
         isIndividuallyViewed: !!individualViewRecord,
@@ -125,7 +125,7 @@ function isReadyToBeReviewed(probability: number) {
   return probability <= 0.6;
 }
 
-function calculateReviewCoefficient(historyRecord: TestReviewHistory, probability: number) {
+function calculateReviewCoefficient(probability: number) {
   return 1 - (2 * (0.5 - probability)) ** 2;
 }
 

@@ -5,7 +5,7 @@ function isVerbMoodDisabled(mood: VerbMood): boolean {
   return mood !== VerbMood.Indikativ;
 }
 function isVerbTenseDisabled(tense: VerbTense, mood: VerbMood): boolean {
-  return tense !== VerbTense.Präsens && tense !== VerbTense.Perfekt;
+  return mood !== null && tense !== VerbTense.Präsens && tense !== VerbTense.Perfekt;
 }
 
 function isNounVariantDisabled(number: NounNumber, case_: Case): boolean {
@@ -14,7 +14,7 @@ function isNounVariantDisabled(number: NounNumber, case_: Case): boolean {
 }
 
 function isArticleVariantDisabled(number: NounNumber, gender: NounGender, case_: Case): boolean {
-  return case_ === Case.Nominativ;
+  return number !== undefined && gender !== undefined && case_ === Case.Nominativ;
 }
 
 export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
