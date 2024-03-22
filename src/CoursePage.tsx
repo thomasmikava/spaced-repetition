@@ -5,13 +5,13 @@ import { courses } from './course/lessons';
 import ReviewButtons from './ReviewButtons';
 
 const CoursePage = () => {
-  let params = useParams();
+  const params = useParams();
   const navigate = useNavigate();
 
   const courseId = +(params.courseId as string);
   const myCourse = useMemo(() => {
     return courses.find((course) => course.id === courseId);
-  }, []);
+  }, [courseId]);
 
   const handleLessonClick = (lessonId: number) => {
     navigate(`/spaced-repetition/course/${courseId}/lesson/${lessonId}`);

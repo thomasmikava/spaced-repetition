@@ -1,4 +1,5 @@
-import { Article, CardType, Case, NounGender, NounNumber } from './types';
+import type { Article } from './types';
+import { CardType, Case, NounGender, NounNumber } from './types';
 
 export const articles: Article[] = [
   {

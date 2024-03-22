@@ -1,18 +1,11 @@
-import { LessonCard, courses } from '../course/lessons';
-import { AnyCard } from '../database/types';
+import type { LessonCard } from '../course/lessons';
+import { courses } from '../course/lessons';
+import type { AnyCard } from '../database/types';
 import { generateTestableCards } from './generate-variants';
 import { generateIndexedDatabase } from './generateIndexedDatabase';
 import { PreviousReviews } from './previous-reviews';
-import {
-  AnyTestableCard,
-  CardViewMode,
-  GroupReviewHistory,
-  IndividualReviewHistory,
-  TestReviewHistory,
-  calculateProbability,
-  initialViewS,
-  secondsUntilProbabilityIsHalf,
-} from './reviews';
+import type { AnyTestableCard, GroupReviewHistory, IndividualReviewHistory, TestReviewHistory } from './reviews';
+import { CardViewMode, calculateProbability, initialViewS, secondsUntilProbabilityIsHalf } from './reviews';
 
 interface WithProbability {
   record: AnyTestableCard;
@@ -33,6 +26,7 @@ interface WithProbability {
 export class Reviewer {
   private lessonCards: LessonCard[];
   private allTestableCards: AnyTestableCard[];
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
     courseId: number | undefined = undefined,
     lessonId: number | undefined = undefined,

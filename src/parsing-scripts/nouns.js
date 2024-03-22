@@ -54,8 +54,7 @@ function copyNounTable() {
 
   const normalizeValue = (value) => {
     const text = value.replaceAll('/\n', '/');
-    const afterFirstSpace = text.substring(text.indexOf(' ') + 1);
-    return afterFirstSpace;
+    return text.substring(text.indexOf(' ') + 1);
   };
 
   singularNames.forEach((value, index) => {

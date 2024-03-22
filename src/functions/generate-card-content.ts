@@ -1,18 +1,17 @@
-import { AnyContent, ContentTag, ContentVoice } from '../content-types';
-import {
+/* eslint-disable sonarjs/cognitive-complexity */
+import type { AnyContent, ContentTag, ContentVoice } from '../content-types';
+import type {
   ArticleVariant,
-  CardType,
-  Case,
   NounGender,
-  NounNumber,
   NounVariant,
   VerbConjugationVariant,
   VerbMood,
-  VerbPronoun,
   VerbTense,
   VerbVariant as VerbVariant,
 } from '../database/types';
-import { AnyTestableCard, CardViewMode } from './reviews';
+import { CardType, Case, NounNumber, VerbPronoun } from '../database/types';
+import type { AnyTestableCard } from './reviews';
+import { CardViewMode } from './reviews';
 import {
   getVerbMeta,
   getPronounDisplayName,
@@ -480,10 +479,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
       ];
     }
   }
-  if (1 < 2) {
-    throw new Error('Unsupported card type ' + (record as any).type + ' for test');
-  }
-  return [];
+  throw new Error('Unsupported card type ' + (record as Record<string, unknown>).type + ' for test');
 };
 
 const getAfterAnswerMetaInfo = (record: AnyTestableCard): AnyContent[] => {

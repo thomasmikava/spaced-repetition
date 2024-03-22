@@ -1,5 +1,6 @@
-import { AnyCard, CardType, Case, NounGender, NounNumber, VerbMood, VerbTense } from '../database/types';
-import { AnyTestableCard, ArticleTestableCard, NounTestableCard, VerbTestableCard } from './reviews';
+import type { AnyCard, NounGender } from '../database/types';
+import { CardType, Case, NounNumber, VerbMood, VerbTense } from '../database/types';
+import type { AnyTestableCard, ArticleTestableCard, NounTestableCard, VerbTestableCard } from './reviews';
 
 function isVerbMoodDisabled(mood: VerbMood): boolean {
   return mood !== VerbMood.Indikativ;
@@ -17,6 +18,7 @@ function isArticleVariantDisabled(number: NounNumber, gender: NounGender, case_:
   return number !== undefined && gender !== undefined && case_ === Case.Nominativ;
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
   const value = card.uniqueValue ?? card.value;
   const valueKey = `#${value}`;
@@ -108,6 +110,5 @@ export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
     }
     return allVariants;
   }
-  if (1 < 2) return [];
-  throw new Error('Unsupported card type ' + (card as any).type);
+  throw new Error('Unsupported card type ' + (card as Record<string, unknown>).type);
 }

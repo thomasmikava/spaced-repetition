@@ -1,21 +1,22 @@
 import cssModule from './App.module.css';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { LessonCard, courses } from './course/lessons';
+import type { LessonCard } from './course/lessons';
+import { courses } from './course/lessons';
 import { generateIndexedDatabase } from './functions/generateIndexedDatabase';
 import { CardType } from './database/types';
 import ReviewButtons from './ReviewButtons';
 import { Reviewer } from './functions/reviewer';
 
 const LessonPage = () => {
-  let params = useParams();
+  const params = useParams();
   const navigate = useNavigate();
 
   const courseId = +(params.courseId as string);
   const lessonId = +(params.lessonId as string);
   const myCourse = useMemo(() => {
     return courses.find((course) => course.id === courseId);
-  }, []);
+  }, [courseId]);
 
   const [reviewer] = useState(() => new Reviewer(courseId, lessonId));
 

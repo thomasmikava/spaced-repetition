@@ -1,4 +1,5 @@
-import { CardType, Verb, VerbMood, VerbPronoun, VerbTense } from './types';
+import type { Verb } from './types';
+import { CardType, VerbMood, VerbPronoun, VerbTense } from './types';
 
 export const verbs: Verb[] = [
   {

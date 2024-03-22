@@ -1,4 +1,6 @@
-import { FC, createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+/* eslint-disable react-hooks/rules-of-hooks */
+import type { FC } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useLatestCallback } from '../utils/hooks';
 
 interface QuestionResult {
@@ -33,7 +35,7 @@ export const TestContextProvider: FC<Props> = ({ children, mode, onResult }) => 
       if (!result.isCorrect) areAllCorrect = false;
     }
     onLatestResult(areAllCorrect);
-  }, [mode]);
+  }, [mode, onLatestResult]);
 
   const useOnCheck = useCallback(
     <T extends QuestionResult>(questionId: string | undefined, check: () => T): T | undefined => {
@@ -54,8 +56,7 @@ export const TestContextProvider: FC<Props> = ({ children, mode, onResult }) => 
         return () => {
           if (questionId) delete ref.current[questionId];
         };
-      }, []);
-      return;
+      }, [questionId]);
     },
     [],
   );

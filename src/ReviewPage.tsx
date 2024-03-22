@@ -8,7 +8,7 @@ import Content from './Content';
 import { TestContextProvider } from './contexts/testContext';
 
 const ReviewPage = () => {
-  let params = useParams();
+  const params = useParams();
   const courseId = !params.courseId ? undefined : +params.courseId;
   const lessonId = !params.lessonId ? undefined : +params.lessonId;
 

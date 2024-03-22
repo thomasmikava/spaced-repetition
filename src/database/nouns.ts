@@ -1,4 +1,5 @@
-import { CardType, Case, Noun, NounGender, NounNumber } from './types';
+import type { Noun } from './types';
+import { CardType, Case, NounGender, NounNumber } from './types';
 
 export const nouns: Noun[] = [
   {

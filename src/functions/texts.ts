@@ -64,13 +64,14 @@ export function getWithSymbolArticle(word: string, gender: NounGender) {
   return prefix + word;
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export function getVerbMeta(mood: VerbMood, tense: VerbTense) {
   let moodName = {
     [VerbMood.Indikativ]: 'Indikativ',
     [VerbMood.Konjunktiv]: 'Konjunktiv',
     [VerbMood.Imperativ]: 'Imperativ',
   }[mood];
-  let tenseName = {
+  const tenseName = {
     [VerbTense.Präsens]: 'Präsens',
     [VerbTense.Präteritum]: 'Präteritum',
     [VerbTense.Perfekt]: 'Perfekt',

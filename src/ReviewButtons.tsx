@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import cssModule from './App.module.css';
-import { FC, memo, useState } from 'react';
+import type { FC } from 'react';
+import { memo, useState } from 'react';
 import { Reviewer } from './functions/reviewer';
 
 interface Props {

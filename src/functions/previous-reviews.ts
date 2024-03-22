@@ -1,15 +1,12 @@
-import {
+import type {
   AllCardsReviewHistory,
   AnyReviewHistory,
   CardKeys,
-  CardViewMode,
   GroupReviewHistory,
   IndividualReviewHistory,
   TestReviewHistory,
-  initialS,
-  maxS,
-  minS,
 } from './reviews';
+import { CardViewMode, initialS, maxS, minS } from './reviews';
 
 const REVIEWS_HISTORY_KEY = 'lastReviewHistory';
 
@@ -39,12 +36,12 @@ export class PreviousReviews {
   static getCardHistory(card: CardKeys, mode: CardViewMode.groupView): GroupReviewHistory | undefined;
   static getCardHistory(card: CardKeys, mode: CardViewMode): AnyReviewHistory | undefined {
     const key = this.getFinalKey(card, mode);
-    const value = this.history[key];
-    return value;
+    return this.history[key];
   }
   private static getFinalKey = (card: CardKeys, mode: CardViewMode) =>
     mode + '@' + (mode === CardViewMode.groupView ? card.groupViewKey : card.testKey);
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   static saveCardResult = (card: CardKeys, mode: CardViewMode, success: boolean) => {
     const key = this.getFinalKey(card, mode);
     const history = { ...this.history };

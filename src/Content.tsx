@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cssModule from './App.module.css';
-import { AnyContent, ContentAfterAnswer, ContentExpandable, ContentInput, ContentVoice } from './content-types';
+import type { AnyContent, ContentAfterAnswer, ContentExpandable, ContentInput, ContentVoice } from './content-types';
 import { useTestContext } from './contexts/testContext';
 
 const renderContent = (
@@ -156,7 +156,7 @@ const Voice = ({ text, language, autoplay, size }: ContentVoice) => {
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = language;
     window.speechSynthesis.speak(msg);
-  }, []);
+  }, [language, text]);
 
   useEffect(() => {
     let isCanceled = false;
@@ -169,7 +169,7 @@ const Voice = ({ text, language, autoplay, size }: ContentVoice) => {
       isCanceled = true;
       window.speechSynthesis.cancel();
     };
-  }, [autoplay]);
+  }, [autoplay, handleSound]);
 
   return (
     <div
