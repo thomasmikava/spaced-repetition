@@ -1,5 +1,5 @@
-import type { LessonCard } from '../course/lessons';
-import { courses } from '../course/lessons';
+import type { LessonCard } from '../courses/lessons';
+import { courses } from '../courses/lessons';
 import type { AnyCard } from '../database/types';
 import { generateTestableCards } from './generate-variants';
 import { generateIndexedDatabase } from './generateIndexedDatabase';
@@ -33,6 +33,7 @@ export class Reviewer {
     private mode: 'endless' | 'normal' = 'normal',
     private cardsDatabase = generateIndexedDatabase(),
   ) {
+    console.log(courseId, lessonId);
     this.lessonCards = [];
     this.allTestableCards = [];
     for (const course of courses) {

@@ -1,7 +1,7 @@
 import cssModule from './App.module.css';
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { courses } from './course/lessons';
+import { courses } from './courses/lessons';
 import ReviewButtons from './ReviewButtons';
 
 const CoursePage = () => {

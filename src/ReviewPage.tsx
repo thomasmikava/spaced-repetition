@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import cssModule from './App.module.css';
 import { getCardTestContent, getCardViewContent } from './functions/generate-card-content';
 import { Reviewer } from './functions/reviewer';
@@ -8,11 +7,11 @@ import Content from './Content';
 import { TestContextProvider } from './contexts/testContext';
 
 const ReviewPage = () => {
-  const params = useParams();
-  const courseId = !params.courseId ? undefined : +params.courseId;
-  const lessonId = !params.lessonId ? undefined : +params.lessonId;
+  const searchParams = new URL(window.location.href).searchParams;
+  const mode = !!searchParams.get('mode');
+  const courseId = !searchParams.get('courseId') ? undefined : +(searchParams.get('courseId') as string);
+  const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
 
-  const mode = !!new URL(window.location.href).searchParams.get('mode');
   const [reviewer] = useState(() => new Reviewer(courseId, lessonId, mode ? 'endless' : 'normal'));
   const [questionNumber, setQuestionNumber] = useState(0);
 

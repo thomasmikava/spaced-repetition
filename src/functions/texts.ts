@@ -1,5 +1,15 @@
 import { articles } from '../database/articles';
-import { VerbPronoun, VerbMood, VerbTense, NounGender, CardType, NounNumber, Case } from '../database/types';
+import {
+  VerbPronoun,
+  VerbMood,
+  VerbTense,
+  NounGender,
+  CardType,
+  NounNumber,
+  Case,
+  AdjectiveDegree,
+  AdjectiveInflection,
+} from '../database/types';
 
 export function getPronounDisplayName(pronoun: VerbPronoun) {
   return {
@@ -97,10 +107,29 @@ export function getVerbMeta(mood: VerbMood, tense: VerbTense) {
   };
 }
 
-export const getPartOfSentenceNames = (cardType: CardType.NOUN | CardType.VERB | CardType.ARTICLE) => {
+export const getPartOfSentenceNames = (
+  cardType: CardType.NOUN | CardType.VERB | CardType.ARTICLE | CardType.ADJECTIVE,
+) => {
   return {
     [CardType.VERB]: 'Verb',
     [CardType.NOUN]: 'Nomen',
     [CardType.ARTICLE]: 'Artikel',
+    [CardType.ADJECTIVE]: 'Adj. Adv.',
   }[cardType];
 };
+
+export function getDegreeDisplayName(degree: AdjectiveDegree) {
+  return {
+    [AdjectiveDegree.Positiv]: 'Positiv',
+    [AdjectiveDegree.Komparativ]: 'Komparativ',
+    [AdjectiveDegree.Superlativ]: 'Superlativ',
+  }[degree];
+}
+
+export function getInflationDisplayName(inflation: AdjectiveInflection) {
+  return {
+    [AdjectiveInflection.Strong]: 'Stark',
+    [AdjectiveInflection.Weak]: 'Schwach',
+    [AdjectiveInflection.Mixed]: 'Gemischt',
+  }[inflation];
+}

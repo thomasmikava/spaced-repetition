@@ -1,3 +1,4 @@
+import { adjectives } from '../database/adjectives';
 import { articles } from '../database/articles';
 import { nouns } from '../database/nouns';
 import type { Verb } from '../database/types';
@@ -21,8 +22,8 @@ export const generateIndexedDatabase = () => {
     [CardType.VERB]: createIndexedObject(verbs),
     [CardType.ARTICLE]: createIndexedObject(articles),
     [CardType.NOUN]: createIndexedObject(nouns),
+    [CardType.ADJECTIVE]: createIndexedObject(adjectives),
     [CardType.PRONOUNS]: createIndexedObject([] as Verb[]),
-    [CardType.ADJECTIVE]: createIndexedObject([] as Verb[]),
     [CardType.ADVERB]: createIndexedObject([] as Verb[]),
     [CardType.PREPOSITION]: createIndexedObject([] as Verb[]),
     [CardType.CONJUNCTION]: createIndexedObject([] as Verb[]),

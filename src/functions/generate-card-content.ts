@@ -1,15 +1,17 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { AnyContent, ContentTag, ContentVoice } from '../content-types';
 import type {
+  AdjectiveInflection,
+  AdjectiveVariant,
   ArticleVariant,
-  NounGender,
   NounVariant,
   VerbConjugationVariant,
   VerbMood,
   VerbTense,
   VerbVariant as VerbVariant,
 } from '../database/types';
-import { CardType, Case, NounNumber, VerbPronoun } from '../database/types';
+import { NounGender } from '../database/types';
+import { AdjectiveDegree, CardType, Case, NounNumber, VerbPronoun } from '../database/types';
 import type { AnyTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
 import {
@@ -22,6 +24,8 @@ import {
   getNumberDisplayName,
   getCaseDisplayName,
   getArticle,
+  getDegreeDisplayName,
+  getInflationDisplayName,
 } from './texts';
 
 const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
@@ -48,60 +52,66 @@ const getDefaultViewContent = (
   ];
 };
 
+const generateColumnedTable = <Row extends string[]>(
+  columns: Row[],
+  getVoiceText: (row: Row) => string,
+): AnyContent[] => {
+  return [
+    {
+      type: 'table',
+      style: { fontSize: 20, margin: '0 auto' },
+      content: columns.map((row) => {
+        return [
+          {
+            type: 'div',
+            content: [{ type: 'text', content: row[0] }],
+            style: { textAlign: 'right' },
+          },
+          {
+            type: 'div',
+            content: [
+              {
+                type: 'div',
+                content: [{ type: 'text', content: row[1] }],
+                style: {
+                  flex: 1,
+                  padding: '0 10px 0 5px',
+                },
+              },
+              {
+                type: 'div',
+                content: [
+                  {
+                    type: 'voice',
+                    language: 'de',
+                    text: getVoiceText(row),
+                    autoplay: false,
+                    size: 'mini',
+                  },
+                ],
+                style: { display: row[1] === '-' ? 'none' : undefined },
+              },
+            ],
+            style: { display: 'flex' },
+          },
+        ];
+      }),
+      getCellStyles: (rowIndex, columnIndex) => {
+        const isFaded = columns[rowIndex][1] === '-';
+        const commonStyles = { opacity: isFaded ? 0.5 : 1 };
+        if (columnIndex === 0) return { ...commonStyles, width: '0', paddingRight: '5px' };
+        return { ...commonStyles, minWidth: '50%' };
+      },
+    },
+  ];
+};
+
 const getTableViewContent = (record: AnyTestableCard): AnyContent[] => {
   if (record.type === CardType.VERB && !record.initial) {
     const conjugationTable = getConjugationTable(
       getConjugations(record.variant.mood, record.variant.tense, record.card.variants) || [],
     );
-    return [
-      {
-        type: 'table',
-        style: { fontSize: 20, margin: '0 auto' },
-        content: conjugationTable.map((row) => {
-          return [
-            {
-              type: 'div',
-              content: [{ type: 'text', content: row[0] }],
-              style: { textAlign: 'right' },
-            },
-            {
-              type: 'div',
-              content: [
-                {
-                  type: 'div',
-                  content: [{ type: 'text', content: row[1] }],
-                  style: {
-                    flex: 1,
-                    padding: '0 10px 0 5px',
-                    //   whiteSpace: 'nowrap',
-                  },
-                },
-                {
-                  type: 'div',
-                  content: [
-                    {
-                      type: 'voice',
-                      language: 'de',
-                      text: getValueBeforeSlash(row[0]) + ' ' + row[1],
-                      autoplay: false,
-                      size: 'mini',
-                    },
-                  ],
-                  style: { display: row[1] === '-' ? 'none' : undefined },
-                },
-              ],
-              style: { display: 'flex' },
-            },
-          ];
-        }),
-        getCellStyles: (rowIndex, columnIndex) => {
-          const isFaded = conjugationTable[rowIndex][1] === '-';
-          const commonStyles = { opacity: isFaded ? 0.5 : 1 };
-          if (columnIndex === 0) return { ...commonStyles, width: '0', paddingRight: '5px' };
-          return { ...commonStyles, minWidth: '50%' };
-        },
-      },
-    ];
+    return generateColumnedTable(conjugationTable, (row) => getValueBeforeSlash(row[0]) + ' ' + row[1]);
   }
 
   if (record.type === CardType.NOUN && !record.initial) {
@@ -163,54 +173,17 @@ const getTableViewContent = (record: AnyTestableCard): AnyContent[] => {
 
   if (record.type === CardType.ARTICLE && !record.initial) {
     const casesTable = getArticleCasesTable(record.card.variants);
-    return [
-      {
-        type: 'table',
-        style: { fontSize: 20, margin: '0 auto' },
-        content: casesTable.map((row) => {
-          return [
-            {
-              type: 'div',
-              content: [{ type: 'text', content: row[0] }],
-              style: { textAlign: 'right' },
-            },
-            {
-              type: 'div',
-              content: [
-                {
-                  type: 'div',
-                  content: [{ type: 'text', content: row[1] }],
-                  style: {
-                    flex: 1,
-                    padding: '0 10px 0 5px',
-                  },
-                },
-                {
-                  type: 'div',
-                  content: [
-                    {
-                      type: 'voice',
-                      language: 'de',
-                      text: prepareTextForAudio(row[1]),
-                      autoplay: false,
-                      size: 'mini',
-                    },
-                  ],
-                  style: { display: row[1] === '-' ? 'none' : undefined },
-                },
-              ],
-              style: { display: 'flex' },
-            },
-          ];
-        }),
-        getCellStyles: (rowIndex, columnIndex) => {
-          const isFaded = casesTable[rowIndex][1] === '-';
-          const commonStyles = { opacity: isFaded ? 0.5 : 1 };
-          if (columnIndex === 0) return { ...commonStyles, width: '0', paddingRight: '5px' };
-          return { ...commonStyles, minWidth: '50%' };
-        },
-      },
-    ];
+    return generateColumnedTable(casesTable, (row) => prepareTextForAudio(row[1]));
+  }
+
+  if (record.type === CardType.ADJECTIVE && !record.isInitialTrio) {
+    const casesTable = getAdjectiveCasesTable(
+      record.variant.degree,
+      record.variant.inflection,
+      record.variant.gender,
+      record.card.variants,
+    );
+    return generateColumnedTable(casesTable, (row) => prepareTextForAudio(row[1]));
   }
 
   return [];
@@ -294,6 +267,32 @@ export const getCardViewContent = (
         ...getTableViewContent(record),
       ];
     }
+  } else if (record.type === CardType.ADJECTIVE) {
+    if (record.isInitialTrio) {
+      const tags = [getPartOfSentenceNames(record.type)];
+      return getDefaultViewContent(tags, record.card.value, record.card.translation);
+    } else {
+      let rootValue = record.variant.value;
+      if (record.variant.degree === AdjectiveDegree.Komparativ) rootValue = record.card.komparativ as string;
+      if (record.variant.degree === AdjectiveDegree.Superlativ) rootValue = record.card.superlativ as string;
+      const tags: ContentTag[] = [
+        getPartOfSentenceNames(record.type),
+        { variant: 'secondary', text: getDegreeDisplayName(record.variant.degree) },
+        { variant: 'secondary', text: getInflationDisplayName(record.variant.inflection) },
+        { variant: 'primary', text: getGenderDisplayName(record.variant.gender) },
+      ];
+      return [
+        getTopRow(tags, rootValue),
+        { type: 'hr', style: { opacity: 0 } },
+        {
+          type: 'text',
+          content: getWithSymbolArticle(rootValue, record.variant.gender),
+          style: { textAlign: 'center', fontSize: 20, display: 'block' },
+        },
+        { type: 'hr', style: { opacity: 0.2 } },
+        ...getTableViewContent(record),
+      ];
+    }
   }
 
   return [];
@@ -365,6 +364,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
             },
           ],
         },
+        ...getAfterAnswerTranslation(record.card.translation),
         ...getAfterAnswerMetaInfo(record),
       ];
     }
@@ -421,15 +421,16 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
           style: { textAlign: 'center' },
           audioProps: prepareInputAudio(correctValues),
         },
+        ...getAfterAnswerTranslation(record.card.translation),
         ...getAfterAnswerMetaInfo(record),
       ];
     }
   } else if (record.type === CardType.ARTICLE) {
     if (record.initial) {
-      const tags = [
+      const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        record.card.gender !== null ? getGenderDisplayName(record.card.gender) : null,
-        record.card.isDefinite ? 'bestimmter' : 'unbestimmter',
+        { variant: 'secondary', text: record.card.isDefinite ? 'bestimmter' : 'unbestimmter' },
+        record.card.gender !== null ? { variant: 'primary', text: getGenderDisplayName(record.card.gender) } : null,
       ];
       const correctValues = record.card.value.split('/');
       return [
@@ -449,6 +450,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
           style: { textAlign: 'center' },
           audioProps: prepareInputAudio(correctValues),
         },
+        ...getAfterAnswerMetaInfo(record),
       ];
     } else {
       const tags: ContentTag[] = [
@@ -478,6 +480,63 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         ...getAfterAnswerMetaInfo(record),
       ];
     }
+  } else if (record.type === CardType.ADJECTIVE) {
+    if (record.isInitialTrio) {
+      const tags: ContentTag[] = [
+        getPartOfSentenceNames(record.type),
+        { variant: 'primary', text: getDegreeDisplayName(record.degree) },
+      ];
+      const correctValues = record.value.split('/');
+      return [
+        { type: 'tag', content: tags },
+        {
+          type: 'paragraph',
+          content: record.card.translation,
+          style: { textAlign: 'center', fontSize: 20 },
+        },
+        {
+          type: 'input',
+          inputId: '1',
+          placeholder: 'tipp',
+          fullWidth: true,
+          autoFocus: true,
+          correctValues,
+          style: { textAlign: 'center' },
+          audioProps: prepareInputAudio(correctValues),
+        },
+      ];
+    } else {
+      let rootValue = record.variant.value;
+      if (record.variant.degree === AdjectiveDegree.Komparativ) rootValue = record.card.komparativ as string;
+      if (record.variant.degree === AdjectiveDegree.Superlativ) rootValue = record.card.superlativ as string;
+      const tags: ContentTag[] = [
+        getPartOfSentenceNames(record.type),
+        { variant: 'secondary', text: getDegreeDisplayName(record.variant.degree) },
+        { variant: 'secondary', text: getInflationDisplayName(record.variant.inflection) },
+        { variant: 'primary', text: getGenderDisplayName(record.variant.gender) },
+      ];
+      const correctValues = record.variant.value.split('/');
+      return [
+        getTopRow(tags, rootValue),
+        {
+          type: 'paragraph',
+          content: getWithSymbolArticle(rootValue, record.variant.gender),
+          style: { textAlign: 'center', fontSize: 20, display: 'block' },
+        },
+        {
+          type: 'input',
+          inputId: '1',
+          placeholder: 'tipp',
+          fullWidth: true,
+          autoFocus: true,
+          correctValues,
+          style: { textAlign: 'center' },
+          audioProps: prepareInputAudio(correctValues),
+        },
+        ...getAfterAnswerTranslation(record.card.translation),
+        ...getAfterAnswerMetaInfo(record),
+      ];
+    }
   }
   throw new Error('Unsupported card type ' + (record as Record<string, unknown>).type + ' for test');
 };
@@ -499,6 +558,17 @@ const getAfterAnswerMetaInfo = (record: AnyTestableCard): AnyContent[] => {
             content: table,
           },
         },
+      ],
+    },
+  ];
+};
+
+const getAfterAnswerTranslation = (translation: string): AnyContent[] => {
+  return [
+    {
+      type: 'afterAnswer',
+      content: [
+        { type: 'paragraph', content: 'Übersetzung: ' + translation, style: { textAlign: 'center', fontSize: 20 } },
       ],
     },
   ];
@@ -532,6 +602,27 @@ function getArticleCasesTable(variants: ArticleVariant[]) {
   return defaultCases.map((caseId): [string, string] => {
     const variant = variants.find((v) => v.case === caseId);
     return [getCaseDisplayName(caseId), variant?.value || '-'];
+  });
+}
+
+function getAdjectiveCasesTable(
+  degree: AdjectiveDegree,
+  inflation: AdjectiveInflection,
+  gender: NounGender,
+  variants: AdjectiveVariant[],
+) {
+  const genderIndex = {
+    [NounGender.Maskulinum]: 1,
+    [NounGender.Femininum]: 2,
+    [NounGender.Neutrum]: 3,
+    [NounGender.Plural]: 4,
+  }[gender] as 1 | 2 | 3 | 4;
+  const myVariants = variants.find((v) => v.degree === degree && v.inflection === inflation);
+  if (!myVariants) return [];
+  return defaultCases.map((caseId): [string, string] => {
+    const variant = myVariants.values.find((v) => v[0] === caseId);
+    if (!variant) return [getCaseDisplayName(caseId), '-'];
+    return [getCaseDisplayName(caseId), variant[genderIndex]];
   });
 }
 

@@ -111,4 +111,31 @@ export interface Article extends Card {
   variants: ArticleVariant[];
 }
 
-export type AnyCard = Verb | Noun | Article;
+export enum AdjectiveDegree {
+  Positiv,
+  Komparativ,
+  Superlativ,
+}
+
+export enum AdjectiveInflection {
+  Weak,
+  Strong,
+  Mixed,
+}
+
+export interface AdjectiveVariant {
+  degree: AdjectiveDegree;
+  inflection: AdjectiveInflection;
+  values: [Case, masculineValue: string, feminineValue: string, neutralValue: string, pluralValue: string][];
+}
+
+export interface Adjective extends Card {
+  type: CardType.ADJECTIVE;
+  value: string;
+  translation: string;
+  komparativ: string | null;
+  superlativ: string | null;
+  variants: AdjectiveVariant[];
+}
+
+export type AnyCard = Verb | Noun | Article | Adjective;

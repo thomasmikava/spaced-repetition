@@ -1,6 +1,6 @@
 import cssModule from './App.module.css';
 import ReviewButtons from './ReviewButtons';
-import { courses } from './course/lessons';
+import { courses } from './courses/lessons';
 import { useNavigate } from 'react-router-dom';
 
 const App = () => {

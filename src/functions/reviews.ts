@@ -1,8 +1,12 @@
 import type {
+  Adjective,
+  AdjectiveDegree,
+  AdjectiveInflection,
   Article,
   CardType,
   Case,
   Noun,
+  NounGender,
   NounNumber,
   Verb,
   VerbConjugationVariant,
@@ -72,4 +76,29 @@ export type ArticleTestableCard = GeneralTestableCard & {
   card: Article;
 } & ({ initial: true } | { initial: false; variant: { case: Case; value: string } });
 
-export type AnyTestableCard = VerbTestableCard | NounTestableCard | ArticleTestableCard;
+export type AdjectiveTestableCard = GeneralTestableCard & {
+  type: CardType.ADJECTIVE;
+  card: Adjective;
+} & (
+    | { initial: true; isInitialTrio: true; degree: AdjectiveDegree.Positiv; value: string }
+    | {
+        initial: false;
+        isInitialTrio: true;
+        degree: AdjectiveDegree.Komparativ | AdjectiveDegree.Superlativ;
+        value: string;
+      }
+    | {
+        initial: false;
+        isInitialTrio: false;
+        variant: {
+          case: Case;
+          gender: NounGender;
+          number: NounNumber;
+          degree: AdjectiveDegree;
+          inflection: AdjectiveInflection;
+          value: string;
+        };
+      }
+  );
+
+export type AnyTestableCard = VerbTestableCard | NounTestableCard | ArticleTestableCard | AdjectiveTestableCard;

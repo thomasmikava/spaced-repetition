@@ -1,6 +1,13 @@
-import type { AnyCard, NounGender } from '../database/types';
-import { CardType, Case, NounNumber, VerbMood, VerbTense } from '../database/types';
-import type { AnyTestableCard, ArticleTestableCard, NounTestableCard, VerbTestableCard } from './reviews';
+import type { AnyCard } from '../database/types';
+import { NounGender } from '../database/types';
+import { AdjectiveDegree, CardType, Case, NounNumber, VerbMood, VerbTense } from '../database/types';
+import type {
+  AdjectiveTestableCard,
+  AnyTestableCard,
+  ArticleTestableCard,
+  NounTestableCard,
+  VerbTestableCard,
+} from './reviews';
 
 function isVerbMoodDisabled(mood: VerbMood): boolean {
   return mood !== VerbMood.Indikativ;
@@ -107,6 +114,66 @@ export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
         hasGroupViewMode: true,
         hasIndividualViewMode: false,
       });
+    }
+    return allVariants;
+  } else if (card.type === CardType.ADJECTIVE) {
+    const allVariants: AdjectiveTestableCard[] = [
+      {
+        type: CardType.ADJECTIVE,
+        card,
+        initial: true,
+        isInitialTrio: true,
+        degree: AdjectiveDegree.Positiv,
+        testKey: `${valueKey}#${AdjectiveDegree.Positiv}`,
+        value: card.value,
+        groupViewKey: null,
+        hasGroupViewMode: false,
+        hasIndividualViewMode: true,
+      },
+    ];
+    if (card.komparativ) {
+      allVariants.push({
+        ...allVariants[0],
+        initial: false,
+        degree: AdjectiveDegree.Komparativ,
+        testKey: `${valueKey}#${AdjectiveDegree.Komparativ}`,
+        value: card.komparativ,
+      } as never);
+    }
+    if (card.superlativ) {
+      allVariants.push({
+        ...allVariants[0],
+        initial: false,
+        degree: AdjectiveDegree.Superlativ,
+        testKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
+        value: card.superlativ,
+      } as never);
+    }
+    const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
+    for (const variant of card.variants) {
+      for (const [case_, ...rest] of variant.values) {
+        rest.forEach((value, index) => {
+          const gender = genders[index];
+          allVariants.push({
+            type: CardType.ADJECTIVE,
+            card,
+            initial: false,
+            isInitialTrio: false,
+            testKey: `${valueKey}#${variant.degree}.${variant.inflection}.${gender}.${case_}.${value}`,
+            groupViewKey: `${valueKey}#${variant.degree}.${variant.inflection}.${gender}`,
+            hasGroupViewMode: true,
+            hasIndividualViewMode: false,
+            variant: {
+              case: case_,
+              degree: variant.degree,
+              gender,
+              inflection: variant.inflection,
+              number: index > 2 ? NounNumber.plural : NounNumber.singular,
+              value,
+            },
+          });
+        });
+      }
     }
     return allVariants;
   }

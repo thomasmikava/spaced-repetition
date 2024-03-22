@@ -1,8 +1,8 @@
 import cssModule from './App.module.css';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { LessonCard } from './course/lessons';
-import { courses } from './course/lessons';
+import type { LessonCard } from './courses/lessons';
+import { courses } from './courses/lessons';
 import { generateIndexedDatabase } from './functions/generateIndexedDatabase';
 import { CardType } from './database/types';
 import ReviewButtons from './ReviewButtons';
@@ -78,6 +78,8 @@ const toReadableType = (type: CardType) => {
       return 'v.';
     case CardType.ARTICLE:
       return 'art.';
+    case CardType.ADJECTIVE:
+      return 'adj.adv.';
     default:
       return 'Unknown';
   }

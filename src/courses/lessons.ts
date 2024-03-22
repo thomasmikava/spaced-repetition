@@ -52,6 +52,28 @@ export const courses: Course[] = [
           },
         ],
       },
+      {
+        id: 2,
+        title: 'Lesson 2',
+        cards: [
+          {
+            type: CardType.ADJECTIVE,
+            value: 'ganz',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'beste',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'weitere',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'genau',
+          },
+        ],
+      },
     ],
   },
   {
