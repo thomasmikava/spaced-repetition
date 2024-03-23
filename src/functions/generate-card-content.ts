@@ -269,8 +269,11 @@ export const getCardViewContent = (
     }
   } else if (record.type === CardType.ADJECTIVE) {
     if (record.isInitialTrio) {
-      const tags = [getPartOfSentenceNames(record.type)];
-      return getDefaultViewContent(tags, record.card.value, record.card.translation);
+      const tags: ContentTag[] = [
+        getPartOfSentenceNames(record.type),
+        { variant: 'primary', text: getDegreeDisplayName(record.degree) },
+      ];
+      return getDefaultViewContent(tags, record.value, record.card.translation);
     } else {
       let rootValue = record.variant.value;
       if (record.variant.degree === AdjectiveDegree.Komparativ) rootValue = record.card.komparativ as string;
@@ -343,12 +346,12 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         },
         {
           type: 'div',
-          style: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 },
+          style: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexDirection: 'column' },
           content: [
             {
               type: 'text',
               content: getPronounDisplayName(record.variant.conjugation.pronoun),
-              style: { fontSize: 20, display: 'inline-block', marginRight: 10 },
+              style: { fontSize: 20, display: 'inline-block' },
             },
             {
               type: 'input',
@@ -357,6 +360,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
               autoFocus: true,
               correctValues,
               style: { textAlign: 'center' },
+              fullWidth: true,
               audioProps: prepareInputAudio(
                 correctValues,
                 getValueBeforeSlash(getPronounDisplayName(record.variant.conjugation.pronoun)) + ' ',

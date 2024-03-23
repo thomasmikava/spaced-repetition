@@ -68,7 +68,7 @@ export class PreviousReviews {
           ...currentValue,
           lastDate: Date.now(),
           repetition: currentValue.repetition + 1,
-          lastS: Math.min(maxS, Math.max(minS, success ? currentValue.lastS * 1.2 : currentValue.lastS * 0.8)),
+          lastS: updateS(success, currentValue.lastS),
           lastHasFailed: !success ? true : undefined,
         };
       } else {
@@ -76,7 +76,7 @@ export class PreviousReviews {
           firstDate: Date.now(),
           lastDate: Date.now(),
           repetition: 1,
-          lastS: initialS,
+          lastS: updateS(success, initialS),
           lastHasFailed: !success ? true : undefined,
         };
       }
@@ -84,3 +84,9 @@ export class PreviousReviews {
     this.history = history;
   };
 }
+
+const updateS = (success: boolean, s?: number) => {
+  if (!s && success) return initialS;
+  const coeffS = s ?? initialS;
+  return Math.min(maxS, Math.max(minS, success ? coeffS * 1.2 : coeffS * 0.8));
+};

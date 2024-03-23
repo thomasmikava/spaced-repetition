@@ -82,7 +82,7 @@ export class Reviewer {
         isCriticalForReview: historyRecord && isCriticalToBeReviewed(probability),
         isReadyForReview: historyRecord && isReadyToBeReviewed(probability),
         reviewCoefficient: historyRecord
-          ? calculateReviewCoefficient(probability)
+          ? probability
           : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode),
         isTested: !!historyRecord,
         isIndividuallyViewed: !!individualViewRecord,
@@ -99,7 +99,7 @@ export class Reviewer {
       if (!a.isCriticalForReview && b.isCriticalForReview) return 1;
       if (a.isReadyForReview && !b.isReadyForReview) return -1;
       if (!a.isReadyForReview && b.isReadyForReview) return 1;
-      return b.reviewCoefficient - a.reviewCoefficient;
+      return a.reviewCoefficient - b.reviewCoefficient;
     });
     console.log(sorted);
     if (this.mode === 'endless') return sorted[0];

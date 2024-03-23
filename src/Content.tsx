@@ -123,7 +123,7 @@ const Input = ({
   }, [audioProps]);
 
   return (
-    <div className={cssModule.inputContainer} style={containerStyle}>
+    <div className={cssModule.inputContainer + ' ' + (fullWidth ? cssModule.fullWidth : '')} style={containerStyle}>
       <input
         ref={ref}
         type={isSubmit ? 'submit' : 'text'}
