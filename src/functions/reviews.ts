@@ -23,7 +23,7 @@ export function secondsUntilProbabilityIsHalf(T_reviewed: number, T_current: num
 export const calculateProbability = (t: number, s: number) => Math.exp(-t / s);
 
 export const initialS = calculateHalfLifeCoefficient(45); // after 45 seconds, the probability of remembering the card is 50%
-export const initialViewS = calculateHalfLifeCoefficient(20);
+export const initialViewS = calculateHalfLifeCoefficient(40);
 export const minS = calculateHalfLifeCoefficient(15);
 export const maxS = calculateHalfLifeCoefficient(10 * 60 * 60 * 24 * 30); // 30 days
 

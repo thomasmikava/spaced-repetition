@@ -62,13 +62,14 @@ export class PreviousReviews {
         };
       }
     } else {
+      const isGroup = !!card.groupViewKey;
       const currentValue = history[key] as TestReviewHistory;
       if (currentValue) {
         history[key] = {
           ...currentValue,
           lastDate: Date.now(),
           repetition: currentValue.repetition + 1,
-          lastS: updateS(success, currentValue.lastS),
+          lastS: updateS(success, isGroup, currentValue.lastS),
           lastHasFailed: !success ? true : undefined,
         };
       } else {
@@ -76,7 +77,7 @@ export class PreviousReviews {
           firstDate: Date.now(),
           lastDate: Date.now(),
           repetition: 1,
-          lastS: updateS(success, initialS),
+          lastS: updateS(success, isGroup, initialS),
           lastHasFailed: !success ? true : undefined,
         };
       }
@@ -85,8 +86,9 @@ export class PreviousReviews {
   };
 }
 
-const updateS = (success: boolean, s?: number) => {
+const updateS = (success: boolean, isGroup: boolean, s?: number) => {
   if (!s && success) return initialS;
   const coeffS = s ?? initialS;
-  return Math.min(maxS, Math.max(minS, success ? coeffS * 1.2 : coeffS * 0.8));
+  const successMultiplier = isGroup ? 1.6 : 1.2;
+  return Math.min(maxS, Math.max(minS, success ? coeffS * successMultiplier : coeffS * 0.8));
 };

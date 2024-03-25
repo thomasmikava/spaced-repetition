@@ -275,7 +275,7 @@ export const getCardViewContent = (
       ];
       return getDefaultViewContent(tags, record.value, record.card.translation);
     } else {
-      let rootValue = record.variant.value;
+      let rootValue = record.card.value;
       if (record.variant.degree === AdjectiveDegree.Komparativ) rootValue = record.card.komparativ as string;
       if (record.variant.degree === AdjectiveDegree.Superlativ) rootValue = record.card.superlativ as string;
       const tags: ContentTag[] = [
@@ -510,7 +510,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         },
       ];
     } else {
-      let rootValue = record.variant.value;
+      let rootValue = record.card.value;
       if (record.variant.degree === AdjectiveDegree.Komparativ) rootValue = record.card.komparativ as string;
       if (record.variant.degree === AdjectiveDegree.Superlativ) rootValue = record.card.superlativ as string;
       const tags: ContentTag[] = [
@@ -518,6 +518,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         { variant: 'secondary', text: getDegreeDisplayName(record.variant.degree) },
         { variant: 'secondary', text: getInflationDisplayName(record.variant.inflection) },
         { variant: 'primary', text: getGenderDisplayName(record.variant.gender) },
+        { variant: 'primary', text: getCaseDisplayName(record.variant.case) },
       ];
       const correctValues = record.variant.value.split('/');
       return [

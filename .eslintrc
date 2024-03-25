@@ -8,7 +8,7 @@
     "plugin:prettier/recommended",
     "plugin:sonarjs/recommended",
   ],
-  "ignorePatterns": ["dist", ".eslintrc.cjs"],
+  "ignorePatterns": ["dist", ".eslintrc.cjs", "src/database/*.ts"],
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint/eslint-plugin", "react-refresh", "sonarjs"],
   "rules": {

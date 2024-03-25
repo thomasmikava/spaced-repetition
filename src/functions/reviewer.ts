@@ -21,6 +21,7 @@ interface WithProbability {
   isViewedInGroup: boolean;
   hasGroupViewMode: boolean;
   hasIndividualViewMode: boolean;
+  reviewDue: number;
 }
 
 export class Reviewer {
@@ -68,29 +69,55 @@ export class Reviewer {
   };
 
   private calculateProbabilities = () => {
-    return this.allTestableCards.map((record): WithProbability => {
-      const historyRecord = PreviousReviews.getCardHistory(record, CardViewMode.test);
-      const individualViewRecord = PreviousReviews.getCardHistory(record, CardViewMode.individualView);
-      const groupVewRecord = PreviousReviews.getCardHistory(record, CardViewMode.groupView);
-      const probability = historyRecord
-        ? calculateProbability(Math.floor((Date.now() - historyRecord.lastDate) / 1000), historyRecord.lastS)
-        : 0;
-      return {
-        record,
-        historyRecord,
-        probability,
-        isCriticalForReview: historyRecord && isCriticalToBeReviewed(probability),
-        isReadyForReview: historyRecord && isReadyToBeReviewed(probability),
-        reviewCoefficient: historyRecord
-          ? probability
-          : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode),
-        isTested: !!historyRecord,
-        isIndividuallyViewed: !!individualViewRecord,
-        isViewedInGroup: !!groupVewRecord,
-        hasGroupViewMode: record.hasGroupViewMode,
-        hasIndividualViewMode: record.hasIndividualViewMode,
-      };
-    });
+    const groupLastViewDates: { [key in string]?: number } = {};
+    return this.allTestableCards
+      .map((record) => {
+        const historyRecord = PreviousReviews.getCardHistory(record, CardViewMode.test);
+        const individualViewRecord = PreviousReviews.getCardHistory(record, CardViewMode.individualView);
+        const groupVewRecord = PreviousReviews.getCardHistory(record, CardViewMode.groupView);
+        if (record.groupViewKey) {
+          const lastViewDate = historyRecord
+            ? historyRecord.lastDate
+            : (groupVewRecord ?? individualViewRecord)?.lastDate;
+          if (lastViewDate) {
+            groupLastViewDates[record.groupViewKey] = Math.max(
+              lastViewDate,
+              groupLastViewDates[record.groupViewKey] ?? 0,
+            );
+          }
+        }
+        return { record, historyRecord, individualViewRecord, groupVewRecord };
+      })
+      .map(({ record, historyRecord, individualViewRecord, groupVewRecord }, i): WithProbability => {
+        if (i === 0) console.log(groupLastViewDates);
+        const lastGroupViewDate =
+          record.groupViewKey && record.hasGroupViewMode ? groupLastViewDates[record.groupViewKey] : undefined;
+        const lastNormalizedViewDate = lastGroupViewDate ?? historyRecord?.lastDate;
+        const probability =
+          historyRecord && lastNormalizedViewDate
+            ? calculateProbability(Math.floor((Date.now() - lastNormalizedViewDate) / 1000), historyRecord.lastS)
+            : 0;
+        const reviewDue = historyRecord
+          ? getReviewDue(historyRecord, lastNormalizedViewDate)
+          : getFirstDue(groupVewRecord, individualViewRecord, record.hasGroupViewMode, lastNormalizedViewDate);
+        return {
+          record,
+          historyRecord,
+          probability,
+          isCriticalForReview: historyRecord && isCriticalToBeReviewed(probability, reviewDue),
+          isReadyForReview: historyRecord && isReadyToBeReviewed(probability, reviewDue),
+          reviewCoefficient: historyRecord
+            ? probability
+            : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode),
+          reviewDue,
+          isTested: !!historyRecord,
+          isIndividuallyViewed: !!individualViewRecord,
+          isViewedInGroup: !!groupVewRecord,
+          hasGroupViewMode: record.hasGroupViewMode,
+          hasIndividualViewMode: record.hasIndividualViewMode,
+          ...{ lastNormalizedViewDate, lastGroupViewDate },
+        };
+      });
   };
 
   getNextCard = () => {
@@ -99,7 +126,7 @@ export class Reviewer {
       if (!a.isCriticalForReview && b.isCriticalForReview) return 1;
       if (a.isReadyForReview && !b.isReadyForReview) return -1;
       if (!a.isReadyForReview && b.isReadyForReview) return 1;
-      return a.reviewCoefficient - b.reviewCoefficient;
+      return a.reviewDue - b.reviewDue;
     });
     console.log(sorted);
     if (this.mode === 'endless') return sorted[0];
@@ -112,17 +139,34 @@ export class Reviewer {
   };
 }
 
-function isCriticalToBeReviewed(probability: number) {
-  return probability <= 0.55 && probability >= 0.45;
+function getReviewDue(record: TestReviewHistory, lastGroupViewDate: number | undefined) {
+  return secondsUntilProbabilityIsHalf(lastGroupViewDate ?? record.lastDate, Date.now(), record.lastS);
 }
 
-function isReadyToBeReviewed(probability: number) {
-  return probability <= 0.6;
+const DEFAULT_REVIEW_DUE = 30;
+function getFirstDue(
+  groupRecord: GroupReviewHistory | undefined,
+  individualRecord: IndividualReviewHistory | undefined,
+  hasGroupViewMode: boolean,
+  groupLastView: number | undefined,
+) {
+  const mainRecord = hasGroupViewMode ? groupRecord : individualRecord;
+  if (!mainRecord) return DEFAULT_REVIEW_DUE;
+  if (hasGroupViewMode && groupLastView) return secondsUntilProbabilityIsHalf(groupLastView, Date.now(), initialViewS);
+  return secondsUntilProbabilityIsHalf(mainRecord.lastDate, Date.now(), initialViewS);
 }
 
-function calculateReviewCoefficient(probability: number) {
-  return 1 - (2 * (0.5 - probability)) ** 2;
+function isCriticalToBeReviewed(probability: number, reviewDue: number) {
+  return probability <= 0.55 && probability >= 0.45 && reviewDue <= 90;
 }
+
+function isReadyToBeReviewed(probability: number, reviewDue: number) {
+  return probability <= 0.6 && reviewDue <= 5 * 60;
+}
+
+// function calculateReviewCoefficient(probability: number) {
+//   return 1 - (2 * (0.5 - probability)) ** 2;
+// }
 
 function calculateViewCoefficient(
   groupRecord: GroupReviewHistory | undefined,
