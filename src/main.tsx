@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import CoursePage from './CoursePage.tsx';
 import LessonPage from './LessonPage.tsx';
 import ReviewPage from './ReviewPage.tsx';
+import AlgorithmReviewPage from './AlgorithmReviewPage.tsx';
 
 const router = createBrowserRouter(
   [
@@ -24,6 +25,10 @@ const router = createBrowserRouter(
     {
       path: '/review',
       element: <ReviewPage />,
+    },
+    {
+      path: '/review-algo',
+      element: <AlgorithmReviewPage />,
     },
   ],
   {

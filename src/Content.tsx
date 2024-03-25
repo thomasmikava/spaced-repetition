@@ -47,8 +47,18 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
         <div className={cssModule.contentTagsContainer}>
           {content.content.map((tag, idx) => {
             const variant = typeof tag === 'object' && tag ? tag.variant : 'regular';
+            const color = typeof tag === 'object' && tag ? tag.color : undefined;
+            const bgColor = variant === 'primary' ? color : undefined;
+            const borderColor = variant === 'primary' || variant === 'secondary' ? color : undefined;
             return tag === undefined || tag === null ? null : (
-              <div className={cssModule.contentTag + ' ' + cssModule['contentTag-' + variant]} key={idx}>
+              <div
+                className={cssModule.contentTag + ' ' + cssModule['contentTag-' + variant]}
+                key={idx}
+                style={{
+                  background: bgColor,
+                  boxShadow: borderColor ? `0 0 0 1px ${color}, inset 0 0 0 1px ${color}` : undefined,
+                }}
+              >
                 {typeof tag === 'object' ? renderContent(tag.text) : renderContent(tag)}
               </div>
             );

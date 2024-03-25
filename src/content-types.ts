@@ -33,7 +33,7 @@ export interface ContentVoice {
 
 type TagVariant = 'primary' | 'secondary' | 'regular';
 
-export type ContentTag = string | null | undefined | { variant: TagVariant; text: string };
+export type ContentTag = string | null | undefined | { variant: TagVariant; text: string; color: string };
 
 interface ContentTagContainer {
   type: 'tag';

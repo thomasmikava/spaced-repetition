@@ -30,6 +30,21 @@ export function getGenderDisplayName(gender: NounGender) {
     [NounGender.Plural]: 'Plural',
   }[gender];
 }
+export function getGenderColor(gender: NounGender) {
+  return {
+    [NounGender.Maskulinum]: Colors.blue,
+    [NounGender.Femininum]: Colors.pink,
+    [NounGender.Neutrum]: Colors.violet,
+    [NounGender.Plural]: Colors.green,
+  }[gender];
+}
+export function getArticleTypeDisplayName(isDefinite: boolean) {
+  return isDefinite ? 'Bestimmter' : 'Unbestimmter';
+}
+export function getArticleTypeColor(isDefinite: boolean) {
+  return isDefinite ? Colors.lightBlue : Colors.green;
+}
+
 export function getCaseDisplayName(caseId: Case) {
   return {
     [Case.Nominativ]: 'Nominativ',
@@ -38,11 +53,25 @@ export function getCaseDisplayName(caseId: Case) {
     [Case.Dativ]: 'Dativ',
   }[caseId];
 }
+export function getCaseColor(caseId: Case) {
+  return {
+    [Case.Nominativ]: Colors.lightBlue,
+    [Case.Akkusativ]: Colors.orange,
+    [Case.Genitiv]: Colors.pink,
+    [Case.Dativ]: Colors.green,
+  }[caseId];
+}
 
 export function getNumberDisplayName(number: NounNumber) {
   return {
     [NounNumber.singular]: 'Singular',
     [NounNumber.plural]: 'Plural',
+  }[number];
+}
+export function getNumberColor(number: NounNumber) {
+  return {
+    [NounNumber.singular]: Colors.lightBlue,
+    [NounNumber.plural]: Colors.green,
   }[number];
 }
 
@@ -107,6 +136,32 @@ export function getVerbMeta(mood: VerbMood, tense: VerbTense) {
   };
 }
 
+const Colors = {
+  lightBlue: '#1798b6',
+  green: '#17b65c',
+  orange: '#b65717',
+  pink: '#b617af',
+  violet: '#6517b6',
+  blue: '#173eb6',
+};
+
+export const getTenseColor = (tense: VerbTense) => {
+  return {
+    [VerbTense.Präsens]: Colors.lightBlue,
+    [VerbTense.Präteritum]: Colors.orange,
+    [VerbTense.Perfekt]: Colors.green,
+    [VerbTense.Plusquamperfekt]: 'orange',
+    [VerbTense.Futur1]: 'red',
+    [VerbTense.Futur2]: 'red',
+    [VerbTense.Futur2_1]: 'red',
+    [VerbTense.Futur2_2]: 'red',
+  }[tense];
+};
+
+export const getMoodColor = (mood: VerbMood) => {
+  return mood ? Colors.lightBlue : '';
+};
+
 export const getPartOfSentenceNames = (
   cardType: CardType.NOUN | CardType.VERB | CardType.ARTICLE | CardType.ADJECTIVE,
 ) => {
@@ -125,11 +180,25 @@ export function getDegreeDisplayName(degree: AdjectiveDegree) {
     [AdjectiveDegree.Superlativ]: 'Superlativ',
   }[degree];
 }
+export function getDegreeColor(degree: AdjectiveDegree) {
+  return {
+    [AdjectiveDegree.Positiv]: Colors.lightBlue,
+    [AdjectiveDegree.Komparativ]: Colors.orange,
+    [AdjectiveDegree.Superlativ]: Colors.green,
+  }[degree];
+}
 
 export function getInflationDisplayName(inflation: AdjectiveInflection) {
   return {
     [AdjectiveInflection.Strong]: 'Stark',
     [AdjectiveInflection.Weak]: 'Schwach',
     [AdjectiveInflection.Mixed]: 'Gemischt',
+  }[inflation];
+}
+export function getInflationColor(inflation: AdjectiveInflection) {
+  return {
+    [AdjectiveInflection.Strong]: Colors.lightBlue,
+    [AdjectiveInflection.Weak]: Colors.orange,
+    [AdjectiveInflection.Mixed]: Colors.violet,
   }[inflation];
 }

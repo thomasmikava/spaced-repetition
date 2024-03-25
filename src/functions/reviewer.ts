@@ -7,7 +7,7 @@ import { PreviousReviews } from './previous-reviews';
 import type { AnyTestableCard, GroupReviewHistory, IndividualReviewHistory, TestReviewHistory } from './reviews';
 import { CardViewMode, calculateProbability, initialViewS, secondsUntilProbabilityIsHalf } from './reviews';
 
-interface WithProbability {
+export interface CardWithProbability {
   record: AnyTestableCard;
   historyRecord?: TestReviewHistory;
   reviewRecord?: TestReviewHistory;
@@ -27,14 +27,16 @@ interface WithProbability {
 export class Reviewer {
   private lessonCards: LessonCard[];
   private allTestableCards: AnyTestableCard[];
+  private prevReviews: PreviousReviews;
   // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
     courseId: number | undefined = undefined,
     lessonId: number | undefined = undefined,
     private mode: 'endless' | 'normal' = 'normal',
+    avoidStorage = false,
     private cardsDatabase = generateIndexedDatabase(),
   ) {
-    console.log(courseId, lessonId);
+    this.prevReviews = new PreviousReviews(avoidStorage);
     this.lessonCards = [];
     this.allTestableCards = [];
     for (const course of courses) {
@@ -57,24 +59,24 @@ export class Reviewer {
     return Math.min(...testableCards.map((record) => this.getDueDate(record)));
   };
 
-  getDueDate = (record: AnyTestableCard): number => {
-    const historyRecord = PreviousReviews.getCardHistory(record, CardViewMode.test);
+  getDueDate = (record: AnyTestableCard, accordingToDate = Date.now()): number => {
+    const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
     if (!historyRecord) return Infinity;
-    return secondsUntilProbabilityIsHalf(historyRecord.lastDate, Date.now(), historyRecord.lastS);
+    return secondsUntilProbabilityIsHalf(historyRecord.lastDate, accordingToDate, historyRecord.lastS);
   };
 
-  getDueCardsCount = () => {
-    const probabilities = this.calculateProbabilities();
+  getDueCardsCount = (accordingToDate = Date.now()) => {
+    const probabilities = this.calculateProbabilities(accordingToDate);
     return probabilities.filter((record) => record.isReadyForReview).length;
   };
 
-  private calculateProbabilities = () => {
+  private calculateProbabilities = (currentDate = Date.now()) => {
     const groupLastViewDates: { [key in string]?: number } = {};
     return this.allTestableCards
       .map((record) => {
-        const historyRecord = PreviousReviews.getCardHistory(record, CardViewMode.test);
-        const individualViewRecord = PreviousReviews.getCardHistory(record, CardViewMode.individualView);
-        const groupVewRecord = PreviousReviews.getCardHistory(record, CardViewMode.groupView);
+        const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
+        const individualViewRecord = this.prevReviews.getCardHistory(record, CardViewMode.individualView);
+        const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView);
         if (record.groupViewKey) {
           const lastViewDate = historyRecord
             ? historyRecord.lastDate
@@ -88,18 +90,24 @@ export class Reviewer {
         }
         return { record, historyRecord, individualViewRecord, groupVewRecord };
       })
-      .map(({ record, historyRecord, individualViewRecord, groupVewRecord }, i): WithProbability => {
-        if (i === 0) console.log(groupLastViewDates);
+      .map(({ record, historyRecord, individualViewRecord, groupVewRecord }, i): CardWithProbability => {
+        // if (i === 0) console.log(groupLastViewDates);
         const lastGroupViewDate =
           record.groupViewKey && record.hasGroupViewMode ? groupLastViewDates[record.groupViewKey] : undefined;
         const lastNormalizedViewDate = lastGroupViewDate ?? historyRecord?.lastDate;
         const probability =
           historyRecord && lastNormalizedViewDate
-            ? calculateProbability(Math.floor((Date.now() - lastNormalizedViewDate) / 1000), historyRecord.lastS)
+            ? calculateProbability(Math.floor((currentDate - lastNormalizedViewDate) / 1000), historyRecord.lastS)
             : 0;
         const reviewDue = historyRecord
-          ? getReviewDue(historyRecord, lastNormalizedViewDate)
-          : getFirstDue(groupVewRecord, individualViewRecord, record.hasGroupViewMode, lastNormalizedViewDate);
+          ? getReviewDue(historyRecord, lastNormalizedViewDate, currentDate)
+          : getFirstDue(
+              groupVewRecord,
+              individualViewRecord,
+              record.hasGroupViewMode,
+              lastNormalizedViewDate,
+              currentDate,
+            );
         return {
           record,
           historyRecord,
@@ -108,7 +116,7 @@ export class Reviewer {
           isReadyForReview: historyRecord && isReadyToBeReviewed(probability, reviewDue),
           reviewCoefficient: historyRecord
             ? probability
-            : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode),
+            : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode, currentDate),
           reviewDue,
           isTested: !!historyRecord,
           isIndividuallyViewed: !!individualViewRecord,
@@ -120,27 +128,27 @@ export class Reviewer {
       });
   };
 
-  getNextCard = () => {
-    const sorted = this.calculateProbabilities().sort((a, b) => {
+  getNextCard = (currentDate = Date.now()) => {
+    const sorted = this.calculateProbabilities(currentDate).sort((a, b) => {
       if (a.isCriticalForReview && !b.isCriticalForReview) return -1;
       if (!a.isCriticalForReview && b.isCriticalForReview) return 1;
       if (a.isReadyForReview && !b.isReadyForReview) return -1;
       if (!a.isReadyForReview && b.isReadyForReview) return 1;
       return a.reviewDue - b.reviewDue;
     });
-    console.log(sorted);
+    // console.log(sorted);
     if (this.mode === 'endless') return sorted[0];
     if (!sorted[0].isTested || sorted[0].isCriticalForReview || sorted[0].isReadyForReview) return sorted[0];
     return undefined;
   };
 
-  markViewed = (card: WithProbability, mode: CardViewMode, success: boolean) => {
-    PreviousReviews.saveCardResult(card.record, mode, success);
+  markViewed = (card: CardWithProbability, mode: CardViewMode, success: boolean, currentDate = Date.now()) => {
+    this.prevReviews.saveCardResult(card.record, mode, success, currentDate);
   };
 }
 
-function getReviewDue(record: TestReviewHistory, lastGroupViewDate: number | undefined) {
-  return secondsUntilProbabilityIsHalf(lastGroupViewDate ?? record.lastDate, Date.now(), record.lastS);
+function getReviewDue(record: TestReviewHistory, lastGroupViewDate: number | undefined, currentDate: number) {
+  return secondsUntilProbabilityIsHalf(lastGroupViewDate ?? record.lastDate, currentDate, record.lastS);
 }
 
 const DEFAULT_REVIEW_DUE = 30;
@@ -149,11 +157,12 @@ function getFirstDue(
   individualRecord: IndividualReviewHistory | undefined,
   hasGroupViewMode: boolean,
   groupLastView: number | undefined,
+  currentDate: number,
 ) {
   const mainRecord = hasGroupViewMode ? groupRecord : individualRecord;
   if (!mainRecord) return DEFAULT_REVIEW_DUE;
-  if (hasGroupViewMode && groupLastView) return secondsUntilProbabilityIsHalf(groupLastView, Date.now(), initialViewS);
-  return secondsUntilProbabilityIsHalf(mainRecord.lastDate, Date.now(), initialViewS);
+  if (hasGroupViewMode && groupLastView) return secondsUntilProbabilityIsHalf(groupLastView, currentDate, initialViewS);
+  return secondsUntilProbabilityIsHalf(mainRecord.lastDate, currentDate, initialViewS);
 }
 
 function isCriticalToBeReviewed(probability: number, reviewDue: number) {
@@ -172,9 +181,10 @@ function calculateViewCoefficient(
   groupRecord: GroupReviewHistory | undefined,
   individualRecord: IndividualReviewHistory | undefined,
   hasGroupViewMode: boolean,
+  currentDate: number,
 ) {
   const mainRecord = hasGroupViewMode ? groupRecord : individualRecord;
   if (!mainRecord) return initialViewCoefficient;
-  return calculateProbability(Math.floor((Date.now() - mainRecord.lastDate) / 1000), initialViewS);
+  return calculateProbability(Math.floor((currentDate - mainRecord.lastDate) / 1000), initialViewS);
 }
 const initialViewCoefficient = 0.8;

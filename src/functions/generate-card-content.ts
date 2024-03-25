@@ -26,6 +26,15 @@ import {
   getArticle,
   getDegreeDisplayName,
   getInflationDisplayName,
+  getTenseColor,
+  getMoodColor,
+  getArticleTypeDisplayName,
+  getGenderColor,
+  getArticleTypeColor,
+  getCaseColor,
+  getNumberColor,
+  getDegreeColor,
+  getInflationColor,
 } from './texts';
 
 const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
@@ -199,7 +208,12 @@ export const getCardViewContent = (
       return getDefaultViewContent(tags, record.card.value, record.card.translation);
     } else if (mode === CardViewMode.groupView) {
       const meta = getVerbMeta(record.variant.mood, record.variant.tense);
-      const tags = [getPartOfSentenceNames(record.type), meta.mood, meta.tense];
+      const tags: ContentTag[] = [
+        getPartOfSentenceNames(record.type),
+        { variant: 'secondary', text: meta.mood, color: getMoodColor(record.variant.mood) },
+        { variant: 'primary', text: meta.tense, color: getTenseColor(record.variant.tense) },
+      ];
+
       return [
         {
           type: 'div',
@@ -221,11 +235,25 @@ export const getCardViewContent = (
   } else if (record.type === CardType.NOUN) {
     if (record.initial) {
       const withArticle = getWithArticle(record.card.value, record.card.gender);
-      const tags = [getPartOfSentenceNames(record.type), getGenderDisplayName(record.card.gender)];
+      const tags: ContentTag[] = [
+        getPartOfSentenceNames(record.type),
+        {
+          variant: 'secondary',
+          text: getGenderDisplayName(record.card.gender),
+          color: getGenderColor(record.card.gender),
+        },
+      ];
       return getDefaultViewContent(tags, withArticle, record.card.translation);
     } else if (mode === CardViewMode.groupView) {
       const withArticle = getWithArticle(record.card.value, record.card.gender);
-      const tags = [getPartOfSentenceNames(record.type), getNumberDisplayName(record.variant.number)];
+      const tags: ContentTag[] = [
+        getPartOfSentenceNames(record.type),
+        {
+          variant: 'secondary',
+          text: getNumberDisplayName(record.variant.number),
+          color: getNumberColor(record.variant.number),
+        },
+      ];
       return [
         getTopRow(tags, withArticle),
         { type: 'hr', style: { opacity: 0 } },
@@ -242,11 +270,18 @@ export const getCardViewContent = (
     }
   } else if (record.type === CardType.ARTICLE) {
     if (record.initial) {
-      record.card.gender;
-      const tags = [
+      const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        record.card.gender !== null ? getGenderDisplayName(record.card.gender) : null,
-        record.card.isDefinite ? 'bestimmter' : 'unbestimmter',
+        {
+          variant: 'secondary',
+          text: getGenderDisplayName(record.card.gender),
+          color: getGenderColor(record.card.gender),
+        },
+        {
+          variant: 'secondary',
+          text: getArticleTypeDisplayName(record.card.isDefinite),
+          color: getArticleTypeColor(record.card.isDefinite),
+        },
       ];
       return getDefaultViewContent(
         tags,
@@ -254,10 +289,18 @@ export const getCardViewContent = (
         getWithSymbolArticle(record.card.translation, record.card.gender),
       );
     } else if (mode === CardViewMode.groupView) {
-      const tags = [
+      const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        getGenderDisplayName(record.card.gender),
-        record.card.isDefinite ? 'bestimmter' : 'unbestimmter',
+        {
+          variant: 'secondary',
+          text: getGenderDisplayName(record.card.gender),
+          color: getGenderColor(record.card.gender),
+        },
+        {
+          variant: 'secondary',
+          text: getArticleTypeDisplayName(record.card.isDefinite),
+          color: getArticleTypeColor(record.card.isDefinite),
+        },
       ];
       return [
         getTopRow(tags, record.card.value),
@@ -271,7 +314,7 @@ export const getCardViewContent = (
     if (record.isInitialTrio) {
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'primary', text: getDegreeDisplayName(record.degree) },
+        { variant: 'primary', text: getDegreeDisplayName(record.degree), color: getDegreeColor(record.degree) },
       ];
       return getDefaultViewContent(tags, record.value, record.card.translation);
     } else {
@@ -280,9 +323,21 @@ export const getCardViewContent = (
       if (record.variant.degree === AdjectiveDegree.Superlativ) rootValue = record.card.superlativ as string;
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'secondary', text: getDegreeDisplayName(record.variant.degree) },
-        { variant: 'secondary', text: getInflationDisplayName(record.variant.inflection) },
-        { variant: 'primary', text: getGenderDisplayName(record.variant.gender) },
+        {
+          variant: 'secondary',
+          text: getDegreeDisplayName(record.variant.degree),
+          color: getDegreeColor(record.variant.degree),
+        },
+        {
+          variant: 'secondary',
+          text: getInflationDisplayName(record.variant.inflection),
+          color: getInflationColor(record.variant.inflection),
+        },
+        {
+          variant: 'primary',
+          text: getGenderDisplayName(record.variant.gender),
+          color: getGenderColor(record.variant.gender),
+        },
       ];
       return [
         getTopRow(tags, rootValue),
@@ -333,8 +388,8 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
       const meta = getVerbMeta(record.variant.mood, record.variant.tense);
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'secondary', text: meta.mood },
-        { variant: 'primary', text: meta.tense },
+        { variant: 'secondary', text: meta.mood, color: getMoodColor(record.variant.mood) },
+        { variant: 'primary', text: meta.tense, color: getTenseColor(record.variant.tense) },
       ];
       const correctValues = record.variant.conjugation.value.split('/');
       return [
@@ -374,7 +429,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
     }
   } else if (record.type === CardType.NOUN) {
     if (record.initial) {
-      const tags = [getPartOfSentenceNames(record.type)];
+      const tags: ContentTag[] = [getPartOfSentenceNames(record.type)];
       const correctValues = record.card.value.split('/').map((word) => getWithArticle(word, record.card.gender));
       return [
         { type: 'tag', content: tags },
@@ -394,8 +449,12 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
     } else {
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'secondary', text: getNumberDisplayName(record.variant.number) },
-        { variant: 'primary', text: getCaseDisplayName(record.variant.case) },
+        {
+          variant: 'secondary',
+          text: getNumberDisplayName(record.variant.number),
+          color: getNumberColor(record.variant.number),
+        },
+        { variant: 'primary', text: getCaseDisplayName(record.variant.case), color: getCaseColor(record.variant.case) },
       ];
       const possibleArticles =
         record.variant.number === NounNumber.plural
@@ -433,8 +492,16 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
     if (record.initial) {
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'secondary', text: record.card.isDefinite ? 'bestimmter' : 'unbestimmter' },
-        record.card.gender !== null ? { variant: 'primary', text: getGenderDisplayName(record.card.gender) } : null,
+        {
+          variant: 'secondary',
+          text: getArticleTypeDisplayName(record.card.isDefinite),
+          color: getArticleTypeColor(record.card.isDefinite),
+        },
+        {
+          variant: 'primary',
+          text: getGenderDisplayName(record.card.gender),
+          color: getGenderColor(record.card.gender),
+        },
       ];
       const correctValues = record.card.value.split('/');
       return [
@@ -459,9 +526,17 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
     } else {
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'secondary', text: getGenderDisplayName(record.card.gender) },
-        { variant: 'secondary', text: record.card.isDefinite ? 'bestimmter' : 'unbestimmter' },
-        { variant: 'primary', text: getCaseDisplayName(record.variant.case) },
+        {
+          variant: 'secondary',
+          text: getGenderDisplayName(record.card.gender),
+          color: getGenderColor(record.card.gender),
+        },
+        {
+          variant: 'secondary',
+          text: getArticleTypeDisplayName(record.card.isDefinite),
+          color: getArticleTypeColor(record.card.isDefinite),
+        },
+        { variant: 'primary', text: getCaseDisplayName(record.variant.case), color: getCaseColor(record.variant.case) },
       ];
       const correctValues = record.variant.value.split('/');
       return [
@@ -488,7 +563,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
     if (record.isInitialTrio) {
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'primary', text: getDegreeDisplayName(record.degree) },
+        { variant: 'primary', text: getDegreeDisplayName(record.degree), color: getDegreeColor(record.degree) },
       ];
       const correctValues = record.value.split('/');
       return [
@@ -515,10 +590,22 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
       if (record.variant.degree === AdjectiveDegree.Superlativ) rootValue = record.card.superlativ as string;
       const tags: ContentTag[] = [
         getPartOfSentenceNames(record.type),
-        { variant: 'secondary', text: getDegreeDisplayName(record.variant.degree) },
-        { variant: 'secondary', text: getInflationDisplayName(record.variant.inflection) },
-        { variant: 'primary', text: getGenderDisplayName(record.variant.gender) },
-        { variant: 'primary', text: getCaseDisplayName(record.variant.case) },
+        {
+          variant: 'secondary',
+          text: getDegreeDisplayName(record.variant.degree),
+          color: getDegreeColor(record.variant.degree),
+        },
+        {
+          variant: 'secondary',
+          text: getInflationDisplayName(record.variant.inflection),
+          color: getInflationColor(record.variant.inflection),
+        },
+        {
+          variant: 'primary',
+          text: getGenderDisplayName(record.variant.gender),
+          color: getGenderColor(record.variant.gender),
+        },
+        { variant: 'primary', text: getCaseDisplayName(record.variant.case), color: getCaseColor(record.variant.case) },
       ];
       const correctValues = record.variant.value.split('/');
       return [

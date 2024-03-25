@@ -11,7 +11,9 @@ import { CardViewMode, initialS, maxS, minS } from './reviews';
 const REVIEWS_HISTORY_KEY = 'lastReviewHistory';
 
 export class PreviousReviews {
-  private static getLastReviewHistory = (): AllCardsReviewHistory => {
+  constructor(private avoidStorage = false) {}
+  private getLastReviewHistory = (): AllCardsReviewHistory => {
+    if (this.avoidStorage) return {};
     try {
       const value = JSON.parse(localStorage.getItem(REVIEWS_HISTORY_KEY) || '');
       if (!value || typeof value !== 'object') return {};
@@ -21,28 +23,28 @@ export class PreviousReviews {
     }
   };
 
-  private static _history?: AllCardsReviewHistory;
-  private static get history(): AllCardsReviewHistory {
+  private _history?: AllCardsReviewHistory;
+  private get history(): AllCardsReviewHistory {
     if (this._history) return this._history;
     return (this._history = this.getLastReviewHistory());
   }
-  private static set history(value: AllCardsReviewHistory) {
+  private set history(value: AllCardsReviewHistory) {
     this._history = value;
-    localStorage.setItem(REVIEWS_HISTORY_KEY, JSON.stringify(value));
+    if (!this.avoidStorage) localStorage.setItem(REVIEWS_HISTORY_KEY, JSON.stringify(value));
   }
 
-  static getCardHistory(card: CardKeys, mode: CardViewMode.test): TestReviewHistory | undefined;
-  static getCardHistory(card: CardKeys, mode: CardViewMode.individualView): IndividualReviewHistory | undefined;
-  static getCardHistory(card: CardKeys, mode: CardViewMode.groupView): GroupReviewHistory | undefined;
-  static getCardHistory(card: CardKeys, mode: CardViewMode): AnyReviewHistory | undefined {
+  getCardHistory(card: CardKeys, mode: CardViewMode.test): TestReviewHistory | undefined;
+  getCardHistory(card: CardKeys, mode: CardViewMode.individualView): IndividualReviewHistory | undefined;
+  getCardHistory(card: CardKeys, mode: CardViewMode.groupView): GroupReviewHistory | undefined;
+  getCardHistory(card: CardKeys, mode: CardViewMode): AnyReviewHistory | undefined {
     const key = this.getFinalKey(card, mode);
     return this.history[key];
   }
-  private static getFinalKey = (card: CardKeys, mode: CardViewMode) =>
+  private getFinalKey = (card: CardKeys, mode: CardViewMode) =>
     mode + '@' + (mode === CardViewMode.groupView ? card.groupViewKey : card.testKey);
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
-  static saveCardResult = (card: CardKeys, mode: CardViewMode, success: boolean) => {
+  saveCardResult = (card: CardKeys, mode: CardViewMode, success: boolean, date = Date.now()) => {
     const key = this.getFinalKey(card, mode);
     const history = { ...this.history };
 
@@ -51,13 +53,13 @@ export class PreviousReviews {
       if (currentValue) {
         history[key] = {
           ...currentValue,
-          lastDate: Date.now(),
+          lastDate: date,
           repetition: currentValue.repetition + 1,
         };
       } else {
         history[key] = {
-          firstDate: Date.now(),
-          lastDate: Date.now(),
+          firstDate: date,
+          lastDate: date,
           repetition: 1,
         };
       }
@@ -67,15 +69,15 @@ export class PreviousReviews {
       if (currentValue) {
         history[key] = {
           ...currentValue,
-          lastDate: Date.now(),
+          lastDate: date,
           repetition: currentValue.repetition + 1,
           lastS: updateS(success, isGroup, currentValue.lastS),
           lastHasFailed: !success ? true : undefined,
         };
       } else {
         history[key] = {
-          firstDate: Date.now(),
-          lastDate: Date.now(),
+          firstDate: date,
+          lastDate: date,
           repetition: 1,
           lastS: updateS(success, isGroup, initialS),
           lastHasFailed: !success ? true : undefined,
