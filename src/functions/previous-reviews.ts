@@ -92,9 +92,10 @@ const updateS = (success: boolean, isGroup: boolean, s?: number) => {
   if (!s && success) return initialTestS;
   const coeffS = s ?? initialTestS;
   let successMultiplier;
-  if (coeffS < calculateHalfLifeCoefficient(60 * 60)) successMultiplier = isGroup ? 3 : 2;
-  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 2 : 1.6;
-  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 2)) successMultiplier = isGroup ? 1.8 : 1.3;
-  successMultiplier = isGroup ? 1.5 : 1.2;
+  if (coeffS < calculateHalfLifeCoefficient(60 * 20)) successMultiplier = isGroup ? 2 : 1.7;
+  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 2.5 : 1.8;
+  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 24)) successMultiplier = isGroup ? 2 : 1.6;
+  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 24 * 4)) successMultiplier = isGroup ? 1.8 : 1.35;
+  else successMultiplier = isGroup ? 1.5 : 1.2;
   return Math.min(maxS, Math.max(minS, success ? coeffS * successMultiplier : coeffS * 0.5));
 };

@@ -81,13 +81,13 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   min-width: 400px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 600px;
   box-shadow: 0 5px 11px rgba(0, 0, 0, 0.5);
 }
 
 @media screen and (max-width: 600px) {
   .viewCard {
-    width: 100%;
     min-width: unset;
   }
 }

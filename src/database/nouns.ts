@@ -21,7 +21,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Mal',
-    translation: 'time',
+    translation:
+      'time; mark; marking - on person; print; monument; memorial; sign; brand; birthmark; base [SPORT]; touch [SPORT]; posts Pl. [SPORT]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Mal' },
@@ -37,7 +38,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Beispiel',
-    translation: 'example',
+    translation: 'sample; paradigm; lead - initiative for others to follow; exemplar; lead [TECH.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Beispiel' },
@@ -53,7 +54,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Zeit',
-    translation: 'time; period',
+    translation: 'time; period; while; term; time duration; terms Pl.; tense [LING.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Zeit' },
@@ -69,7 +70,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Frau',
-    translation: 'wife; woman; Mrs.',
+    translation: 'wife; woman; female',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Frau' },
@@ -85,7 +86,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Mensch',
-    translation: 'human; person; man',
+    translation: 'human; person; man; human being',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Mensch' },
@@ -101,7 +102,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Deutsch',
-    translation: 'German (language)',
+    translation: 'German [LING.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Deutsch' },
@@ -113,7 +114,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Kind',
-    translation: 'child; kid',
+    translation: 'child; infant; kid [ugs.] - child; kiddy; moppet [ugs.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Kind' },
@@ -129,7 +130,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Tag',
-    translation: 'day',
+    translation:
+      'day; daytime; ground level [GEOL.]; ground surface [GEOL.]; day level; day surface; daylight; grass roots [TECH.]; land level [TECH.]; land surface [TECH.]; level ground [TECH.]; surface [TECH.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Tag' },
@@ -145,7 +147,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Mann',
-    translation: 'man; guy',
+    translation: 'man; husband; male; guy [ugs.]; hubby [ugs.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Mann' },
@@ -161,7 +163,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Land',
-    translation: 'country; ground; land',
+    translation: 'Federal Land',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Land' },
@@ -177,7 +179,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Frage',
-    translation: 'question; issue; matter',
+    translation: 'question [LING.]; question; demand; issue; query',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Frage' },
@@ -193,7 +195,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Haus',
-    translation: 'home; house',
+    translation: 'home; house; House auch: house - dynasty, family lineage; financial institution [FINAN.]; domicile',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Haus' },
@@ -209,7 +211,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Fall',
-    translation: 'drop; case',
+    translation:
+      'fall; case auch [JURA][LING.][MED.]; drop; instance; plunge; tumble; event; labefaction; slump; circumstance; decline; downstream; fall [GEOL.]; rake aft [NAUT.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Fall' },
@@ -224,36 +227,8 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Leute',
-    translation: 'people; folk',
-    gender: NounGender.Plural,
-    variants: [
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Leute' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Leute' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Leuten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Leute' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Arbeit',
-    translation: 'job; work; labor; chore; task',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Arbeit' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Arbeit' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Arbeit' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Arbeit' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Arbeiten' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Arbeiten' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Arbeiten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Arbeiten' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Prozent',
-    translation: 'percent',
+    translation: 'percentesp, per centesp,; percentage; per centum',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Prozent' },
@@ -269,7 +244,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Hand',
-    translation: 'hand',
+    translation: 'hand; manus [ANAT.]; pinion [ZOOL.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Hand' },
@@ -285,7 +260,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Stadt',
-    translation: 'city',
+    translation: 'city; town; burg [ugs.] (Amer.)',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Stadt' },
@@ -301,7 +276,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Herr',
-    translation: 'gentleman',
+    translation: 'gentleman; master; sir; lord; gent; monsieur; mister; the Lord - God, Jesus Christ [REL.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Herr' },
@@ -317,7 +292,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Teil',
-    translation: 'part',
+    translation: 'section; portion; fraction; proportion; partition; slice; tract; lot; cantle; chapter; fragment',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Teil' },
@@ -332,24 +307,8 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Problem',
-    translation: 'trouble',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Problem' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Problems' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Problem' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Problem' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Probleme' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Probleme' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Problemen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Probleme' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Welt',
-    translation: 'world',
+    translation: 'world; earth',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Welt' },
@@ -364,20 +323,8 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Recht',
-    translation: 'law',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Recht' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Rechts/Rechtes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Recht' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Recht' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Ende',
-    translation: 'end',
+    translation: 'ending; tail; cessation; conclusion',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Ende' },
@@ -393,7 +340,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Million',
-    translation: 'million',
+    translation: 'million [Abk.: m]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Million' },
@@ -409,7 +356,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Schule',
-    translation: 'school',
+    translation:
+      'school; school - of fish, dolphins; school building; schoolhouse; pod - small herd or school of marine animals [ZOOL.]; alma mater [BILDUNGSW.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Schule' },
@@ -441,7 +389,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Vater',
-    translation: 'father',
+    translation: 'father; begetter; master negative [TECH.]; master original [TECH.]; genitor selten [BIOL.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Vater' },
@@ -457,7 +405,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Seite',
-    translation: 'page',
+    translation:
+      'page; side; wing [TECH.]; side - opposing group; beam; aspect; point; hub page [COMP.]; flank; party; fold flank [GEOL.]; fold side [GEOL.]; fold limb [GEOL.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Seite' },
@@ -472,24 +421,8 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Leben',
-    translation: 'life',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Leben' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Lebens' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Leben' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Leben' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Leben' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Leben' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Leben' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Leben' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Mutter',
-    translation: 'mother',
+    translation: 'mother; nut [ING.]; screw nut [TECH.]; positive [TECH.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Mutter' },
@@ -505,7 +438,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Grund',
-    translation: 'reason',
+    translation:
+      'reason; cause; ground; occasion; bottom; matter - cause; base; basement; foundation; factor; motive for doing sth.; ground auch: grounds [fig.]; priming [TECH.]; first coat [TECH.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Grund' },
@@ -521,7 +455,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Auge',
-    translation: 'eye',
+    translation:
+      'eye [ANAT.]; pip - of a dice (Amer.); dot - of a dice; spot - of a dice (Amer.); boss [TECH.]; bud [BOT.]; lug [TECH.]; lift eye [TECH.]; wire eye [TECH.]; eye - of a potato [BOT.]; eye [TEXTIL.]; eyelet [TEXTIL.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Auge' },
@@ -537,7 +472,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Wort',
-    translation: 'word',
+    translation: 'word; word [LING.]; vocable - a word esp. with regard to form rather than meaning [LING.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Wort' },
@@ -552,24 +487,8 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Geld',
-    translation: 'money',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Geld' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gelds/Geldes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Geld' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Geld' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gelder' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gelder' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Geldern' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gelder' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Art',
-    translation: 'kind',
+    translation: 'sort; type; variety; species',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Art' },
@@ -585,7 +504,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Bereich',
-    translation: 'area',
+    translation:
+      'area; scope; sector; zone; sphere; field; realm; district; division; block - of text; range [TECH.]; region [TECH.]; domain; reach',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Bereich' },
@@ -601,7 +521,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Weg',
-    translation: 'path',
+    translation:
+      'path - way; way - road, distance; path [MATH.][TECH.]; route; alley; driveway; lane; road; track; channel; distance - distance covered; walk - path; means; pathway',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Weg' },
@@ -617,7 +538,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Stunde',
-    translation: 'hour',
+    translation: 'hour; lesson; period - at school [BILDUNGSW.]; division',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Stunde' },
@@ -633,7 +554,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Name',
-    translation: 'name',
+    translation:
+      'denomination; label; moniker auch: monicker [ugs.]; handle [ugs.] - given name; identifier - in software [TELEKOM.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Name' },
@@ -649,7 +571,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Geschichte',
-    translation: 'story',
+    translation: 'story; tale; history - record of past events; narrative; saga',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Geschichte' },
@@ -665,7 +587,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Gesellschaft',
-    translation: 'society',
+    translation:
+      'society; company [KOMM.]; association; corporation [KOMM.]; fellowship - group of people sharing the same interests, brotherhood; party; community; organization,organisation, organization,; the public; body; function - social gathering',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Gesellschaft' },
@@ -681,7 +604,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Kopf',
-    translation: 'head',
+    translation:
+      'head [ANAT.][TECH.]; crown; owner; heading; conk hauptsächlich (Amer.) [ugs.]; mind [fig.] - intelligent person; header [TECH.]; brains used with sg. verb [sl.]; borehole top [TECH.]; collar [TECH.]; hole head [TECH.]; hole top [TECH.]; well mouth [TECH.]; well opening [TECH.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Kopf' },
@@ -697,7 +621,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Paar',
-    translation: 'pair',
+    translation: 'pair; couple; brace; dyad; twosome; pair [ELEKT.][MATH.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Paar' },
@@ -713,7 +637,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Möglichkeit',
-    translation: 'facility',
+    translation:
+      'facility; possibility; potential; chance; eventuality; opportunity; contingency; potentiality; manageability; odds Pl.; alternative; way - method, manner; avenue [fig.]; feasibility',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Möglichkeit' },
@@ -729,7 +654,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Unternehmen',
-    translation: 'venture',
+    translation:
+      'venture; corporation; establishment; enterprise [KOMM.]; company [KOMM.]; organization, [KOMM.]organisation, organization, [KOMM.]; undertaking; proposition; endeavor, endeavour,; task; unit; business company; corporate client; firm [KOMM.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Unternehmen' },
@@ -745,7 +671,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Bild',
-    translation: 'picture',
+    translation:
+      'picture; photograph [FOTO.]; image auch [MATH.][TECH.]; photo; drawing - picture, sketch; pattern; view; symbol; figure [TECH.]; prospect kein Pl. - mental picture; screen; illustration; likeness; tableau',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Bild' },
@@ -761,7 +688,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Buch',
-    translation: 'book',
+    translation:
+      'book; volume - book; casebook; quire - of paper; ledger [FINAN.]; page [fig.] - pages collectively selten',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Buch' },
@@ -776,24 +704,9 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Wasser',
-    translation: 'water',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Wasser' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Wassers' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Wasser' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Wasser' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Wasser' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Wasser' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Wassern' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Wasser' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Stelle',
-    translation: 'job',
+    translation:
+      'job; place; position; post - job; spot; appointment; location; point; stead; situation; station; site; digit; engagement',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Stelle' },
@@ -809,7 +722,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Form',
-    translation: 'form',
+    translation:
+      'form; shape; profile; mold, mould,; regime; mode; design; set form; style; mold, mould, [TECH.]; type [TECH.]; last [TECH.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Form' },
@@ -825,7 +739,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Entwicklung',
-    translation: 'development',
+    translation:
+      'evolution; trend; processing [TECH.]; deployment; progress; design; progression; movement - change in attitude, behaviour; upgrowth; advancement; changes Pl.; design and development; formation',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Entwicklung' },
@@ -857,7 +772,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Familie',
-    translation: 'family',
+    translation: 'family; kin; family - taxonomic category [BOT.]; clan [GEOL.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Familie' },
@@ -873,7 +788,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Morgen',
-    translation: 'morning',
+    translation: 'morning; morn [poet.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Morgen' },
@@ -889,7 +804,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Abend',
-    translation: 'evening',
+    translation: 'evening; night; eve; weeknight',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Abend' },
@@ -905,7 +820,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Aufgabe',
-    translation: 'duty',
+    translation:
+      'duty; assignment; function; task; problem [MATH.]; job; mission; renunciation; challenge; responsibility; charging; exercise; renouncement; business',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Aufgabe' },
@@ -921,7 +837,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Universität',
-    translation: 'university',
+    translation: 'university; college [BILDUNGSW.] - university; alma mater [BILDUNGSW.]',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Universität' },
@@ -936,20 +852,9 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Sinn',
-    translation: 'meaning',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Sinn' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Sinns/Sinnes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Sinn' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Sinn' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Staat',
-    translation: 'country',
+    translation:
+      'country; nation; state [POL.]; government; the Crown; general government [FINAN.]; body politic [POL.]; public sector [ADMIN.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Staat' },
@@ -965,7 +870,8 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Ziel',
-    translation: 'destination',
+    translation:
+      'destination; goal; object; objective; target; aim; purpose; ambition; mark; end; intent; prompt; intention; finish - of a race or competition [SPORT]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Ziel' },
@@ -981,7 +887,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Freund',
-    translation: 'friend',
+    translation: 'boyfriend; beau',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Freund' },
@@ -997,7 +903,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Thema',
-    translation: 'issue',
+    translation: 'issue; subject; theme; topic; matter - subject; question; subject matter; subject [MUS.]',
     gender: NounGender.Neutrum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Thema' },
@@ -1013,7 +919,7 @@ export const nouns: Noun[] = [
   {
     type: CardType.NOUN,
     value: 'Person',
-    translation: 'person',
+    translation: 'person; character',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Person' },
@@ -1024,6 +930,585 @@ export const nouns: Noun[] = [
       { number: NounNumber.plural, case: Case.Genitiv, value: 'Personen' },
       { number: NounNumber.plural, case: Case.Dativ, value: 'Personen' },
       { number: NounNumber.plural, case: Case.Akkusativ, value: 'Personen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Ding',
+    translation:
+      'thing; object; gizmo (Amer.); item; entity; dingus; jigger (Amer.); doodad (Amer.) [ugs.]; caper; Thing auch: thing [HIST.]; thang (Amer.) [sl.]',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Ding' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Dings/Dinges' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Ding' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Ding' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Dinge' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Dinge' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Dingen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Dinge' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Blick',
+    translation: 'look; sight; gaze; glance; vista; vision; sighting',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Blick' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Blicks/Blickes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Blick' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Blick' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Blicke' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Blicke' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Blicken' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Blicke' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Zahl',
+    translation:
+      'number auch [MATH.]; figure [MATH.]; cipher (Amer.); numerary; digit; rate; count; numerical data [MATH.]',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Zahl' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Zahl' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Zahl' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Zahl' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Zahlen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Zahlen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Zahlen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Zahlen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'System',
+    translation: 'system; scheme; order; regime auch: régime [POL.]; apparatus; crystal system [MIN.]',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'System' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Systems' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'System' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'System' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Systeme' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Systeme' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Systemen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Systeme' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Uhr',
+    translation: 'clock; watch; timepiece; ticker',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Uhr' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Uhr' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Uhr' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Uhr' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Uhren' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Uhren' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Uhren' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Uhren' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Straße',
+    translation: 'road; street; highway; way - road; forest road; avenue; strait [GEOG.]; route',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Straße' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Straße' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Straße' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Straße' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Straßen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Straßen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Straßen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Straßen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Minute',
+    translation: 'minute [Abk.: min.]; original plot [TECH.]',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Minute' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Minute' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Minute' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Minute' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Minuten' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Minuten' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Minuten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Minuten' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Gruppe',
+    translation:
+      'group; group [MATH.]; cluster; gang; squad auch [SPORT]; band used with sg. or pl. verb [MUS.]; assembly [TECH.]; bracket; category; denomination; passel; unit; class; clump',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Gruppe' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gruppe' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Gruppe' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Gruppe' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gruppen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gruppen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Gruppen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gruppen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Wert',
+    translation:
+      'value auch [FINAN.][MATH.][TECH.]; merit; worth; virtue - benefit; price; worthiness; magnitude; quality; caliber, calibre,; figure; score; account; data used with sg. or pl. verb; valuation',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Wert' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Werts/Wertes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Wert' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Wert' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Werte' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Werte' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Werten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Werte' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Gesicht',
+    translation: 'face; pan [fig.] (Amer.) [sl.] - face; vision',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Gesicht' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gesichts' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Gesicht' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Gesicht' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gesichter' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gesichter' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Gesichtern' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gesichter' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Sprache',
+    translation: 'language [COMP.][LING.]; tongue - language; lingo - foreign language [ugs.][hum.]',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Sprache' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Sprache' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Sprache' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Sprache' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Sprachen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Sprachen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Sprachen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Sprachen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Anfang',
+    translation:
+      'start; beginning; origin; initial; inception; commencement; onset; outset; incipience auch: incipiency; top; initiation; opening; proem; beginnings',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Anfang' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Anfangs/Anfanges' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Anfang' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Anfang' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Anfänge' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Anfänge' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Anfängen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Anfänge' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Ort',
+    translation:
+      'place; location; spot; scene - place where an incident occured; locality; city; site; venue; position; point [TECH.]; place [LING.]',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Ort' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Orts/Ortes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Ort' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Ort' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Orte' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Orte' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Orten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Orte' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Moment',
+    translation: 'moment; instant',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Moment' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Moments/Momentes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Moment' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Moment' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Momente' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Momente' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Momenten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Momente' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Folge',
+    translation:
+      'order; consequence; sequence auch [MATH.]; series; result; suite; episode; succession; aftereffect auch: after-effect, after effect; aftermath; effect; implication; string; consecution',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Folge' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Folge' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Folge' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Folge' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Folgen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Folgen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Folgen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Folgen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Interesse',
+    translation: 'interest; concern',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Interesse' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Interesses' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Interesse' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Interesse' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Interessen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Interessen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Interessen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Interessen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Milliarde',
+    translation: 'billion [Abk.: bn] - thousand million',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Milliarde' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Milliarde' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Milliarde' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Milliarde' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Milliarden' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Milliarden' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Milliarden' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Milliarden' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Rolle',
+    translation:
+      'role [THEA.][SOZIOL.]; roll [TECH.]; part [CINE.][THEA.]; coil; pass; spool; bobbin; reel [TECH.]; roller [AVIAT.][ING.][TECH.]; pulley [TECH.]; castor [ING.]; sliding hole [TECH.]; aileron roll - aerobatic manoeuvre [AVIAT.]; bing hole - Derbyshire [MIN.]',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Rolle' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Rolle' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Rolle' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Rolle' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Rollen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Rollen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Rollen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Rollen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Tür',
+    translation: 'door; doorway',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Tür' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Tür' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Tür' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Tür' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Türen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Türen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Türen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Türen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Schüler',
+    translation: 'disciple; schoolboy',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Schüler' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Schülers' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Schüler' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Schüler' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Schüler' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Schüler' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Schülern' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Schüler' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Text',
+    translation: 'text; copy - writing to be printed; words Pl.; lines Pl. [CINE.][THEA.]; lyrics [MUS.]',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Text' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Texts/Textes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Text' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Text' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Texte' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Texte' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Texten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Texte' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Ergebnis',
+    translation:
+      'outcome; result; finding; sum; conclusion; issue; upshot; count; effect; output; score; yield; achievement; performance',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Ergebnis' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Ergebnisses' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Ergebnis' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Ergebnis' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Ergebnisse' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Ergebnisse' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Ergebnissen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Ergebnisse' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Krieg',
+    translation: 'war; warfare',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Krieg' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Kriegs/Krieges' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Krieg' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Krieg' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Kriege' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Kriege' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Kriegen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Kriege' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Weise',
+    translation: 'manner; tune [MUS.]; way - method, manner; fashion; mode; ditty [MUS.]; melody [MUS.]',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Weise' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Weise' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Weise' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Weise' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Weisen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Weisen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Weisen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Weisen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Regierung',
+    translation:
+      'government; administration (Amer.) [POL.]; regime auch: régime; governance [POL.]; regnancy selten; cabinet',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Regierung' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Regierung' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Regierung' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Regierung' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Regierungen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Regierungen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Regierungen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Regierungen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Stück',
+    translation:
+      'piece; play - dramatic performance on stage [THEA.]; slice; chunk; lump; cut - of meat; hunk; slips; part; portion; tablet; article; cantle; exemplar',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Stück' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Stücks/Stückes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Stück' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Stück' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Stücke' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Stücke' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Stücken' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Stücke' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Wohnung',
+    translation:
+      'apartment (Amer.); dwelling; accommodation; abode [form.] auch [hum.]; home; domicile; habitation; lodging; place of residence; residence; suite; tenement; dwelling place',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Wohnung' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Wohnung' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Wohnung' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Wohnung' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Wohnungen' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Wohnungen' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Wohnungen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Wohnungen' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Gespräch',
+    translation:
+      'talk; conversation; discussion; call; interview; colloquy; interlocution; dialogue, dialog,dialogue,; chat; convo [ugs.] (kurz für: conversation); complete connection [TELEKOM.]; connection / seltener: connexion, [TELEKOM.]; conversation - in telecommunication [TELEKOM.]',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Gespräch' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gesprächs/Gespräches' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Gespräch' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Gespräch' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gespräche' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gespräche' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Gesprächen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gespräche' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Meter',
+    translation: 'folding rule; folding yardstick',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Meter' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Meters' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Meter' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Meter' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Meter' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Meter' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Metern' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Meter' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Leute',
+    translation: 'people plural noun; folk; gentry; peeps plural noun [ugs.]; folks [ugs.]',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Leute' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Leute' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Leuten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Leute' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Arbeit',
+    translation:
+      'job; work auch [PHYS.]; labor, labour,; employment; occupation; assignment; activity; task; chore; paper [BILDUNGSW.]; energy [ELEKT.]',
+    gender: NounGender.Femininum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Arbeit' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Arbeit' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Arbeit' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Arbeit' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Arbeiten' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Arbeiten' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Arbeiten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Arbeiten' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Recht',
+    translation:
+      'law [JURA]; justice [JURA]; legislation [JURA]; permit; authorization,authorisation, authorization,; privilege [COMP.]; droit [JURA]',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Recht' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Rechts/Rechtes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Recht' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Recht' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Leben',
+    translation: 'life; living; lifetime; existence; animation',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Leben' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Lebens' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Leben' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Leben' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Leben' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Leben' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Leben' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Leben' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Geld',
+    translation: 'money; cash - money; chips; funds plural noun [FINAN.]',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Geld' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gelds/Geldes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Geld' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Geld' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gelder' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gelder' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Geldern' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gelder' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Wasser',
+    translation: 'water',
+    gender: NounGender.Neutrum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Wasser' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Wassers' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Wasser' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Wasser' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Wasser' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Wasser' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Wassern' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Wasser' },
+    ],
+  },
+  {
+    type: CardType.NOUN,
+    value: 'Sinn',
+    translation: 'meaning; mind; signification; tenor; use',
+    gender: NounGender.Maskulinum,
+    variants: [
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Sinn' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Sinns/Sinnes' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Sinn' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Sinn' },
     ],
   },
   {
@@ -1044,40 +1529,9 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Nacht',
-    translation: 'night',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Nacht' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Nacht' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Nacht' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Nacht' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Nächte' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Nächte' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Nächten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Nächte' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Ding',
-    translation: 'thing',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Ding' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Dings/Dinges' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Ding' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Ding' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Dinge' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Dinge' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Dingen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Dinge' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Raum',
-    translation: 'room',
+    translation:
+      'room; space auch [AVIAT.][MATH.][TELEKOM.]; region; chamber; range; zone; area; scope; room [fig.]; compartment - of an assembly [TECH.]; volume [TECH.]; district; cave chamber [TECH.]; cave room [TECH.]',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Raum' },
@@ -1092,24 +1546,9 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Blick',
-    translation: 'view',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Blick' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Blicks/Blickes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Blick' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Blick' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Blicke' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Blicke' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Blicken' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Blicke' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Platz',
-    translation: 'place',
+    translation:
+      'place; room; square; seat; space; spot; site; location; clearance; accommodation; position; public open space; venue; amount of space',
     gender: NounGender.Maskulinum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Platz' },
@@ -1120,54 +1559,6 @@ export const nouns: Noun[] = [
       { number: NounNumber.plural, case: Case.Genitiv, value: 'Plätze' },
       { number: NounNumber.plural, case: Case.Dativ, value: 'Plätzen' },
       { number: NounNumber.plural, case: Case.Akkusativ, value: 'Plätze' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Zahl',
-    translation: 'number',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Zahl' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Zahl' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Zahl' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Zahl' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Zahlen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Zahlen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Zahlen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Zahlen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'System',
-    translation: 'system',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'System' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Systems' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'System' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'System' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Systeme' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Systeme' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Systemen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Systeme' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Uhr',
-    translation: 'clock',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Uhr' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Uhr' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Uhr' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Uhr' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Uhren' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Uhren' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Uhren' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Uhren' },
     ],
   },
   {
@@ -1184,248 +1575,9 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Straße',
-    translation: 'road',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Straße' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Straße' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Straße' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Straße' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Straßen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Straßen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Straßen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Straßen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Minute',
-    translation: 'minute',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Minute' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Minute' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Minute' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Minute' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Minuten' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Minuten' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Minuten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Minuten' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Gruppe',
-    translation: 'group',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Gruppe' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gruppe' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Gruppe' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Gruppe' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gruppen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gruppen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Gruppen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gruppen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Wert',
-    translation: 'value',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Wert' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Werts/Wertes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Wert' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Wert' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Werte' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Werte' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Werten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Werte' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Gesicht',
-    translation: 'face',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Gesicht' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gesichts' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Gesicht' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Gesicht' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gesichter' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gesichter' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Gesichtern' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gesichter' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Sprache',
-    translation: 'language',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Sprache' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Sprache' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Sprache' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Sprache' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Sprachen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Sprachen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Sprachen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Sprachen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Anfang',
-    translation: 'start',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Anfang' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Anfangs/Anfanges' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Anfang' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Anfang' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Anfänge' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Anfänge' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Anfängen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Anfänge' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Ort',
-    translation: 'place',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Ort' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Orts/Ortes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Ort' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Ort' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Orte' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Orte' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Orten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Orte' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Moment',
-    translation: 'moment',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Moment' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Moments/Momentes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Moment' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Moment' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Momente' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Momente' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Momenten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Momente' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Folge',
-    translation: 'order',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Folge' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Folge' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Folge' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Folge' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Folgen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Folgen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Folgen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Folgen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Interesse',
-    translation: 'interest',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Interesse' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Interesses' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Interesse' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Interesse' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Interessen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Interessen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Interessen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Interessen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Milliarde',
-    translation: 'billion',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Milliarde' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Milliarde' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Milliarde' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Milliarde' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Milliarden' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Milliarden' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Milliarden' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Milliarden' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Rolle',
-    translation: 'role',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Rolle' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Rolle' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Rolle' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Rolle' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Rollen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Rollen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Rollen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Rollen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Tür',
-    translation: 'door',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Tür' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Tür' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Tür' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Tür' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Türen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Türen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Türen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Türen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Schüler',
-    translation: 'pupil',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Schüler' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Schülers' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Schüler' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Schüler' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Schüler' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Schüler' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Schülern' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Schüler' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
     value: 'Bedeutung',
-    translation: 'meaning',
+    translation:
+      'meaning; importance; significance; bearing; relevance; sense; heft; import; prominence; consequence - importance; denotation; intent; signification; weight',
     gender: NounGender.Femininum,
     variants: [
       { number: NounNumber.singular, case: Case.Nominativ, value: 'Bedeutung' },
@@ -1440,146 +1592,35 @@ export const nouns: Noun[] = [
   },
   {
     type: CardType.NOUN,
-    value: 'Text',
-    translation: 'text',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Text' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Texts/Textes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Text' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Text' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Texte' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Texte' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Texten' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Texte' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Ergebnis',
-    translation: 'outcome',
+    value: 'Problem',
+    translation:
+      'trouble; issue; problem; challenge; hitch; pilikia - Hawaiian for "trouble"; kink; job; headache [fig.]; prob [ugs.] - problem',
     gender: NounGender.Neutrum,
     variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Ergebnis' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Ergebnisses' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Ergebnis' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Ergebnis' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Ergebnisse' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Ergebnisse' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Ergebnissen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Ergebnisse' },
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Problem' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Problems' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Problem' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Problem' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Probleme' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Probleme' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Problemen' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Probleme' },
     ],
   },
   {
     type: CardType.NOUN,
-    value: 'Krieg',
-    translation: 'war',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Krieg' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Kriegs/Krieges' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Krieg' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Krieg' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Kriege' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Kriege' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Kriegen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Kriege' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Weise',
-    translation: 'manner',
+    value: 'Nacht',
+    translation: 'night; nite - simplified spelling of "night" (Amer.) [ugs.]',
     gender: NounGender.Femininum,
     variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Weise' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Weise' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Weise' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Weise' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Weisen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Weisen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Weisen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Weisen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Regierung',
-    translation: 'government',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Regierung' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Regierung' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Regierung' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Regierung' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Regierungen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Regierungen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Regierungen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Regierungen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Stück',
-    translation: 'piece',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Stück' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Stücks/Stückes' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Stück' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Stück' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Stücke' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Stücke' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Stücken' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Stücke' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Wohnung',
-    translation: 'apartment',
-    gender: NounGender.Femininum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Wohnung' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Wohnung' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Wohnung' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Wohnung' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Wohnungen' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Wohnungen' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Wohnungen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Wohnungen' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Gespräch',
-    translation: 'talk',
-    gender: NounGender.Neutrum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Gespräch' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Gesprächs/Gespräches' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Gespräch' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Gespräch' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Gespräche' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Gespräche' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Gesprächen' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Gespräche' },
-    ],
-  },
-  {
-    type: CardType.NOUN,
-    value: 'Meter',
-    translation: 'meter',
-    gender: NounGender.Maskulinum,
-    variants: [
-      { number: NounNumber.singular, case: Case.Nominativ, value: 'Meter' },
-      { number: NounNumber.singular, case: Case.Genitiv, value: 'Meters' },
-      { number: NounNumber.singular, case: Case.Dativ, value: 'Meter' },
-      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Meter' },
-      { number: NounNumber.plural, case: Case.Nominativ, value: 'Meter' },
-      { number: NounNumber.plural, case: Case.Genitiv, value: 'Meter' },
-      { number: NounNumber.plural, case: Case.Dativ, value: 'Metern' },
-      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Meter' },
+      { number: NounNumber.singular, case: Case.Nominativ, value: 'Nacht' },
+      { number: NounNumber.singular, case: Case.Genitiv, value: 'Nacht' },
+      { number: NounNumber.singular, case: Case.Dativ, value: 'Nacht' },
+      { number: NounNumber.singular, case: Case.Akkusativ, value: 'Nacht' },
+      { number: NounNumber.plural, case: Case.Nominativ, value: 'Nächte' },
+      { number: NounNumber.plural, case: Case.Genitiv, value: 'Nächte' },
+      { number: NounNumber.plural, case: Case.Dativ, value: 'Nächten' },
+      { number: NounNumber.plural, case: Case.Akkusativ, value: 'Nächte' },
     ],
   },
 ];
