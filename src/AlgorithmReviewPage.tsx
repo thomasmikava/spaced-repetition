@@ -6,14 +6,16 @@ import { Reviewer } from './functions/reviewer';
 import { CardViewMode } from './functions/reviews';
 import Content from './Content';
 import { TestContextProvider } from './contexts/testContext';
+import { CardType } from './database/types';
 
 const AlgorithmReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
   const mode = !!searchParams.get('mode');
   const courseId = !searchParams.get('courseId') ? undefined : +(searchParams.get('courseId') as string);
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
+  const [mainKey, setMainKey] = useState(0);
 
-  const [reviewer] = useState(() => new Reviewer(courseId, lessonId, mode ? 'endless' : 'normal', true));
+  const [correctness, setCorrectness] = useState<boolean[]>([]);
 
   const getQuestion = useCallback((currentCard: CardWithProbability) => {
     if (!currentCard) return null;
@@ -39,9 +41,11 @@ const AlgorithmReviewPage = () => {
   }, []);
 
   const entries = useMemo(() => {
+    const reviewer = new Reviewer(courseId, lessonId, mode ? 'endless' : 'normal', true);
     const cards: CardWithProbability[] = [];
     const questions: NonNullable<ReturnType<typeof getQuestion>>[] = [];
     let lastDate = 0;
+    let index = 0;
     do {
       const currentCard = reviewer.getNextCard(lastDate);
       if (!currentCard) break;
@@ -53,20 +57,42 @@ const AlgorithmReviewPage = () => {
           .replace(/"autoplay":true/g, '"autoplay":false')
           .replace(/"autoFocus":true/g, '"autoFocus":false'),
       );
-      lastDate += 5000;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tagLength = (question as any).content?.[0]?.content?.[0]?.content?.length || 1;
+      lastDate += 5000 + (tagLength - 1) * 3000;
+      if (question.type === CardViewMode.groupView) {
+        lastDate += currentCard.record.card.type === CardType.VERB ? 10000 : 5000;
+      }
       questions.push(question);
-      reviewer.markViewed(currentCard, question.type, true, lastDate);
-    } while (cards.length < 100);
+      reviewer.markViewed(currentCard, question.type, correctness[index] !== false, lastDate);
+      index++;
+    } while (cards.length < 400);
     return { cards, questions };
-  }, [reviewer, getQuestion]);
+  }, [courseId, lessonId, mode, getQuestion, correctness]);
+
+  const changeCorrectness = (index: number, currentValue: boolean) => {
+    const nextValue = currentValue === false ? true : false;
+    const newCorrectness = [...correctness];
+    newCorrectness[index] = nextValue;
+    setCorrectness(newCorrectness.slice(0, index + 1));
+    setMainKey(mainKey + 1);
+  };
 
   return (
     <div className='body'>
       {entries.questions.map((question, index) => {
         const isView = question.type === CardViewMode.groupView || question.type === CardViewMode.individualView;
         return (
-          <div key={index} style={{ margin: '20px 0' }}>
+          <div key={mainKey + '_' + index} style={{ margin: '20px 0' }}>
             <TestContextProvider mode={isView ? 'readonly' : 'edit'} onResult={() => {}}>
+              <div style={{ display: 'flex', marginBottom: 5 }}>
+                <span style={{ flex: 1 }}>#{index + 1}</span>
+                {!isView && (
+                  <button onClick={() => changeCorrectness(index, correctness[index])}>
+                    {correctness[index] === false ? 'Mark as correct' : 'Mark as wrong'}
+                  </button>
+                )}
+              </div>
               <ViewCard>
                 <Content content={question.content} />
               </ViewCard>

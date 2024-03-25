@@ -5,7 +5,13 @@ import { generateTestableCards } from './generate-variants';
 import { generateIndexedDatabase } from './generateIndexedDatabase';
 import { PreviousReviews } from './previous-reviews';
 import type { AnyTestableCard, GroupReviewHistory, IndividualReviewHistory, TestReviewHistory } from './reviews';
-import { CardViewMode, calculateProbability, initialViewS, secondsUntilProbabilityIsHalf } from './reviews';
+import {
+  CardViewMode,
+  DEFAULT_REVIEW_DUE,
+  calculateProbability,
+  initialViewS,
+  dueDateUntilProbabilityIsHalf,
+} from './reviews';
 
 export interface CardWithProbability {
   record: AnyTestableCard;
@@ -21,6 +27,7 @@ export interface CardWithProbability {
   isViewedInGroup: boolean;
   hasGroupViewMode: boolean;
   hasIndividualViewMode: boolean;
+  isBlockedByPreviousGroup: boolean;
   reviewDue: number;
 }
 
@@ -62,7 +69,7 @@ export class Reviewer {
   getDueDate = (record: AnyTestableCard, accordingToDate = Date.now()): number => {
     const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
     if (!historyRecord) return Infinity;
-    return secondsUntilProbabilityIsHalf(historyRecord.lastDate, accordingToDate, historyRecord.lastS);
+    return dueDateUntilProbabilityIsHalf(historyRecord.lastDate, accordingToDate, historyRecord.lastS);
   };
 
   getDueCardsCount = (accordingToDate = Date.now()) => {
@@ -71,29 +78,39 @@ export class Reviewer {
   };
 
   private calculateProbabilities = (currentDate = Date.now()) => {
-    const groupLastViewDates: { [key in string]?: number } = {};
+    type GroupMeta = { lastViewDate: number; numOfCards: number; numOfTestedCards: number };
+    const groupsMetaData: {
+      [key in string]?: GroupMeta;
+    } = {};
     return this.allTestableCards
       .map((record) => {
         const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
         const individualViewRecord = this.prevReviews.getCardHistory(record, CardViewMode.individualView);
         const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView);
         if (record.groupViewKey) {
+          const groupRecord: GroupMeta = groupsMetaData[record.groupViewKey] || {
+            lastViewDate: 0,
+            numOfCards: 0,
+            numOfTestedCards: 0,
+          };
+          groupRecord.numOfCards++;
+          if (historyRecord) groupRecord.numOfTestedCards++;
           const lastViewDate = historyRecord
             ? historyRecord.lastDate
             : (groupVewRecord ?? individualViewRecord)?.lastDate;
           if (lastViewDate) {
-            groupLastViewDates[record.groupViewKey] = Math.max(
-              lastViewDate,
-              groupLastViewDates[record.groupViewKey] ?? 0,
-            );
+            groupRecord.lastViewDate = Math.max(lastViewDate, groupRecord.lastViewDate);
           }
+          groupsMetaData[record.groupViewKey] = groupRecord;
         }
         return { record, historyRecord, individualViewRecord, groupVewRecord };
       })
       .map(({ record, historyRecord, individualViewRecord, groupVewRecord }, i): CardWithProbability => {
         // if (i === 0) console.log(groupLastViewDates);
         const lastGroupViewDate =
-          record.groupViewKey && record.hasGroupViewMode ? groupLastViewDates[record.groupViewKey] : undefined;
+          record.groupViewKey && record.hasGroupViewMode
+            ? groupsMetaData[record.groupViewKey]?.lastViewDate
+            : undefined;
         const lastNormalizedViewDate = lastGroupViewDate ?? historyRecord?.lastDate;
         const probability =
           historyRecord && lastNormalizedViewDate
@@ -108,6 +125,10 @@ export class Reviewer {
               lastNormalizedViewDate,
               currentDate,
             );
+        const prevGroupMeta = record.previousGroupViewKey ? groupsMetaData[record.previousGroupViewKey] : undefined;
+        const isBlockedByPreviousGroup = prevGroupMeta
+          ? prevGroupMeta.numOfTestedCards < prevGroupMeta.numOfCards
+          : false;
         return {
           record,
           historyRecord,
@@ -123,20 +144,23 @@ export class Reviewer {
           isViewedInGroup: !!groupVewRecord,
           hasGroupViewMode: record.hasGroupViewMode,
           hasIndividualViewMode: record.hasIndividualViewMode,
+          isBlockedByPreviousGroup,
           ...{ lastNormalizedViewDate, lastGroupViewDate },
         };
       });
   };
 
   getNextCard = (currentDate = Date.now()) => {
-    const sorted = this.calculateProbabilities(currentDate).sort((a, b) => {
-      if (a.isCriticalForReview && !b.isCriticalForReview) return -1;
-      if (!a.isCriticalForReview && b.isCriticalForReview) return 1;
-      if (a.isReadyForReview && !b.isReadyForReview) return -1;
-      if (!a.isReadyForReview && b.isReadyForReview) return 1;
-      return a.reviewDue - b.reviewDue;
-    });
-    // console.log(sorted);
+    const sorted = this.calculateProbabilities(currentDate)
+      .filter((e) => !e.isBlockedByPreviousGroup)
+      .sort((a, b) => {
+        // if (a.isCriticalForReview && !b.isCriticalForReview) return -1;
+        // if (!a.isCriticalForReview && b.isCriticalForReview) return 1;
+        // if (a.isReadyForReview && !b.isReadyForReview) return -1;
+        // if (!a.isReadyForReview && b.isReadyForReview) return 1;
+        return a.reviewDue - b.reviewDue;
+      });
+    console.log(sorted);
     if (this.mode === 'endless') return sorted[0];
     if (!sorted[0].isTested || sorted[0].isCriticalForReview || sorted[0].isReadyForReview) return sorted[0];
     return undefined;
@@ -148,10 +172,9 @@ export class Reviewer {
 }
 
 function getReviewDue(record: TestReviewHistory, lastGroupViewDate: number | undefined, currentDate: number) {
-  return secondsUntilProbabilityIsHalf(lastGroupViewDate ?? record.lastDate, currentDate, record.lastS);
+  return dueDateUntilProbabilityIsHalf(lastGroupViewDate ?? record.lastDate, currentDate, record.lastS);
 }
 
-const DEFAULT_REVIEW_DUE = 30;
 function getFirstDue(
   groupRecord: GroupReviewHistory | undefined,
   individualRecord: IndividualReviewHistory | undefined,
@@ -161,8 +184,8 @@ function getFirstDue(
 ) {
   const mainRecord = hasGroupViewMode ? groupRecord : individualRecord;
   if (!mainRecord) return DEFAULT_REVIEW_DUE;
-  if (hasGroupViewMode && groupLastView) return secondsUntilProbabilityIsHalf(groupLastView, currentDate, initialViewS);
-  return secondsUntilProbabilityIsHalf(mainRecord.lastDate, currentDate, initialViewS);
+  if (hasGroupViewMode && groupLastView) return dueDateUntilProbabilityIsHalf(groupLastView, currentDate, initialViewS);
+  return dueDateUntilProbabilityIsHalf(mainRecord.lastDate, currentDate, initialViewS);
 }
 
 function isCriticalToBeReviewed(probability: number, reviewDue: number) {

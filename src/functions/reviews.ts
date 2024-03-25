@@ -14,19 +14,26 @@ import type {
   VerbTense,
 } from '../database/types';
 
-function calculateHalfLifeCoefficient(halfLife: number) {
+export function calculateHalfLifeCoefficient(halfLife: number) {
   return -halfLife / Math.log(0.5);
 }
-export function secondsUntilProbabilityIsHalf(T_reviewed: number, T_current: number, S: number) {
-  return S * Math.log(2) - (T_current - T_reviewed) / 1000;
+export function dueDateUntilProbabilityIsHalf(T_reviewed: number, T_current: number, S: number) {
+  return Math.round(S * Math.log(2) - (T_current - T_reviewed) / 1000);
 }
+function secondsUntilProbabilityIsHalf(S: number) {
+  return Math.round(S * Math.log(2));
+}
+// function secondsUntil
+(window as any).calculateHalfLifeCoefficient = calculateHalfLifeCoefficient;
+(window as any).dueDateUntilProbabilityIsHalf = dueDateUntilProbabilityIsHalf;
+(window as any).secondsUntilProbabilityIsHalf = secondsUntilProbabilityIsHalf;
 export const calculateProbability = (t: number, s: number) => Math.exp(-t / s);
 
-export const initialS = calculateHalfLifeCoefficient(45); // after 45 seconds, the probability of remembering the card is 50%
-export const initialViewS = calculateHalfLifeCoefficient(40);
-export const minS = calculateHalfLifeCoefficient(15);
+export const initialTestS = calculateHalfLifeCoefficient(120); // after 120 seconds of being tested, the probability of remembering the card is 50%
+export const initialViewS = calculateHalfLifeCoefficient(60);
+export const minS = calculateHalfLifeCoefficient(30);
 export const maxS = calculateHalfLifeCoefficient(10 * 60 * 60 * 24 * 30); // 30 days
-
+export const DEFAULT_REVIEW_DUE = 20;
 export interface TestReviewHistory {
   firstDate: number;
   lastDate: number;
@@ -54,6 +61,7 @@ export enum CardViewMode {
 export type CardKeys = {
   testKey: string;
   groupViewKey: string | null;
+  previousGroupViewKey?: string | null;
 };
 type GeneralTestableCard = CardKeys & {
   hasGroupViewMode: boolean;

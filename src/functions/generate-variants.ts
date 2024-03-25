@@ -1,5 +1,5 @@
 import type { AnyCard } from '../database/types';
-import { NounGender } from '../database/types';
+import { NounGender, AdjectiveInflection } from '../database/types';
 import { AdjectiveDegree, CardType, Case, NounNumber, VerbMood, VerbTense } from '../database/types';
 import type {
   AdjectiveTestableCard,
@@ -25,8 +25,12 @@ function isArticleVariantDisabled(number: NounNumber, gender: NounGender, case_:
   return number !== undefined && gender !== undefined && case_ === Case.Nominativ;
 }
 
+function isAdjectiveVariantDisabled(degree: AdjectiveDegree, inflection: AdjectiveInflection): boolean {
+  return degree !== AdjectiveDegree.Positiv || inflection !== AdjectiveInflection.Strong;
+}
+
 // eslint-disable-next-line sonarjs/cognitive-complexity
-export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
+function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
   const value = card.uniqueValue ?? card.value;
   const valueKey = `#${value}`;
   if (card.type === CardType.VERB) {
@@ -151,6 +155,7 @@ export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
     }
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
     for (const variant of card.variants) {
+      if (isAdjectiveVariantDisabled(variant.degree, variant.inflection)) continue;
       for (const [case_, ...rest] of variant.values) {
         rest.forEach((value, index) => {
           const gender = genders[index];
@@ -178,4 +183,22 @@ export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
     return allVariants;
   }
   throw new Error('Unsupported card type ' + (card as Record<string, unknown>).type);
+}
+
+function addPreviousGroups(allVariants: AnyTestableCard[]): AnyTestableCard[] {
+  let lastGroupKey: string | null = null;
+  let currentGroupKey: string | null = null;
+  return allVariants.map((variant): AnyTestableCard => {
+    if (variant.groupViewKey !== lastGroupKey) {
+      if (variant.groupViewKey !== currentGroupKey) lastGroupKey = currentGroupKey;
+      currentGroupKey = variant.groupViewKey;
+      return { ...variant, previousGroupViewKey: lastGroupKey };
+    }
+    currentGroupKey = variant.groupViewKey;
+    return variant;
+  });
+}
+
+export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
+  return addPreviousGroups(_generateTestableCards(card));
 }

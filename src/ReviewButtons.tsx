@@ -26,9 +26,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
 
   return (
     <div className={cssModule.buttonsContainer}>
-      <button onClick={() => handleReview(false)} disabled={dueCardsCount <= 0}>
-        Review {dueCardsCount > 0 ? `(${dueCardsCount})` : ''}
-      </button>
+      <button onClick={() => handleReview(false)}>Review {`(${dueCardsCount})`}</button>
       <button onClick={() => handleReview(true)}>Endless review</button>
     </div>
   );

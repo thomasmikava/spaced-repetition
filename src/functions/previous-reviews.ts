@@ -6,7 +6,7 @@ import type {
   IndividualReviewHistory,
   TestReviewHistory,
 } from './reviews';
-import { CardViewMode, initialS, maxS, minS } from './reviews';
+import { CardViewMode, calculateHalfLifeCoefficient, initialTestS, maxS, minS } from './reviews';
 
 const REVIEWS_HISTORY_KEY = 'lastReviewHistory';
 
@@ -79,7 +79,7 @@ export class PreviousReviews {
           firstDate: date,
           lastDate: date,
           repetition: 1,
-          lastS: updateS(success, isGroup, initialS),
+          lastS: updateS(success, isGroup, initialTestS),
           lastHasFailed: !success ? true : undefined,
         };
       }
@@ -89,8 +89,12 @@ export class PreviousReviews {
 }
 
 const updateS = (success: boolean, isGroup: boolean, s?: number) => {
-  if (!s && success) return initialS;
-  const coeffS = s ?? initialS;
-  const successMultiplier = isGroup ? 1.6 : 1.2;
-  return Math.min(maxS, Math.max(minS, success ? coeffS * successMultiplier : coeffS * 0.8));
+  if (!s && success) return initialTestS;
+  const coeffS = s ?? initialTestS;
+  let successMultiplier;
+  if (coeffS < calculateHalfLifeCoefficient(60 * 60)) successMultiplier = isGroup ? 3 : 2;
+  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 2 : 1.6;
+  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 2)) successMultiplier = isGroup ? 1.8 : 1.3;
+  successMultiplier = isGroup ? 1.5 : 1.2;
+  return Math.min(maxS, Math.max(minS, success ? coeffS * successMultiplier : coeffS * 0.5));
 };
