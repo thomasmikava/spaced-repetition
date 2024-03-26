@@ -10,6 +10,8 @@ import { CardViewMode, calculateHalfLifeCoefficient, initialTestS, maxS, minS } 
 
 const REVIEWS_HISTORY_KEY = 'lastReviewHistory';
 
+type SessionHistory = { card: CardKeys; mode: CardViewMode; success: boolean; date: number; key: string };
+
 export class PreviousReviews {
   constructor(private avoidStorage = false) {}
   private getLastReviewHistory = (): AllCardsReviewHistory => {
@@ -43,9 +45,24 @@ export class PreviousReviews {
   private getFinalKey = (card: CardKeys, mode: CardViewMode) =>
     mode + '@' + (mode === CardViewMode.groupView ? card.groupViewKey : card.testKey);
 
+  private currentSessionCards: SessionHistory[] = [];
+
+  getHistoryForLastPeriod = (period: number, currentDate = Date.now()) => {
+    return this.currentSessionCards.filter((x) => x.date >= currentDate - period * 1000).reverse();
+  };
+
+  getLastNHistory = (n: number) => {
+    return this.currentSessionCards.slice(-n).reverse();
+  };
+
+  isInSession(card: CardKeys, mode: CardViewMode, sessions = this.currentSessionCards) {
+    return sessions.some((x) => x.card === card && x.mode === mode);
+  }
+
   // eslint-disable-next-line sonarjs/cognitive-complexity
   saveCardResult = (card: CardKeys, mode: CardViewMode, success: boolean, date = Date.now()) => {
     const key = this.getFinalKey(card, mode);
+    this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
 
     if (mode === CardViewMode.groupView || mode === CardViewMode.individualView) {

@@ -34,6 +34,12 @@ export const initialViewS = calculateHalfLifeCoefficient(40);
 export const minS = calculateHalfLifeCoefficient(30);
 export const maxS = calculateHalfLifeCoefficient(10 * 60 * 60 * 24 * 30); // 30 days
 export const DEFAULT_REVIEW_DUE = 30;
+
+export const MAX_NUM_OF_VIEW_CARDS = 2;
+export const MAX_NUM_OF_GROUP_VIEW_CARDS = 1;
+export const LAST_CARDS_COUNT_TO_CONSIDER = 3;
+export const LAST_PERIOD_TO_CONSIDER = 20; // seconds
+
 export interface TestReviewHistory {
   firstDate: number;
   lastDate: number;

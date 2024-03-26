@@ -11,6 +11,10 @@ import {
   calculateProbability,
   initialViewS,
   dueDateUntilProbabilityIsHalf,
+  MAX_NUM_OF_VIEW_CARDS,
+  MAX_NUM_OF_GROUP_VIEW_CARDS,
+  LAST_CARDS_COUNT_TO_CONSIDER,
+  LAST_PERIOD_TO_CONSIDER,
 } from './reviews';
 
 export interface CardWithProbability {
@@ -92,6 +96,38 @@ export class Reviewer {
         const individualViewRecord = this.prevReviews.getCardHistory(record, CardViewMode.individualView);
         const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView);
 
+        if (record.groupViewKey) {
+          const groupRecord: GroupMeta = groupsMetaData[record.groupViewKey] || {
+            lastViewDate: 0,
+            numOfCards: 0,
+            numOfTestedCards: 0,
+            minReviewDue: Infinity,
+          };
+          groupRecord.numOfCards++;
+          if (historyRecord) groupRecord.numOfTestedCards++;
+          const lastViewDate = historyRecord
+            ? historyRecord.lastDate
+            : (groupVewRecord ?? individualViewRecord)?.lastDate;
+          if (lastViewDate) {
+            groupRecord.lastViewDate = Math.max(lastViewDate, groupRecord.lastViewDate);
+          }
+          groupsMetaData[record.groupViewKey] = groupRecord;
+        } else if (record.initial) {
+          grouplessMetaData[getSingleKey(record.card)] = {
+            lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
+            numOfCards: 1,
+            numOfTestedCards: historyRecord ? 1 : 0,
+            minReviewDue: Infinity,
+          };
+        }
+        return {
+          record,
+          historyRecord,
+          individualViewRecord,
+          groupVewRecord,
+        };
+      })
+      .map(({ record, historyRecord, individualViewRecord, groupVewRecord }) => {
         const lastGroupViewDate =
           record.groupViewKey && record.hasGroupViewMode
             ? groupsMetaData[record.groupViewKey]?.lastViewDate
@@ -112,30 +148,13 @@ export class Reviewer {
             );
 
         if (record.groupViewKey) {
-          const groupRecord: GroupMeta = groupsMetaData[record.groupViewKey] || {
-            lastViewDate: 0,
-            numOfCards: 0,
-            numOfTestedCards: 0,
-            minReviewDue: Infinity,
-          };
-          groupRecord.numOfCards++;
-          if (historyRecord) groupRecord.numOfTestedCards++;
-          groupRecord.minReviewDue = Math.min(groupRecord.minReviewDue, reviewDue);
-          const lastViewDate = historyRecord
-            ? historyRecord.lastDate
-            : (groupVewRecord ?? individualViewRecord)?.lastDate;
-          if (lastViewDate) {
-            groupRecord.lastViewDate = Math.max(lastViewDate, groupRecord.lastViewDate);
-          }
-          groupsMetaData[record.groupViewKey] = groupRecord;
+          const groupRecord = groupsMetaData[record.groupViewKey];
+          if (groupRecord) groupRecord.minReviewDue = Math.min(groupRecord.minReviewDue, reviewDue);
         } else if (record.initial) {
-          grouplessMetaData[getSingleKey(record.card)] = {
-            lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
-            numOfCards: 1,
-            numOfTestedCards: historyRecord ? 1 : 0,
-            minReviewDue: reviewDue,
-          };
+          const meta = grouplessMetaData[getSingleKey(record.card)];
+          if (meta) meta.minReviewDue = reviewDue;
         }
+
         return {
           record,
           historyRecord,
@@ -200,6 +219,18 @@ export class Reviewer {
   };
 
   getNextCard = (currentDate = Date.now()) => {
+    const lastCards = this.prevReviews.getHistoryForLastPeriod(LAST_PERIOD_TO_CONSIDER, currentDate);
+
+    const lastNCards = this.prevReviews.getLastNHistory(LAST_CARDS_COUNT_TO_CONSIDER);
+
+    const numOfViewedCard = lastCards.filter(
+      (e) => e.mode === CardViewMode.groupView || e.mode === CardViewMode.individualView,
+    ).length;
+    const numOfGroupViewedCard = Math.max(
+      lastCards.filter((e) => e.mode === CardViewMode.groupView).length,
+      lastNCards.filter((e) => e.mode === CardViewMode.groupView).length,
+    );
+
     const sorted = this.calculateProbabilities(currentDate)
       .filter((e) => !e.isBlockedByPreviousGroup)
       .sort((a, b) => {
@@ -208,6 +239,31 @@ export class Reviewer {
         // if (a.isReadyForReview && !b.isReadyForReview) return -1;
         // if (!a.isReadyForReview && b.isReadyForReview) return 1;
         return a.reviewDue - b.reviewDue;
+      })
+      .map((a) => {
+        let currentCardTestType: CardViewMode;
+        if (a.hasGroupViewMode && !a.isViewedInGroup) {
+          currentCardTestType = CardViewMode.groupView;
+        } else if (!a.hasGroupViewMode && a.hasIndividualViewMode && !a.isIndividuallyViewed) {
+          currentCardTestType = CardViewMode.individualView;
+        } else {
+          currentCardTestType = CardViewMode.test;
+        }
+        let shouldBe = true;
+        if (
+          (currentCardTestType !== CardViewMode.test && numOfViewedCard >= MAX_NUM_OF_VIEW_CARDS) ||
+          (currentCardTestType === CardViewMode.groupView && numOfGroupViewedCard >= MAX_NUM_OF_GROUP_VIEW_CARDS) ||
+          this.prevReviews.isInSession(a.record, currentCardTestType, lastNCards)
+        ) {
+          shouldBe = false;
+          // eslint-disable-next-line sonarjs/no-duplicated-branches
+        }
+        return { ...a, shouldBe };
+      })
+      .sort((a, b) => {
+        if (a.shouldBe && !b.shouldBe) return -1;
+        if (!a.shouldBe && b.shouldBe) return 1;
+        return 0;
       });
     console.log(sorted);
     if (this.mode === 'endless') return sorted[0];

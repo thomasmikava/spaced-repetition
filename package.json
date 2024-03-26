@@ -7,9 +7,10 @@
   "scripts": {
     "dev": "vite",
     "start": "vite --port 5999",
-    "build": "tsc && vite build && @powershell copy 404.html dist\\",
+    "build": "tsc && vite build",
     "predeploy": "yarn build",
     "deploy": "gh-pages -d dist",
+    "generate-pwa-assets": "pwa-assets-generator --preset minimal public/logo.svg",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -23,6 +24,7 @@
     "@types/react-dom": "^18.2.21",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
+    "@vite-pwa/assets-generator": "^0.2.4",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -32,6 +34,7 @@
     "eslint-plugin-sonarjs": "^0.24.0",
     "prettier": "^3.2.5",
     "typescript": "^5.2.2",
-    "vite": "^5.1.6"
+    "vite": "^5.1.6",
+    "vite-plugin-pwa": "^0.19.7"
   }
 }

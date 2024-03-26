@@ -12,6 +12,7 @@ import type {
 } from '../database/types';
 import { NounGender } from '../database/types';
 import { AdjectiveDegree, CardType, Case, NounNumber, VerbPronoun } from '../database/types';
+import { slashSplit } from '../utils/split';
 import type { AnyTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
 import {
@@ -120,7 +121,9 @@ const getTableViewContent = (record: AnyTestableCard): AnyContent[] => {
     const conjugationTable = getConjugationTable(
       getConjugations(record.variant.mood, record.variant.tense, record.card.variants) || [],
     );
-    return generateColumnedTable(conjugationTable, (row) => getValueBeforeSlash(row[0]) + ' ' + row[1]);
+    return generateColumnedTable(conjugationTable, (row) =>
+      prepareTextForAudio(getValueBeforeSlash(row[0]) + ' ' + row[1]),
+    );
   }
 
   if (record.type === CardType.NOUN && !record.initial) {
@@ -356,10 +359,10 @@ export const getCardViewContent = (
   return [];
 };
 
-const prepareTextForAudio = (text: string) => text.replace('/', '. ');
+const prepareTextForAudio = (text: string) => slashSplit(text).join('. ');
 const prepareInputAudio = (correctValues: string[], prefix: string = ''): Omit<ContentVoice, 'type'> => ({
   language: 'de',
-  text: prepareTextForAudio(correctValues.map((e) => prefix + e).join('/')),
+  text: prepareTextForAudio(correctValues.map((e) => `(${prefix + e})`).join('/')),
   autoplay: true,
   size: 'mini',
 });
@@ -368,7 +371,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
   if (record.type === CardType.VERB) {
     if (record.initial) {
       const tags = [getPartOfSentenceNames(record.type)];
-      const correctValues = record.card.value.split('/');
+      const correctValues = slashSplit(record.card.value);
       return [
         { type: 'tag', content: tags },
         { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
@@ -391,7 +394,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         { variant: 'secondary', text: meta.mood, color: getMoodColor(record.variant.mood) },
         { variant: 'primary', text: meta.tense, color: getTenseColor(record.variant.tense) },
       ];
-      const correctValues = record.variant.conjugation.value.split('/');
+      const correctValues = slashSplit(record.variant.conjugation.value);
       return [
         getTopRow(tags, record.card.value),
         {
@@ -430,7 +433,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
   } else if (record.type === CardType.NOUN) {
     if (record.initial) {
       const tags: ContentTag[] = [getPartOfSentenceNames(record.type)];
-      const correctValues = record.card.value.split('/').map((word) => getWithArticle(word, record.card.gender));
+      const correctValues = slashSplit(record.card.value).map((word) => getWithArticle(word, record.card.gender));
       return [
         { type: 'tag', content: tags },
         { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
@@ -463,8 +466,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
               getArticle(record.variant.number, record.card.gender, true, record.variant.case) as string,
               getArticle(record.variant.number, record.card.gender, false, record.variant.case) as string,
             ];
-      const correctValues = record.variant.value
-        .split('/')
+      const correctValues = slashSplit(record.variant.value)
         .map((word) => possibleArticles.map((article) => `${article} ${word}`))
         .flat();
       return [
@@ -503,7 +505,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
           color: getGenderColor(record.card.gender),
         },
       ];
-      const correctValues = record.card.value.split('/');
+      const correctValues = slashSplit(record.card.value);
       return [
         { type: 'tag', content: tags },
         {
@@ -538,7 +540,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         },
         { variant: 'primary', text: getCaseDisplayName(record.variant.case), color: getCaseColor(record.variant.case) },
       ];
-      const correctValues = record.variant.value.split('/');
+      const correctValues = slashSplit(record.variant.value);
       return [
         getTopRow(tags, record.card.value),
         {
@@ -565,7 +567,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         getPartOfSentenceNames(record.type),
         { variant: 'primary', text: getDegreeDisplayName(record.degree), color: getDegreeColor(record.degree) },
       ];
-      const correctValues = record.value.split('/');
+      const correctValues = slashSplit(record.value);
       return [
         { type: 'tag', content: tags },
         {
@@ -607,7 +609,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         },
         { variant: 'primary', text: getCaseDisplayName(record.variant.case), color: getCaseColor(record.variant.case) },
       ];
-      const correctValues = record.variant.value.split('/');
+      const correctValues = slashSplit(record.variant.value);
       return [
         getTopRow(tags, rootValue),
         {

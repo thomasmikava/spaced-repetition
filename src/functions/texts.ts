@@ -138,7 +138,7 @@ export function getVerbMeta(mood: VerbMood, tense: VerbTense) {
 
 const Colors = {
   lightBlue: '#1798b6',
-  green: '#17b65c',
+  green: '#5ca810',
   orange: '#b65717',
   pink: '#b617af',
   violet: '#6517b6',
