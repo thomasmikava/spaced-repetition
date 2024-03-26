@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/spaced-repetition/sw.js', { scope: '/spaced-repetition/' })})}
