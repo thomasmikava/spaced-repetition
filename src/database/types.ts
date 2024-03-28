@@ -8,6 +8,7 @@ export enum CardType {
   PREPOSITION = 'PREPOSITION',
   CONJUNCTION = 'CONJUNCTION',
   INTERJECTION = 'INTERJECTION',
+  NUMBERS = 'NUMBERS',
 }
 
 export enum VerbTense {

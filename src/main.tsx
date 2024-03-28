@@ -7,6 +7,7 @@ import CoursePage from './CoursePage.tsx';
 import LessonPage from './LessonPage.tsx';
 import ReviewPage from './ReviewPage.tsx';
 import AlgorithmReviewPage from './AlgorithmReviewPage.tsx';
+import NewWordsPage from './NewWords.tsx';
 
 const router = createBrowserRouter(
   [
@@ -29,6 +30,10 @@ const router = createBrowserRouter(
     {
       path: '/review-algo',
       element: <AlgorithmReviewPage />,
+    },
+    {
+      path: '/new-words',
+      element: <NewWordsPage />,
     },
   ],
   {
