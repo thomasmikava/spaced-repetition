@@ -538,7 +538,7 @@ export const courses: Course[] = [
     lessons: [
       {
         id: 1,
-        title: 'Lesson 1',
+        title: 'Articles',
         cards: [
           {
             type: CardType.ARTICLE,
@@ -548,22 +548,26 @@ export const courses: Course[] = [
             type: CardType.ARTICLE,
             value: 'dieF',
           },
-          // {
-          //   type: CardType.VERB,
-          //   value: 'sein',
-          // },
-          // {
-          //   type: CardType.NOUN,
-          //   value: 'Jahr',
-          // },
-          // {
-          //   type: CardType.VERB,
-          //   value: 'haben',
-          // },
-          // {
-          //   type: CardType.NOUN,
-          //   value: 'Mal',
-          // },
+          {
+            type: CardType.ARTICLE,
+            value: 'das',
+          },
+          {
+            type: CardType.ARTICLE,
+            value: 'dieP',
+          },
+          {
+            type: CardType.ARTICLE,
+            value: 'einM',
+          },
+          {
+            type: CardType.ARTICLE,
+            value: 'eine',
+          },
+          {
+            type: CardType.ARTICLE,
+            value: 'einN',
+          },
         ],
       },
     ],

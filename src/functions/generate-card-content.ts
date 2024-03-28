@@ -43,7 +43,13 @@ const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
     type: 'div',
     content: [
       { type: 'tag', content: tags },
-      { type: 'voice', language: 'de', text: word, autoplay: true, style: { alignSelf: 'baseline' } },
+      {
+        type: 'voice',
+        language: 'de',
+        text: prepareTextForAudio(word),
+        autoplay: true,
+        style: { alignSelf: 'baseline' },
+      },
     ],
     style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   };

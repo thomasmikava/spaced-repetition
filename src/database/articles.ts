@@ -63,6 +63,7 @@ export const articles: Article[] = [
   {
     type: CardType.ARTICLE,
     value: 'ein',
+    uniqueValue: 'einM',
     translation: 'a',
     gender: NounGender.Maskulinum,
     number: NounNumber.singular,
@@ -91,6 +92,7 @@ export const articles: Article[] = [
   {
     type: CardType.ARTICLE,
     value: 'ein',
+    uniqueValue: 'einN',
     translation: 'a',
     gender: NounGender.Neutrum,
     number: NounNumber.singular,
