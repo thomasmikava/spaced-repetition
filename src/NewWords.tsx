@@ -45,7 +45,7 @@ const NewWordsPage = () => {
         <div>
           {results.unknownWords.length > 0 && (
             <div>
-              <h2>New words</h2>
+              <h2>New words ({results.unknownWords.length})</h2>
               <ul>
                 {results.unknownWords.map((result, index) => (
                   <li key={index}>{result}</li>
@@ -55,7 +55,7 @@ const NewWordsPage = () => {
           )}
           {results.knownTokens.length > 0 && (
             <div>
-              <h2>In database</h2>
+              <h2>In database ({results.knownTokens.length})</h2>
               <ul>
                 {results.knownTokens.map((result, index) => (
                   <li key={index}>

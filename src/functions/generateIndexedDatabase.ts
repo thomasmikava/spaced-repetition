@@ -36,8 +36,8 @@ export const generateAllVariants = (): Record<CardType, Map<string, string>> => 
   return {
     [CardType.VERB]: getAllVerbVariantsSet(verbs),
     [CardType.ARTICLE]: getAllArticlesSet(articles),
-    [CardType.NOUN]: getAllNounsSet(nouns),
     [CardType.ADJECTIVE]: getAllAdjectivesSet(adjectives),
+    [CardType.NOUN]: getAllNounsSet(nouns),
     [CardType.PRONOUNS]: new Map([
       ['ich', 'ich'],
       ['du', 'du'],
