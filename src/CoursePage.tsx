@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { courses } from './courses/lessons';
 import ReviewButtons from './ReviewButtons';
+import { paths } from './routes/paths';
 
 const CoursePage = () => {
   const params = useParams();
@@ -14,11 +15,11 @@ const CoursePage = () => {
   }, [courseId]);
 
   const handleLessonClick = (lessonId: number) => {
-    navigate(`/course/${courseId}/lesson/${lessonId}`);
+    navigate(paths.app.lesson(lessonId, courseId));
   };
 
   const goToMainPage = () => {
-    navigate(`/`);
+    navigate(paths.app.main());
   };
 
   if (!myCourse) return <div>Course not found</div>;

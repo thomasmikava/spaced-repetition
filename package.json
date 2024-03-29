@@ -15,6 +15,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.28.9",
+    "axios": "^1.6.8",
+    "link-builders": "^0.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3"
@@ -36,5 +39,6 @@
     "typescript": "^5.2.2",
     "vite": "^5.1.6",
     "vite-plugin-pwa": "^0.19.7"
-  }
+  },
+  "proxy": "http://localhost:5567"
 }

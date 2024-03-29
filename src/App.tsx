@@ -2,12 +2,13 @@ import cssModule from './App.module.css';
 import ReviewButtons from './ReviewButtons';
 import { courses } from './courses/lessons';
 import { useNavigate } from 'react-router-dom';
+import { paths } from './routes/paths';
 
 const App = () => {
   const navigate = useNavigate();
 
   const handleCourseClick = (courseId: number) => {
-    navigate(`/course/${courseId}`);
+    navigate(paths.app.course(courseId));
   };
   return (
     <div className='body'>
