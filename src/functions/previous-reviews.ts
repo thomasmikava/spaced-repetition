@@ -14,7 +14,7 @@ type SessionHistory = { card: CardKeys; mode: CardViewMode; success: boolean; da
 
 export class PreviousReviews {
   constructor(private avoidStorage = false) {}
-  private getLastReviewHistory = (): AllCardsReviewHistory => {
+  getLastReviewHistory = (): AllCardsReviewHistory => {
     if (this.avoidStorage) return {};
     try {
       const value = JSON.parse(localStorage.getItem(REVIEWS_HISTORY_KEY) || '');
@@ -23,6 +23,33 @@ export class PreviousReviews {
     } catch (e) {
       return {};
     }
+  };
+
+  markAsSavedInDb = (keys: string[]) => {
+    if (!keys.length) return;
+    const history = { ...this.history };
+    for (const key of keys) {
+      const value = history[key];
+      if (value) {
+        history[key] = { ...value, savedInDb: true };
+      }
+    }
+    this.history = history;
+  };
+
+  loadInDb = (
+    data: ((
+      | Omit<TestReviewHistory, 'savedInDb'>
+      | Omit<IndividualReviewHistory, 'savedInDb'>
+      | Omit<GroupReviewHistory, 'savedInDb'>
+    ) & { key: string })[],
+    overwrite: boolean,
+  ) => {
+    const history = overwrite ? {} : { ...this.history };
+    for (const record of data) {
+      history[record.key] = { ...record, savedInDb: true };
+    }
+    this.history = history;
   };
 
   private _history?: AllCardsReviewHistory;
@@ -61,6 +88,7 @@ export class PreviousReviews {
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
   saveCardResult = (card: CardKeys, mode: CardViewMode, success: boolean, date = Date.now()) => {
+    const dateInSec = Math.floor(date / 1000);
     const key = this.getFinalKey(card, mode);
     this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
@@ -70,14 +98,16 @@ export class PreviousReviews {
       if (currentValue) {
         history[key] = {
           ...currentValue,
-          lastDate: date,
+          lastDate: dateInSec,
           repetition: currentValue.repetition + 1,
+          savedInDb: false,
         };
       } else {
         history[key] = {
-          firstDate: date,
-          lastDate: date,
+          firstDate: dateInSec,
+          lastDate: dateInSec,
           repetition: 1,
+          savedInDb: false,
         };
       }
     } else {
@@ -86,18 +116,20 @@ export class PreviousReviews {
       if (currentValue) {
         history[key] = {
           ...currentValue,
-          lastDate: date,
+          lastDate: dateInSec,
           repetition: currentValue.repetition + 1,
           lastS: updateS(success, isGroup, currentValue.lastS),
-          lastHasFailed: !success ? true : undefined,
+          lastHasFailed: !success,
+          savedInDb: false,
         };
       } else {
         history[key] = {
-          firstDate: date,
-          lastDate: date,
+          firstDate: dateInSec,
+          lastDate: dateInSec,
           repetition: 1,
           lastS: updateS(success, isGroup, initialTestS),
-          lastHasFailed: !success ? true : undefined,
+          lastHasFailed: !success,
+          savedInDb: false,
         };
       }
     }

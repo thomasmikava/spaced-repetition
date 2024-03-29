@@ -14,6 +14,7 @@ import { AuthProvider } from './contexts/Auth.tsx';
 import { paths } from './routes/paths.ts';
 import { PageGuard } from './routes/PageGuard.tsx';
 import LoginPage from './Pages/Login/index.tsx';
+import { ReviewContextProvider } from './contexts/ReviewContext.tsx';
 
 const router = createBrowserRouter(
   [
@@ -71,7 +72,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <ReviewContextProvider>
+          <RouterProvider router={router} />
+        </ReviewContextProvider>
       </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>,

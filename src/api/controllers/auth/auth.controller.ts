@@ -1,5 +1,5 @@
-import { apiRequest } from '../api';
-import type { IRequest } from '../request';
+import { apiRequest } from '../../api';
+import type { IRequest } from '../../request';
 import type {
   LoginReqDTO,
   LoginResDTO,

@@ -41,16 +41,18 @@ export const LAST_CARDS_COUNT_TO_CONSIDER = 3;
 export const LAST_PERIOD_TO_CONSIDER = 20; // seconds
 
 export interface TestReviewHistory {
-  firstDate: number;
-  lastDate: number;
+  firstDate: number; // in seconds
+  lastDate: number; // in seconds
   repetition: number;
   lastS: number;
-  lastHasFailed?: true;
+  lastHasFailed?: boolean;
+  savedInDb: boolean;
 }
 export interface IndividualReviewHistory {
-  firstDate: number;
-  lastDate: number;
+  firstDate: number; // in seconds
+  lastDate: number; // in seconds
   repetition: number;
+  savedInDb: boolean;
 }
 export type GroupReviewHistory = IndividualReviewHistory;
 

@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import { useInterval, useLatestCallback } from '../utils/hooks';
 import { destroyTokenInStorage, getTokenInfo, saveTokenInStorage } from '../api/helpers';
-import { useAuthLoginState, useAuthRenewAccessToken, useAuthRevokeAccessToken } from '../api/controllers/auth.queries';
+import {
+  useAuthLoginState,
+  useAuthRenewAccessToken,
+  useAuthRevokeAccessToken,
+} from '../api/controllers/auth/auth.queries';
 
 export interface AuthData {
   signOut: () => void;

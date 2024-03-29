@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { useAuthLogin } from '../../api/controllers/auth.queries';
+import { useAuthLogin } from '../../api/controllers/auth/auth.queries';
 import { mapErrorObjectCode, useCommonErrorMessage } from '../../errors';
 import { HttpStatus } from '../../api/http-status';
 import type { FormProps } from '../../forms/types';

@@ -73,7 +73,7 @@ export class Reviewer {
   getDueDate = (record: AnyTestableCard, accordingToDate = Date.now()): number => {
     const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
     if (!historyRecord) return Infinity;
-    return dueDateUntilProbabilityIsHalf(historyRecord.lastDate, accordingToDate, historyRecord.lastS);
+    return dueDateUntilProbabilityIsHalf(historyRecord.lastDate * 1000, accordingToDate, historyRecord.lastS);
   };
 
   getDueCardsCount = (accordingToDate = Date.now()) => {
@@ -277,7 +277,7 @@ export class Reviewer {
 }
 
 function getReviewDue(record: TestReviewHistory, lastGroupViewDate: number | undefined, currentDate: number) {
-  return dueDateUntilProbabilityIsHalf(lastGroupViewDate ?? record.lastDate, currentDate, record.lastS);
+  return dueDateUntilProbabilityIsHalf((lastGroupViewDate ?? record.lastDate) * 1000, currentDate, record.lastS);
 }
 
 function getFirstDue(
@@ -290,7 +290,7 @@ function getFirstDue(
   const mainRecord = hasGroupViewMode ? groupRecord : individualRecord;
   if (!mainRecord) return DEFAULT_REVIEW_DUE;
   if (hasGroupViewMode && groupLastView) return dueDateUntilProbabilityIsHalf(groupLastView, currentDate, initialViewS);
-  return dueDateUntilProbabilityIsHalf(mainRecord.lastDate, currentDate, initialViewS);
+  return dueDateUntilProbabilityIsHalf(mainRecord.lastDate * 1000, currentDate, initialViewS);
 }
 
 function isCriticalToBeReviewed(probability: number, reviewDue: number) {
@@ -313,6 +313,6 @@ function calculateViewCoefficient(
 ) {
   const mainRecord = hasGroupViewMode ? groupRecord : individualRecord;
   if (!mainRecord) return initialViewCoefficient;
-  return calculateProbability(Math.floor((currentDate - mainRecord.lastDate) / 1000), initialViewS);
+  return calculateProbability(Math.floor(currentDate / 1000) - mainRecord.lastDate, initialViewS);
 }
 const initialViewCoefficient = 0.8;

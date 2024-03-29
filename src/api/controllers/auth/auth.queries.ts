@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { authController } from './auth.controller';
-import { createMutationSuccessAutoDestroyer, useLastMutationState } from '../../utils/queries';
+import { createMutationSuccessAutoDestroyer, useLastMutationState } from '../../../utils/queries';
 
 export const useAuthLogin = () => {
   return useMutation({
