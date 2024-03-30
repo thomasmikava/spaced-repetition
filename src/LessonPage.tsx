@@ -80,6 +80,12 @@ const toReadableType = (type: CardType) => {
       return 'art.';
     case CardType.ADJECTIVE:
       return 'adj.adv.';
+    case CardType.CONJUNCTION:
+      return 'konj.';
+    case CardType.PREPOSITION:
+      return 'präp.';
+    case CardType.PHRASE:
+      return 'phrase';
     default:
       return 'Unknown';
   }

@@ -1,9 +1,13 @@
 import { adjectives } from '../database/adjectives';
 import { articles } from '../database/articles';
+import { conjunctions } from '../database/conjunctions';
 import { nouns } from '../database/nouns';
-import type { Adjective, Article, Noun, Verb } from '../database/types';
+import { phrases } from '../database/phrases';
+import { prepositions } from '../database/prepositions';
+import type { Adjective, Article, Noun, Phrase, Verb } from '../database/types';
 import { CardType } from '../database/types';
 import { verbs } from '../database/verbs';
+import { slashSplit } from '../utils/split';
 
 const createIndexedObject = <T extends { value: string; uniqueValue?: string }>(array: T[]) => {
   const indexedObject: Record<string, T | undefined> = {};
@@ -25,10 +29,11 @@ export const generateIndexedDatabase = () => {
     [CardType.ADJECTIVE]: createIndexedObject(adjectives),
     [CardType.PRONOUNS]: createIndexedObject([] as Verb[]),
     [CardType.ADVERB]: createIndexedObject([] as Verb[]),
-    [CardType.PREPOSITION]: createIndexedObject([] as Verb[]),
-    [CardType.CONJUNCTION]: createIndexedObject([] as Verb[]),
+    [CardType.PREPOSITION]: createIndexedObject(prepositions),
+    [CardType.CONJUNCTION]: createIndexedObject(conjunctions),
     [CardType.INTERJECTION]: createIndexedObject([] as Verb[]),
     [CardType.NUMBERS]: createIndexedObject([] as Verb[]),
+    [CardType.PHRASE]: createIndexedObject(phrases),
   } satisfies Record<CardType, unknown>;
 };
 
@@ -50,8 +55,8 @@ export const generateAllVariants = (): Record<CardType, Map<string, string>> => 
       ['Sie', 'Sie'],
     ]),
     [CardType.ADVERB]: new Map(),
-    [CardType.PREPOSITION]: new Map(),
-    [CardType.CONJUNCTION]: new Map(),
+    [CardType.PREPOSITION]: getBasicSet(prepositions),
+    [CardType.CONJUNCTION]: getBasicSet(conjunctions),
     [CardType.INTERJECTION]: new Map(),
     [CardType.NUMBERS]: new Map([
       ['null', 'null'],
@@ -85,6 +90,7 @@ export const generateAllVariants = (): Record<CardType, Map<string, string>> => 
       ['neunzig', 'neunzig'],
       ['hundert', 'hundert'],
     ]),
+    [CardType.PHRASE]: getAllPhrasesSet(phrases),
   };
 };
 
@@ -104,13 +110,19 @@ function getAllVerbVariantsSet(verbs: Verb[]) {
   return words;
 }
 
-function getBasicSet(array: { uniqueValue?: string; value: string; variants: { value: string }[] }[]) {
+function getBasicSet(array: { uniqueValue?: string; value: string; variants?: { value: string }[] }[]) {
   const words = new Map<string, string>();
   for (const each of array) {
-    const uniqueValue = each.value;
-    words.set(each.value, uniqueValue);
-    for (const variant of each.variants) {
-      words.set(variant.value, uniqueValue);
+    const vls = slashSplit(each.value);
+    for (const v of vls) {
+      words.set(v, each.value);
+    }
+    const uniqueValue = vls[0];
+    if (vls.length > 1) words.set(each.value, uniqueValue);
+    if (each.variants) {
+      for (const variant of each.variants) {
+        words.set(variant.value, uniqueValue);
+      }
     }
   }
   return words;
@@ -141,4 +153,8 @@ function getAllAdjectivesSet(adjectives: Adjective[]) {
     }
   }
   return words;
+}
+
+function getAllPhrasesSet(phrases: Phrase[]) {
+  return getBasicSet(phrases);
 }

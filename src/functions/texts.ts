@@ -163,13 +163,23 @@ export const getMoodColor = (mood: VerbMood) => {
 };
 
 export const getPartOfSentenceNames = (
-  cardType: CardType.NOUN | CardType.VERB | CardType.ARTICLE | CardType.ADJECTIVE,
+  cardType:
+    | CardType.NOUN
+    | CardType.VERB
+    | CardType.ARTICLE
+    | CardType.ADJECTIVE
+    | CardType.CONJUNCTION
+    | CardType.PREPOSITION
+    | CardType.PHRASE,
 ) => {
   return {
     [CardType.VERB]: 'Verb',
     [CardType.NOUN]: 'Nomen',
     [CardType.ARTICLE]: 'Artikel',
     [CardType.ADJECTIVE]: 'Adj. Adv.',
+    [CardType.PHRASE]: 'Phrase',
+    [CardType.CONJUNCTION]: 'Konj.',
+    [CardType.PREPOSITION]: 'Präp.',
   }[cardType];
 };
 

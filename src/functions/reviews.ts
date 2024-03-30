@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   Adjective,
   AdjectiveDegree,
@@ -8,6 +9,7 @@ import type {
   Noun,
   NounGender,
   NounNumber,
+  Preposition,
   Verb,
   VerbConjugationVariant,
   VerbMood,
@@ -117,4 +119,22 @@ export type AdjectiveTestableCard = GeneralTestableCard & {
       }
   );
 
-export type AnyTestableCard = VerbTestableCard | NounTestableCard | ArticleTestableCard | AdjectiveTestableCard;
+export type SingleTestableCard = GeneralTestableCard & {
+  type: null;
+  typeTag: string | null;
+  card: { value: string; translation: string; caseSensitive: boolean };
+};
+
+export type PrepositionTestableCard = GeneralTestableCard & {
+  type: CardType.PREPOSITION;
+  card: Preposition;
+};
+
+export type AnyTestableCard =
+  | VerbTestableCard
+  | NounTestableCard
+  | ArticleTestableCard
+  | AdjectiveTestableCard
+  | SingleTestableCard
+  | PrepositionTestableCard
+  | PrepositionTestableCard;

@@ -5,6 +5,7 @@ import type {
   AdjectiveVariant,
   ArticleVariant,
   NounVariant,
+  Preposition,
   VerbConjugationVariant,
   VerbMood,
   VerbTense,
@@ -207,6 +208,24 @@ const getTableViewContent = (record: AnyTestableCard): AnyContent[] => {
   return [];
 };
 
+const getPrepositionsTranslation = (variations: Preposition['variations']): AnyContent[] => {
+  return variations.flatMap((variation): AnyContent[] => {
+    return [
+      {
+        type: 'div',
+        content: [
+          {
+            type: 'tag',
+            content: variation.cases.map(getCaseDisplayName),
+          },
+          { type: 'paragraph', content: variation.translation, style: { textAlign: 'center' } },
+        ],
+        style: { display: 'flex', columnGap: 10, alignItems: 'center', justifyContent: 'center' },
+      },
+    ];
+  });
+};
+
 export const getCardViewContent = (
   record: AnyTestableCard,
   mode: CardViewMode.individualView | CardViewMode.groupView,
@@ -360,6 +379,17 @@ export const getCardViewContent = (
         ...getTableViewContent(record),
       ];
     }
+  } else if (record.type === CardType.PREPOSITION) {
+    const tags: ContentTag[] = [getPartOfSentenceNames(record.type)];
+    return [
+      getTopRow(tags, record.card.value),
+      { type: 'header', variant: 'h1', content: record.card.value, style: { textAlign: 'center' } },
+      { type: 'hr', style: { opacity: 0.2 } },
+      ...getPrepositionsTranslation(record.card.variations),
+    ];
+  } else if (record.type === null) {
+    const tags: ContentTag[] = record.typeTag ? [record.typeTag] : [];
+    return getDefaultViewContent(tags, record.card.value, record.card.translation);
   }
 
   return [];
@@ -637,6 +667,44 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         ...getAfterAnswerMetaInfo(record),
       ];
     }
+  } else if (record.type === CardType.PREPOSITION) {
+    const tags: ContentTag[] = [getPartOfSentenceNames(record.type)];
+    const correctValues = slashSplit(record.card.value);
+    return [
+      { type: 'tag', content: tags },
+      ...getPrepositionsTranslation(record.card.variations),
+      {
+        type: 'input',
+        inputId: '1',
+        placeholder: 'tipp',
+        fullWidth: true,
+        autoFocus: true,
+        correctValues,
+        caseInsensitive: true,
+        style: { textAlign: 'center' },
+        audioProps: prepareInputAudio(correctValues),
+      },
+      ...getAfterAnswerMetaInfo(record),
+    ];
+  } else if (record.type === null) {
+    const tags: ContentTag[] = record.typeTag ? [record.typeTag] : [];
+    const correctValues = slashSplit(record.card.value);
+    return [
+      { type: 'tag', content: tags },
+      { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
+      {
+        type: 'input',
+        inputId: '1',
+        placeholder: 'tipp',
+        fullWidth: true,
+        autoFocus: true,
+        correctValues,
+        caseInsensitive: !record.card.caseSensitive,
+        style: { textAlign: 'center' },
+        audioProps: prepareInputAudio(correctValues),
+      },
+      ...getAfterAnswerMetaInfo(record),
+    ];
   }
   throw new Error('Unsupported card type ' + (record as Record<string, unknown>).type + ' for test');
 };

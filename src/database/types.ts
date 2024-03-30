@@ -9,6 +9,7 @@ export enum CardType {
   CONJUNCTION = 'CONJUNCTION',
   INTERJECTION = 'INTERJECTION',
   NUMBERS = 'NUMBERS',
+  PHRASE = 'PHRASE',
 }
 
 export enum VerbTense {
@@ -139,4 +140,23 @@ export interface Adjective extends Card {
   variants: AdjectiveVariant[];
 }
 
-export type AnyCard = Verb | Noun | Article | Adjective;
+export interface Phrase extends Card {
+  type: CardType.PHRASE;
+  value: string;
+  translation: string;
+}
+
+export interface Conjunction extends Card {
+  type: CardType.CONJUNCTION;
+  value: string;
+  translation: string;
+}
+
+export interface Preposition extends Card {
+  type: CardType.PREPOSITION;
+  value: string;
+  translation: string;
+  variations: { cases: Case[]; translation: string }[];
+}
+
+export type AnyCard = Verb | Noun | Article | Adjective | Phrase | Conjunction | Preposition;

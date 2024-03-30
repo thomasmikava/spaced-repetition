@@ -65,6 +65,7 @@ export interface ContentInput {
   fullWidth?: boolean;
   autoFocus?: boolean;
   isSubmit?: boolean;
+  caseInsensitive?: boolean;
   audioProps?: Omit<ContentVoice, 'type'>;
   style?: React.CSSProperties;
   containerStyle?: React.CSSProperties;

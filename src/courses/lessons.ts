@@ -570,6 +570,25 @@ export const courses: Course[] = [
           },
         ],
       },
+      {
+        id: 2,
+        title: 'Phrases',
+        cards: [
+          { type: CardType.PHRASE, value: 'Prost' },
+          { type: CardType.PHRASE, value: 'Bitte' },
+          { type: CardType.PHRASE, value: 'Tschüss' },
+        ],
+      },
+      {
+        id: 3,
+        title: 'Prepositions',
+        cards: [
+          { type: CardType.PREPOSITION, value: 'auf' },
+          { type: CardType.PREPOSITION, value: 'in' },
+          { type: CardType.PREPOSITION, value: 'um' },
+          { type: CardType.PREPOSITION, value: 'für' },
+        ],
+      },
     ],
   },
   {

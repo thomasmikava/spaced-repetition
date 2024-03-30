@@ -181,6 +181,41 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       }
     }
     return allVariants;
+  } else if (card.type === CardType.PHRASE) {
+    return [
+      {
+        type: null,
+        typeTag: 'Phrase',
+        card: { value: card.value, translation: card.translation, caseSensitive: false },
+        testKey: valueKey,
+        groupViewKey: null,
+        hasGroupViewMode: false,
+        hasIndividualViewMode: true,
+      },
+    ];
+  } else if (card.type === CardType.CONJUNCTION) {
+    return [
+      {
+        type: null,
+        typeTag: 'Konjunktion',
+        card: { value: card.value, translation: card.translation, caseSensitive: false },
+        testKey: valueKey,
+        groupViewKey: null,
+        hasGroupViewMode: false,
+        hasIndividualViewMode: true,
+      },
+    ];
+  } else if (card.type === CardType.PREPOSITION) {
+    return [
+      {
+        type: CardType.PREPOSITION,
+        card,
+        testKey: valueKey,
+        groupViewKey: null,
+        hasGroupViewMode: false,
+        hasIndividualViewMode: true,
+      },
+    ];
   }
   throw new Error('Unsupported card type ' + (card as Record<string, unknown>).type);
 }
