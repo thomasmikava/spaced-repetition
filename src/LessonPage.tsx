@@ -46,7 +46,11 @@ const LessonPage = () => {
             const key = lessonCard.type + lessonCard.value;
             const card = getCard(lessonCard);
             if (!card) {
-              return <div key={key}>Card {lessonCard.value} not found</div>;
+              return (
+                <div key={key}>
+                  Card {lessonCard.value} ({toReadableType(lessonCard.type)}) not found
+                </div>
+              );
             }
             const closestDueDate = reviewer.getClosestDueDate(card);
             return (

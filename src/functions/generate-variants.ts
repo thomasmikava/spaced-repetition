@@ -142,6 +142,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         initial: false,
         degree: AdjectiveDegree.Komparativ,
         testKey: `${valueKey}#${AdjectiveDegree.Komparativ}`,
+        groupViewKey: `${valueKey}#${AdjectiveDegree.Komparativ}`,
         value: card.komparativ,
       } as never);
     }
@@ -151,6 +152,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         initial: false,
         degree: AdjectiveDegree.Superlativ,
         testKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
+        groupViewKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
         value: card.superlativ,
       } as never);
     }
@@ -187,7 +189,8 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       {
         type: null,
         typeTag: 'Phrase',
-        card: { value: card.value, translation: card.translation, caseSensitive: false },
+        initial: true,
+        card: { value: card.value, type: CardType.PHRASE, translation: card.translation, caseSensitive: false },
         testKey: valueKey,
         groupViewKey: null,
         hasGroupViewMode: false,
@@ -199,7 +202,8 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       {
         type: null,
         typeTag: 'Konjunktion',
-        card: { value: card.value, translation: card.translation, caseSensitive: false },
+        initial: true,
+        card: { value: card.value, type: CardType.CONJUNCTION, translation: card.translation, caseSensitive: false },
         testKey: valueKey,
         groupViewKey: null,
         hasGroupViewMode: false,
@@ -211,6 +215,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       {
         type: CardType.PREPOSITION,
         card,
+        initial: true,
         testKey: valueKey,
         groupViewKey: null,
         hasGroupViewMode: false,
@@ -255,11 +260,15 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
 function addPreviousGroups(allVariants: AnyTestableCard[]): AnyTestableCard[] {
   let lastGroupKey: string | null = null;
   let currentGroupKey: string | null = null;
+  let groupLevel = 0;
   return allVariants.map((variant): AnyTestableCard => {
     if (variant.groupViewKey !== lastGroupKey) {
-      if (variant.groupViewKey !== currentGroupKey) lastGroupKey = currentGroupKey;
+      if (variant.groupViewKey !== currentGroupKey) {
+        lastGroupKey = currentGroupKey;
+        groupLevel++;
+      }
       currentGroupKey = variant.groupViewKey;
-      return { ...variant, previousGroupViewKey: lastGroupKey };
+      return { ...variant, previousGroupViewKey: lastGroupKey, groupLevel };
     }
     currentGroupKey = variant.groupViewKey;
     return variant;

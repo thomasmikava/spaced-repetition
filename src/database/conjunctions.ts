@@ -9,7 +9,7 @@ export const conjunctions: Conjunction[] = [
   {
     type: CardType.CONJUNCTION,
     value: 'denn',
-    translation: 'for veraltend auch [poet.]; because; \'cause - short for "because" [ugs.]',
+    translation: 'because',
   },
   { type: CardType.CONJUNCTION, value: 'dass', translation: 'that' },
   {
@@ -39,4 +39,8 @@ export const conjunctions: Conjunction[] = [
   { type: CardType.CONJUNCTION, value: 'noch', translation: 'nor' },
   { type: CardType.CONJUNCTION, value: 'sowohl', translation: 'as well - ... as' },
   { type: CardType.CONJUNCTION, value: 'seitdem', translation: 'since; ever since; since then' },
+  { type: CardType.CONJUNCTION, value: 'jedoch', translation: 'only' },
+  { type: CardType.CONJUNCTION, value: 'hingegen', translation: 'whereas' },
+  { type: CardType.CONJUNCTION, value: 'wie', translation: 'as; such as; like; how' },
+  { type: CardType.CONJUNCTION, value: 'wo', translation: 'where; when' },
 ];

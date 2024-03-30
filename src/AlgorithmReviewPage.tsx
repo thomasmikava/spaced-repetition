@@ -3,7 +3,7 @@ import cssModule from './App.module.css';
 import { getCardTestContent, getCardViewContent } from './functions/generate-card-content';
 import type { CardWithProbability } from './functions/reviewer';
 import { Reviewer } from './functions/reviewer';
-import { CardViewMode } from './functions/reviews';
+import { CardViewMode, secondsUntilProbabilityIsHalf } from './functions/reviews';
 import Content from './Content';
 import { TestContextProvider } from './contexts/testContext';
 import { CardType } from './database/types';
@@ -87,6 +87,13 @@ const AlgorithmReviewPage = () => {
             <TestContextProvider mode={isView ? 'readonly' : 'edit'} onResult={() => {}}>
               <div style={{ display: 'flex', marginBottom: 5 }}>
                 <span style={{ flex: 1 }}>#{index + 1}</span>
+                {entries.cards[index].historyRecord && (
+                  <span>prob: {Math.floor(entries.cards[index].probability * 1000) / 10}%; </span>
+                )}
+                <span>due: {entries.cards[index].reviewDue}s</span>
+                {entries.cards[index].historyRecord && (
+                  <span>. Half: {secondsUntilProbabilityIsHalf(entries.cards[index].historyRecord!.lastS)}s</span>
+                )}
                 {!isView && (
                   <button onClick={() => changeCorrectness(index, correctness[index])}>
                     {correctness[index] === false ? 'Mark as correct' : 'Mark as wrong'}

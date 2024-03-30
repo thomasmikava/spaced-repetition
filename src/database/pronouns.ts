@@ -359,5 +359,5 @@ export const pronouns: Pronoun[] = [
         ],
       },
     ],
-  },
+  }
 ];

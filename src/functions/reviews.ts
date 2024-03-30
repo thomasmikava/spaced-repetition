@@ -21,10 +21,10 @@ import type {
 export function calculateHalfLifeCoefficient(halfLife: number) {
   return -halfLife / Math.log(0.5);
 }
-export function dueDateUntilProbabilityIsHalf(T_reviewed: number, T_current: number, S: number) {
-  return Math.round(S * Math.log(2) - (T_current - T_reviewed) / 1000);
+export function dueDateUntilProbabilityIsHalf(T_reviewed_S: number, T_current_S: number, S: number) {
+  return Math.round(S * Math.log(2) - (T_current_S - T_reviewed_S));
 }
-function secondsUntilProbabilityIsHalf(S: number) {
+export function secondsUntilProbabilityIsHalf(S: number) {
   return Math.round(S * Math.log(2));
 }
 // function secondsUntil
@@ -36,7 +36,7 @@ export const calculateProbability = (t: number, s: number) => Math.exp(-t / s);
 export const initialTestS = calculateHalfLifeCoefficient(120); // after 120 seconds of being tested, the probability of remembering the card is 50%
 export const initialViewS = calculateHalfLifeCoefficient(40);
 export const minS = calculateHalfLifeCoefficient(30);
-export const maxS = calculateHalfLifeCoefficient(10 * 60 * 60 * 24 * 30); // 30 days
+export const maxS = calculateHalfLifeCoefficient(60 * 60 * 24 * 60); // 60 days
 export const DEFAULT_REVIEW_DUE = 30;
 
 export const MAX_NUM_OF_VIEW_CARDS = 2;
@@ -74,6 +74,7 @@ export type CardKeys = {
   testKey: string;
   groupViewKey: string | null;
   previousGroupViewKey?: string | null;
+  groupLevel?: number;
 };
 type GeneralTestableCard = CardKeys & {
   hasGroupViewMode: boolean;
@@ -123,13 +124,15 @@ export type AdjectiveTestableCard = GeneralTestableCard & {
 
 export type SingleTestableCard = GeneralTestableCard & {
   type: null;
+  initial: true;
   typeTag: string | null;
-  card: { value: string; translation: string; caseSensitive: boolean };
+  card: { type: CardType | null; value: string; uniqueValue?: string; translation: string; caseSensitive: boolean };
 };
 
 export type PrepositionTestableCard = GeneralTestableCard & {
   type: CardType.PREPOSITION;
   card: Preposition;
+  initial: true;
 };
 
 export type PronounTestableCard = GeneralTestableCard & {

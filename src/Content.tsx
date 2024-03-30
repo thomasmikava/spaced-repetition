@@ -45,6 +45,7 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
     case 'tag':
       return (
         <div className={cssModule.contentTagsContainer}>
+          {/* <span>{content.content.map((e) => (typeof e === 'object' && e ? e.text : e || '')).join(', ')}</span> */}
           {content.content.map((tag, idx) => {
             const variant = typeof tag === 'object' && tag ? tag.variant : 'regular';
             const color = typeof tag === 'object' && tag ? tag.color : undefined;
