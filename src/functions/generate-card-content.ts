@@ -6,6 +6,8 @@ import type {
   ArticleVariant,
   NounVariant,
   Preposition,
+  PronounFunction,
+  PronounVariant,
   VerbConjugationVariant,
   VerbMood,
   VerbTense,
@@ -37,6 +39,8 @@ import {
   getNumberColor,
   getDegreeColor,
   getInflationColor,
+  getPronounFunctionDisplayName,
+  getPronounFunctionColor,
 } from './texts';
 
 const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
@@ -44,13 +48,15 @@ const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
     type: 'div',
     content: [
       { type: 'tag', content: tags },
-      {
-        type: 'voice',
-        language: 'de',
-        text: prepareTextForAudio(word),
-        autoplay: true,
-        style: { alignSelf: 'baseline' },
-      },
+      word
+        ? {
+            type: 'voice',
+            language: 'de',
+            text: prepareTextForAudio(word),
+            autoplay: true,
+            style: { alignSelf: 'baseline' },
+          }
+        : undefined,
     ],
     style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   };
@@ -200,6 +206,16 @@ const getTableViewContent = (record: AnyTestableCard): AnyContent[] => {
       record.variant.degree,
       record.variant.inflection,
       record.variant.gender,
+      record.card.variants,
+    );
+    return generateColumnedTable(casesTable, (row) => prepareTextForAudio(row[1]));
+  }
+
+  if (record.type === CardType.PRONOUN && !record.initial) {
+    const casesTable = getPronounCasesTable(
+      record.variant.function,
+      record.variant.gender,
+      record.variant.number,
       record.card.variants,
     );
     return generateColumnedTable(casesTable, (row) => prepareTextForAudio(row[1]));
@@ -386,6 +402,34 @@ export const getCardViewContent = (
       { type: 'header', variant: 'h1', content: record.card.value, style: { textAlign: 'center' } },
       { type: 'hr', style: { opacity: 0.2 } },
       ...getPrepositionsTranslation(record.card.variations),
+    ];
+  } else if (record.type === CardType.PRONOUN) {
+    const rootValue = record.card.value;
+    const tags: ContentTag[] = [
+      getPartOfSentenceNames(record.type),
+      {
+        variant: 'secondary',
+        text: getPronounFunctionDisplayName(record.function),
+        color: getPronounFunctionColor(record.function),
+      },
+      record.variant.gender !== null
+        ? {
+            variant: 'primary',
+            text: getGenderDisplayName(record.variant.gender),
+            color: getGenderColor(record.variant.gender),
+          }
+        : undefined,
+    ];
+    return [
+      getTopRow(tags, rootValue),
+      { type: 'hr', style: { opacity: 0 } },
+      {
+        type: 'text',
+        content: record.variant.gender !== null ? getWithSymbolArticle(rootValue, record.variant.gender) : rootValue,
+        style: { textAlign: 'center', fontSize: 20, display: 'block' },
+      },
+      { type: 'hr', style: { opacity: 0.2 } },
+      ...getTableViewContent(record),
     ];
   } else if (record.type === null) {
     const tags: ContentTag[] = record.typeTag ? [record.typeTag] : [];
@@ -686,6 +730,48 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
       },
       ...getAfterAnswerMetaInfo(record),
     ];
+  } else if (record.type === CardType.PRONOUN) {
+    let displayValue = record.card.value;
+    const shouldHideValue = record.variant.case === Case.Nominativ;
+    if (shouldHideValue) displayValue = `Übersetzung: ${record.card.translation}`;
+    const tags: ContentTag[] = [
+      getPartOfSentenceNames(record.type),
+      {
+        variant: 'secondary',
+        text: getPronounFunctionDisplayName(record.function),
+        color: getPronounFunctionColor(record.function),
+      },
+      record.variant.gender !== null
+        ? {
+            variant: 'primary',
+            text: getGenderDisplayName(record.variant.gender),
+            color: getGenderColor(record.variant.gender),
+          }
+        : undefined,
+      { variant: 'primary', text: getCaseDisplayName(record.variant.case), color: getCaseColor(record.variant.case) },
+    ];
+    const correctValues = slashSplit(record.variant.value);
+    return [
+      getTopRow(tags, shouldHideValue ? '' : displayValue),
+      {
+        type: 'paragraph',
+        content:
+          record.variant.gender !== null ? getWithSymbolArticle(displayValue, record.variant.gender) : displayValue,
+        style: { textAlign: 'center', fontSize: 20, display: 'block' },
+      },
+      {
+        type: 'input',
+        inputId: '1',
+        placeholder: 'tipp',
+        fullWidth: true,
+        autoFocus: true,
+        correctValues,
+        style: { textAlign: 'center' },
+        audioProps: prepareInputAudio(correctValues),
+      },
+      ...(shouldHideValue ? [] : getAfterAnswerTranslation(record.card.translation)),
+      ...getAfterAnswerMetaInfo(record),
+    ];
   } else if (record.type === null) {
     const tags: ContentTag[] = record.typeTag ? [record.typeTag] : [];
     const correctValues = slashSplit(record.card.value);
@@ -791,6 +877,33 @@ function getAdjectiveCasesTable(
     const variant = myVariants.values.find((v) => v[0] === caseId);
     if (!variant) return [getCaseDisplayName(caseId), '-'];
     return [getCaseDisplayName(caseId), variant[genderIndex]];
+  });
+}
+
+function getPronounCasesTable(
+  functionId: PronounFunction,
+  gender: NounGender | null,
+  number: NounNumber,
+  variants: PronounVariant[],
+) {
+  let variantIndex = 0;
+  if (gender === null) {
+    variantIndex = number === NounNumber.singular ? 1 : 2;
+  } else {
+    variantIndex = {
+      [NounGender.Maskulinum]: 1,
+      [NounGender.Femininum]: 2,
+      [NounGender.Neutrum]: 3,
+      [NounGender.Plural]: 4,
+    }[gender];
+  }
+  //
+  const myVariants = variants.find((v) => v.function === functionId);
+  if (!myVariants) return [];
+  return defaultCases.map((caseId): [string, string] => {
+    const variant = myVariants.values.find((v) => v[0] === caseId);
+    if (!variant) return [getCaseDisplayName(caseId), '-'];
+    return [getCaseDisplayName(caseId), variant[variantIndex as 1 | 2] ?? '-'];
   });
 }
 

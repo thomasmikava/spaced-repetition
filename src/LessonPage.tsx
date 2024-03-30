@@ -86,6 +86,10 @@ const toReadableType = (type: CardType) => {
       return 'präp.';
     case CardType.PHRASE:
       return 'phrase';
+    case CardType.NUMBER:
+      return 'nummer';
+    case CardType.PRONOUN:
+      return 'pron.';
     default:
       return 'Unknown';
   }

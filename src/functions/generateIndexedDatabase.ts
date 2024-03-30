@@ -4,7 +4,8 @@ import { conjunctions } from '../database/conjunctions';
 import { nouns } from '../database/nouns';
 import { phrases } from '../database/phrases';
 import { prepositions } from '../database/prepositions';
-import type { Adjective, Article, Noun, Phrase, Verb } from '../database/types';
+import { pronouns } from '../database/pronouns';
+import type { Adjective, Article, Noun, Phrase, Pronoun, Verb } from '../database/types';
 import { CardType } from '../database/types';
 import { verbs } from '../database/verbs';
 import { slashSplit } from '../utils/split';
@@ -27,12 +28,10 @@ export const generateIndexedDatabase = () => {
     [CardType.ARTICLE]: createIndexedObject(articles),
     [CardType.NOUN]: createIndexedObject(nouns),
     [CardType.ADJECTIVE]: createIndexedObject(adjectives),
-    [CardType.PRONOUNS]: createIndexedObject([] as Verb[]),
-    [CardType.ADVERB]: createIndexedObject([] as Verb[]),
+    [CardType.PRONOUN]: createIndexedObject(pronouns),
     [CardType.PREPOSITION]: createIndexedObject(prepositions),
     [CardType.CONJUNCTION]: createIndexedObject(conjunctions),
-    [CardType.INTERJECTION]: createIndexedObject([] as Verb[]),
-    [CardType.NUMBERS]: createIndexedObject([] as Verb[]),
+    [CardType.NUMBER]: createIndexedObject([] as Verb[]),
     [CardType.PHRASE]: createIndexedObject(phrases),
   } satisfies Record<CardType, unknown>;
 };
@@ -43,22 +42,10 @@ export const generateAllVariants = (): Record<CardType, Map<string, string>> => 
     [CardType.ARTICLE]: getAllArticlesSet(articles),
     [CardType.ADJECTIVE]: getAllAdjectivesSet(adjectives),
     [CardType.NOUN]: getAllNounsSet(nouns),
-    [CardType.PRONOUNS]: new Map([
-      ['ich', 'ich'],
-      ['du', 'du'],
-      ['er', 'er'],
-      ['sie', 'sie'],
-      ['es', 'es'],
-      ['wir', 'wir'],
-      ['ihr', 'ihr'],
-      ['sie', 'sie'],
-      ['Sie', 'Sie'],
-    ]),
-    [CardType.ADVERB]: new Map(),
+    [CardType.PRONOUN]: getAllPronounsSet(pronouns),
     [CardType.PREPOSITION]: getBasicSet(prepositions),
     [CardType.CONJUNCTION]: getBasicSet(conjunctions),
-    [CardType.INTERJECTION]: new Map(),
-    [CardType.NUMBERS]: new Map([
+    [CardType.NUMBER]: new Map([
       ['null', 'null'],
       ['eins', 'eins'],
       ['zwei', 'zwei'],
@@ -157,4 +144,26 @@ function getAllAdjectivesSet(adjectives: Adjective[]) {
 
 function getAllPhrasesSet(phrases: Phrase[]) {
   return getBasicSet(phrases);
+}
+
+function getAllPronounsSet(pronouns: Pronoun[]) {
+  const words = new Map<string, string>();
+  for (const adjective of pronouns) {
+    const uniqueValue = adjective.value;
+    words.set(adjective.value, uniqueValue);
+    for (const variant of adjective.variants) {
+      for (const v of variant.values as string[][]) {
+        addVariants(words, v[1], uniqueValue);
+        addVariants(words, v[2], uniqueValue);
+        addVariants(words, v[3], uniqueValue);
+        addVariants(words, v[4], uniqueValue);
+      }
+    }
+  }
+  return words;
+}
+
+function addVariants(words: Map<string, string>, value: string | null, uniqueValue: string) {
+  if (!value) return;
+  slashSplit(value).forEach((v) => words.set(v, uniqueValue));
 }

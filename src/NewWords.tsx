@@ -117,8 +117,8 @@ const getTokens = (
           (e) =>
             !allWords.has(e.value) &&
             !database.ARTICLE.has(e.value) &&
-            !database.NUMBERS.has(e.value) &&
-            !database.PRONOUNS.has(e.value),
+            !database.NUMBER.has(e.value) &&
+            !database.PRONOUN.has(e.value),
         ),
     );
     tokens.forEach((token) => allWords.add(token));

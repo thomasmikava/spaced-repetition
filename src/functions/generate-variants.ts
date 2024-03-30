@@ -1,11 +1,12 @@
 import type { AnyCard } from '../database/types';
-import { NounGender, AdjectiveInflection } from '../database/types';
+import { NounGender, AdjectiveInflection, PronounFunction } from '../database/types';
 import { AdjectiveDegree, CardType, Case, NounNumber, VerbMood, VerbTense } from '../database/types';
 import type {
   AdjectiveTestableCard,
   AnyTestableCard,
   ArticleTestableCard,
   NounTestableCard,
+  PronounTestableCard,
   VerbTestableCard,
 } from './reviews';
 
@@ -216,6 +217,37 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         hasIndividualViewMode: true,
       },
     ];
+  } else if (card.type === CardType.PRONOUN) {
+    const allVariants: PronounTestableCard[] = [];
+    const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
+    for (const variant of card.variants) {
+      for (const [case_, ...rest] of variant.values) {
+        rest.forEach((value, index, arr) => {
+          if (value === null) return;
+          const gender = variant.function === PronounFunction.Declanation ? null : genders[index];
+          const pluralIndex = arr.length - 1;
+          const number = index >= pluralIndex ? NounNumber.plural : NounNumber.singular;
+          allVariants.push({
+            type: CardType.PRONOUN,
+            card,
+            initial: false,
+            testKey: `${valueKey}#${variant.function}.${number}.${gender}.${case_}.${value}`,
+            groupViewKey: `${valueKey}#${variant.function}.${number}.${gender}.${case_}`,
+            hasGroupViewMode: true,
+            hasIndividualViewMode: false,
+            function: variant.function,
+            variant: {
+              case: case_,
+              gender,
+              function: variant.function,
+              number,
+              value,
+            },
+          });
+        });
+      }
+    }
+    return allVariants;
   }
   throw new Error('Unsupported card type ' + (card as Record<string, unknown>).type);
 }

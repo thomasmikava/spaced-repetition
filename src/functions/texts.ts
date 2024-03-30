@@ -9,6 +9,7 @@ import {
   Case,
   AdjectiveDegree,
   AdjectiveInflection,
+  PronounFunction,
 } from '../database/types';
 
 export function getPronounDisplayName(pronoun: VerbPronoun) {
@@ -162,16 +163,7 @@ export const getMoodColor = (mood: VerbMood) => {
   return mood ? Colors.lightBlue : '';
 };
 
-export const getPartOfSentenceNames = (
-  cardType:
-    | CardType.NOUN
-    | CardType.VERB
-    | CardType.ARTICLE
-    | CardType.ADJECTIVE
-    | CardType.CONJUNCTION
-    | CardType.PREPOSITION
-    | CardType.PHRASE,
-) => {
+export const getPartOfSentenceNames = (cardType: CardType) => {
   return {
     [CardType.VERB]: 'Verb',
     [CardType.NOUN]: 'Nomen',
@@ -180,6 +172,8 @@ export const getPartOfSentenceNames = (
     [CardType.PHRASE]: 'Phrase',
     [CardType.CONJUNCTION]: 'Konj.',
     [CardType.PREPOSITION]: 'Präp.',
+    [CardType.PRONOUN]: 'Pronomen',
+    [CardType.NUMBER]: 'Nummer',
   }[cardType];
 };
 
@@ -211,4 +205,22 @@ export function getInflationColor(inflation: AdjectiveInflection) {
     [AdjectiveInflection.Weak]: Colors.orange,
     [AdjectiveInflection.Mixed]: Colors.violet,
   }[inflation];
+}
+export function getPronounFunctionDisplayName(function_: PronounFunction) {
+  return {
+    [PronounFunction.Declanation]: 'Deklination',
+    [PronounFunction.Representative]: 'stellvertretend',
+    [PronounFunction.Attributive]: 'attributiv (vor Nomen)',
+    [PronounFunction.NonAttributiveWithoutArticle]: 'nicht-attibutiv, ohne Artikel',
+    [PronounFunction.NonAttributiveWithArticle]: 'nicht-attributiv, mit Artikel',
+  }[function_];
+}
+export function getPronounFunctionColor(function_: PronounFunction) {
+  return {
+    [PronounFunction.Declanation]: Colors.lightBlue,
+    [PronounFunction.Representative]: Colors.orange,
+    [PronounFunction.Attributive]: Colors.lightBlue,
+    [PronounFunction.NonAttributiveWithoutArticle]: Colors.blue,
+    [PronounFunction.NonAttributiveWithArticle]: Colors.pink,
+  }[function_];
 }

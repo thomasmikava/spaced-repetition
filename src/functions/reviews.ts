@@ -10,6 +10,8 @@ import type {
   NounGender,
   NounNumber,
   Preposition,
+  Pronoun,
+  PronounFunction,
   Verb,
   VerbConjugationVariant,
   VerbMood,
@@ -130,6 +132,21 @@ export type PrepositionTestableCard = GeneralTestableCard & {
   card: Preposition;
 };
 
+export type PronounTestableCard = GeneralTestableCard & {
+  type: CardType.PRONOUN;
+  card: Pronoun;
+} & {
+  initial: false;
+  function: PronounFunction;
+  variant: {
+    case: Case;
+    gender: NounGender | null;
+    number: NounNumber;
+    function: PronounFunction;
+    value: string;
+  };
+};
+
 export type AnyTestableCard =
   | VerbTestableCard
   | NounTestableCard
@@ -137,4 +154,4 @@ export type AnyTestableCard =
   | AdjectiveTestableCard
   | SingleTestableCard
   | PrepositionTestableCard
-  | PrepositionTestableCard;
+  | PronounTestableCard;

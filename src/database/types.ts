@@ -2,13 +2,11 @@ export enum CardType {
   ARTICLE = 'ARTICLE',
   NOUN = 'NOUN',
   VERB = 'VERB',
-  PRONOUNS = 'PRONOUNS',
+  PRONOUN = 'PRONOUN',
   ADJECTIVE = 'ADJECTIVE',
-  ADVERB = 'ADVERB',
   PREPOSITION = 'PREPOSITION',
   CONJUNCTION = 'CONJUNCTION',
-  INTERJECTION = 'INTERJECTION',
-  NUMBERS = 'NUMBERS',
+  NUMBER = 'NUMBER',
   PHRASE = 'PHRASE',
 }
 
@@ -159,4 +157,34 @@ export interface Preposition extends Card {
   variations: { cases: Case[]; translation: string }[];
 }
 
-export type AnyCard = Verb | Noun | Article | Adjective | Phrase | Conjunction | Preposition;
+export enum PronounFunction {
+  Attributive,
+  NonAttributiveWithoutArticle,
+  NonAttributiveWithArticle,
+  Representative,
+  Declanation,
+}
+
+interface PronounVariantDeclaration {
+  function: PronounFunction.Declanation;
+  values: [Case, singularValue: string | null, pluralValue: string | null][];
+}
+interface PronounVariantRegular {
+  function:
+    | PronounFunction.Attributive
+    | PronounFunction.NonAttributiveWithArticle
+    | PronounFunction.NonAttributiveWithoutArticle
+    | PronounFunction.Representative;
+  values: [Case, masculineValue: string, feminineValue: string, neutralValue: string, pluralValue: string][];
+}
+
+export type PronounVariant = PronounVariantDeclaration | PronounVariantRegular;
+
+export interface Pronoun extends Card {
+  type: CardType.PRONOUN;
+  value: string;
+  translation: string;
+  variants: PronounVariant[];
+}
+
+export type AnyCard = Verb | Noun | Article | Adjective | Phrase | Conjunction | Preposition | Pronoun;

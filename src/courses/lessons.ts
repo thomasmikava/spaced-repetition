@@ -589,6 +589,16 @@ export const courses: Course[] = [
           { type: CardType.PREPOSITION, value: 'für' },
         ],
       },
+      {
+        id: 4,
+        title: 'Pronouns',
+        cards: [
+          { type: CardType.PRONOUN, value: 'ich' },
+          { type: CardType.PRONOUN, value: 'du' },
+          { type: CardType.PRONOUN, value: 'er' },
+          { type: CardType.PRONOUN, value: 'mein' },
+        ],
+      },
     ],
   },
   {
