@@ -7,6 +7,7 @@ import { CardViewMode, secondsUntilProbabilityIsHalf } from './functions/reviews
 import Content from './Content';
 import { TestContextProvider } from './contexts/testContext';
 import { CardType } from './database/types';
+import { formatTime } from './utils/time';
 
 const AlgorithmReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
@@ -90,9 +91,11 @@ const AlgorithmReviewPage = () => {
                 {entries.cards[index].historyRecord && (
                   <span>prob: {Math.floor(entries.cards[index].probability * 1000) / 10}%; </span>
                 )}
-                <span>due: {entries.cards[index].reviewDue}s</span>
+                <span>due: {formatTime(entries.cards[index].reviewDue)}; </span>
                 {entries.cards[index].historyRecord && (
-                  <span>. Half: {secondsUntilProbabilityIsHalf(entries.cards[index].historyRecord!.lastS)}s</span>
+                  <span>
+                    Half: {formatTime(secondsUntilProbabilityIsHalf(entries.cards[index].historyRecord!.lastS))}
+                  </span>
                 )}
                 {!isView && (
                   <button onClick={() => changeCorrectness(index, correctness[index])}>

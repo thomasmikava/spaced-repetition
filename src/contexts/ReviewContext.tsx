@@ -32,7 +32,7 @@ export const ReviewContextProvider: FC<{ children: ReactElement }> = ({ children
     setUpdated(true);
   }, [data, updated]);
 
-  if (!updated && isSignedIn) return null;
+  if (!updated && isSignedIn) return <div className='body'>Loading...</div>;
   return <ReviewContext.Provider value={{}}>{children}</ReviewContext.Provider>;
 };
 

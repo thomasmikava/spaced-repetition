@@ -262,6 +262,9 @@ export class Reviewer {
         }
         return { ...a, shouldBe, viewMode };
       })
+      .filter((a) => {
+        return a.viewMode !== CardViewMode.test || !a.record.isStandardForm;
+      })
       .sort((a, b) => {
         if (a.shouldBe && !b.shouldBe) return -1;
         if (!a.shouldBe && b.shouldBe) return 1;

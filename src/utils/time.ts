@@ -1,5 +1,6 @@
 export function formatTime(seconds: number) {
   // Ensure the number is an integer
+  const isNegative = seconds < 0;
   seconds = Math.floor(seconds);
 
   const days = Math.floor(seconds / 86400);
@@ -23,5 +24,5 @@ export function formatTime(seconds: number) {
     formattedTime += `${seconds}s`;
   }
 
-  return formattedTime;
+  return isNegative ? '-' + formattedTime : formattedTime;
 }

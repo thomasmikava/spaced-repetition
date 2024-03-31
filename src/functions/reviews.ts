@@ -79,6 +79,7 @@ export type CardKeys = {
 type GeneralTestableCard = CardKeys & {
   hasGroupViewMode: boolean;
   hasIndividualViewMode: boolean;
+  isStandardForm?: boolean;
 };
 
 export type VerbTestableCard = GeneralTestableCard & {

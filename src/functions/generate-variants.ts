@@ -1,5 +1,6 @@
+/* eslint-disable sonarjs/cognitive-complexity */
 import type { AnyCard } from '../database/types';
-import { NounGender, AdjectiveInflection, PronounFunction } from '../database/types';
+import { NounGender, AdjectiveInflection, PronounFunction, VerbPronoun } from '../database/types';
 import { AdjectiveDegree, CardType, Case, NounNumber, VerbMood, VerbTense } from '../database/types';
 import type {
   AdjectiveTestableCard,
@@ -9,10 +10,6 @@ import type {
   PronounTestableCard,
   VerbTestableCard,
 } from './reviews';
-
-function isVerbTenseDisabled(tense: VerbTense, mood: VerbMood): boolean {
-  return mood !== VerbMood.Indikativ || (mood !== null && tense !== VerbTense.Präsens && tense !== VerbTense.Perfekt);
-}
 
 const VERB_MAX_TENSES = 2;
 
@@ -29,7 +26,6 @@ function isAdjectiveVariantDisabled(degree: AdjectiveDegree, inflection: Adjecti
   return degree !== AdjectiveDegree.Positiv || inflection !== AdjectiveInflection.Strong;
 }
 
-// eslint-disable-next-line sonarjs/cognitive-complexity
 function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
   const value = card.uniqueValue ?? card.value;
   const valueKey = `#${value}`;
@@ -58,6 +54,9 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       })
       .slice(0, VERB_MAX_TENSES);
     for (const { mood, tense } of tenseVariants) {
+      const areAllConjugationsStandard = tense.conjugations.every(
+        (conjugation) => conjugation.value === getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun),
+      );
       for (const conjugation of tense.conjugations) {
         allVariants.push({
           type: CardType.VERB,
@@ -72,6 +71,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
           groupViewKey: `${valueKey}#${mood}.${tense.tense}`,
           hasGroupViewMode: true,
           hasIndividualViewMode: false,
+          isStandardForm: areAllConjugationsStandard,
         });
       }
     }
@@ -90,6 +90,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
     ];
     for (const variant of card.variants) {
       if (isNounVariantDisabled(variant.number, variant.case)) continue;
+      const standardVariant = generateNounStandardVariant(card.value, card.gender, variant.number, variant.case);
       allVariants.push({
         type: CardType.NOUN,
         card,
@@ -99,6 +100,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         groupViewKey: `${valueKey}#${variant.number}`,
         hasGroupViewMode: true,
         hasIndividualViewMode: false,
+        isStandardForm: standardVariant === variant.value,
       });
     }
     return allVariants;
@@ -151,6 +153,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         testKey: `${valueKey}#${AdjectiveDegree.Komparativ}`,
         groupViewKey: `${valueKey}#${AdjectiveDegree.Komparativ}`,
         value: card.komparativ,
+        isStandardForm: card.komparativ === getAdjectiveStandardForm(card.value, AdjectiveDegree.Komparativ),
       } as never);
     }
     if (card.superlativ) {
@@ -161,6 +164,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         testKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
         groupViewKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
         value: card.superlativ,
+        isStandardForm: card.komparativ === getAdjectiveStandardForm(card.value, AdjectiveDegree.Superlativ),
       } as never);
     }
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
@@ -178,6 +182,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
             groupViewKey: `${valueKey}#${variant.degree}.${variant.inflection}.${gender}`,
             hasGroupViewMode: true,
             hasIndividualViewMode: false,
+            isStandardForm: false, // TODO: implement
             variant: {
               case: case_,
               degree: variant.degree,
@@ -284,4 +289,68 @@ function addPreviousGroups(allVariants: AnyTestableCard[]): AnyTestableCard[] {
 
 export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
   return addPreviousGroups(_generateTestableCards(card));
+}
+
+const generateNounStandardVariant = (
+  noun: string,
+  gender: NounGender,
+  number: NounNumber,
+  case_: Case,
+): string | null => {
+  if (number === NounNumber.singular && case_ === Case.Nominativ) return noun;
+  if (gender === NounGender.Femininum && number === NounNumber.singular) return noun;
+
+  const lastLetter = noun[noun.length - 1];
+
+  if (gender === NounGender.Femininum && number === NounNumber.plural) {
+    if (lastLetter === 'e') return noun + 'n';
+    return noun + 'en';
+  }
+  if ((gender === NounGender.Maskulinum || gender === NounGender.Neutrum) && number === NounNumber.singular) {
+    if (lastLetter === 'e' && case_ === Case.Genitiv) return noun + 's';
+    if (case_ === Case.Genitiv) return `${noun}s/${noun}es`;
+    return noun;
+  }
+
+  if ((gender === NounGender.Maskulinum || gender === NounGender.Neutrum) && number === NounNumber.plural) {
+    if (lastLetter === 'e' && case_ === Case.Dativ) return noun + 'n';
+    if (case_ === Case.Dativ) return noun + 'en';
+    return noun + 'e';
+  }
+
+  return null;
+};
+
+const getAdjectiveStandardForm = (
+  adjective: string,
+  degree: AdjectiveDegree.Komparativ | AdjectiveDegree.Superlativ,
+): string | null => {
+  const lastLetter = adjective[adjective.length - 1];
+  if (degree === AdjectiveDegree.Komparativ) return lastLetter === 'e' ? `${adjective}r` : `${adjective}er`;
+  if (degree === AdjectiveDegree.Superlativ)
+    return lastLetter === 'e' ? `am ${adjective}st` : `am ${adjective}st/${adjective}est`;
+  return null;
+};
+
+function getVerbStandardForm(verb: string, mood: VerbMood, tense: VerbTense, pronoun: VerbPronoun): string | null {
+  const lastLetters = verb.slice(-2);
+  if (lastLetters !== 'en') return null;
+  const root = verb.slice(0, -2);
+  if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
+    if (pronoun === VerbPronoun.ich) return root + 'e';
+    if (pronoun === VerbPronoun.du) return root + 'st';
+    if (pronoun === VerbPronoun.er_sie_es) return root + 't';
+    if (pronoun === VerbPronoun.wir) return root + 'en';
+    if (pronoun === VerbPronoun.ihr) return root + 't';
+    if (pronoun === VerbPronoun.sie_Sie) return root + 'en';
+  } else if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
+    const perfectRoot = 'ge' + root + 't';
+    if (pronoun === VerbPronoun.ich) return 'habe ' + perfectRoot;
+    if (pronoun === VerbPronoun.du) return 'hast ' + perfectRoot;
+    if (pronoun === VerbPronoun.er_sie_es) return 'hat ' + perfectRoot;
+    if (pronoun === VerbPronoun.wir) return 'haben' + perfectRoot;
+    if (pronoun === VerbPronoun.ihr) return 'habt ' + perfectRoot;
+    if (pronoun === VerbPronoun.sie_Sie) return 'haben' + perfectRoot;
+  }
+  return null;
 }
