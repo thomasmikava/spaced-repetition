@@ -89,6 +89,8 @@ const getCourseTokens = (courseId: number) => {
   return tokens;
 };
 
+const ignoredWords: string[] = ["geht's", "gibt's", 'Neues', 'los', 'Hause', 'am'];
+
 const getTokens = (
   value: string,
   existingTokens: { type: CardType; value: string }[],
@@ -98,10 +100,11 @@ const getTokens = (
   const unknownTokens: string[] = [];
   const knownTokens: { type: CardType; value: string; originalToken: string }[] = [];
   const allWords = new Set<string>(existingTokens.map((token) => token.value));
+  ignoredWords.forEach((word) => allWords.add(word));
   for (const line of lines) {
     let tokens = line
       .split(' ')
-      .map((token) => token.replace(/[.,?!:]/g, ''))
+      .map((token) => token.replace(/[.,?!:"]/g, ''))
       .filter((e) => e.length > 0 && e.match(/[a-zA-ZäöüÄÖÜß]/));
     if (tokens.length > 0 && !database.NOUN.has(tokens[0]) && isInDatabase(tokens[0].toLocaleLowerCase(), database)) {
       tokens[0] = tokens[0].toLocaleLowerCase();

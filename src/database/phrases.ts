@@ -34,4 +34,19 @@ export const phrases: Phrase[] = [
     value: 'Los',
     translation: 'Go! [SPORT.]',
   },
+  {
+    type: CardType.PHRASE,
+    value: 'Schade',
+    translation: 'What a pity!; What a shame!; Too bad!;',
+  },
+  {
+    type: CardType.PHRASE,
+    value: 'Ach',
+    translation: 'Oh!; Ah!; Ouch!;',
+  },
+  {
+    type: CardType.PHRASE,
+    value: 'Na',
+    translation: 'well; why',
+  },
 ];

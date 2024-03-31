@@ -38,13 +38,13 @@ export const generateIndexedDatabase = () => {
 
 export const generateAllVariants = (): Record<CardType, Map<string, string>> => {
   return {
-    [CardType.VERB]: getAllVerbVariantsSet(verbs),
     [CardType.ARTICLE]: getAllArticlesSet(articles),
-    [CardType.ADJECTIVE]: getAllAdjectivesSet(adjectives),
-    [CardType.NOUN]: getAllNounsSet(nouns),
-    [CardType.PRONOUN]: getAllPronounsSet(pronouns),
     [CardType.PREPOSITION]: getBasicSet(prepositions),
     [CardType.CONJUNCTION]: getBasicSet(conjunctions),
+    [CardType.PRONOUN]: getAllPronounsSet(pronouns),
+    [CardType.VERB]: getAllVerbVariantsSet(verbs),
+    [CardType.ADJECTIVE]: getAllAdjectivesSet(adjectives),
+    [CardType.NOUN]: getAllNounsSet(nouns),
     [CardType.NUMBER]: new Map([
       ['null', 'null'],
       ['eins', 'eins'],
@@ -89,13 +89,32 @@ function getAllVerbVariantsSet(verbs: Verb[]) {
     for (const mood of verb.variants) {
       for (const tense of mood.tenses) {
         for (const variant of tense.conjugations) {
-          words.set(variant.value, uniqueValue);
+          slashSplit(variant.value).forEach((v) =>
+            v.split(' ').forEach((x) => !nonVerbWords.has(x) && !words.has(x) && words.set(x, uniqueValue)),
+          );
         }
       }
     }
   }
   return words;
 }
+
+const nonVerbWords = new Set([
+  'mich',
+  'dich',
+  'sich',
+  'uns',
+  'euch',
+  'sich',
+  'mir',
+  'dir',
+  'ihm',
+  'ihr',
+  'uns',
+  'euch',
+  'ihnen',
+  'los',
+]);
 
 function getBasicSet(array: { uniqueValue?: string; value: string; variants?: { value: string }[] }[]) {
   const words = new Map<string, string>();
@@ -108,7 +127,7 @@ function getBasicSet(array: { uniqueValue?: string; value: string; variants?: { 
     if (vls.length > 1) words.set(each.value, uniqueValue);
     if (each.variants) {
       for (const variant of each.variants) {
-        words.set(variant.value, uniqueValue);
+        addVariants(words, variant.value, uniqueValue);
       }
     }
   }

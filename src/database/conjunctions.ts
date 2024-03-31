@@ -43,4 +43,6 @@ export const conjunctions: Conjunction[] = [
   { type: CardType.CONJUNCTION, value: 'hingegen', translation: 'whereas' },
   { type: CardType.CONJUNCTION, value: 'wie', translation: 'as; such as; like; how' },
   { type: CardType.CONJUNCTION, value: 'wo', translation: 'where; when' },
+  { type: CardType.CONJUNCTION, value: 'soweit', translation: 'as far as; insofar (auch: in so far) as' },
+  { type: CardType.CONJUNCTION, value: 'ob', translation: 'if; whether' },
 ];

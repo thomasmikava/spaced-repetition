@@ -17,6 +17,7 @@ export function getPronounDisplayName(pronoun: VerbPronoun) {
     [VerbPronoun.ich]: 'ich',
     [VerbPronoun.du]: 'du',
     [VerbPronoun.er_sie_es]: 'er/sie/es',
+    [VerbPronoun.es]: 'es',
     [VerbPronoun.wir]: 'wir',
     [VerbPronoun.ihr]: 'ihr',
     [VerbPronoun.sie_Sie]: 'sie/Sie',

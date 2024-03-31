@@ -908,16 +908,12 @@ function getPronounCasesTable(
 }
 
 function getConjugationTable(conjugations: VerbConjugationVariant[]) {
-  return [
-    VerbPronoun.ich,
-    VerbPronoun.du,
-    VerbPronoun.er_sie_es,
-    VerbPronoun.wir,
-    VerbPronoun.ihr,
-    VerbPronoun.sie_Sie,
-  ].map((pronoun): [string, string] => {
-    const conjugation = conjugations.find((c) => c.pronoun === pronoun);
-    if (!conjugation) return [getPronounDisplayName(pronoun), '-'];
-    return [getPronounDisplayName(pronoun), conjugation.value];
-  });
+  const thirdPronoun = conjugations.find((c) => c.pronoun === VerbPronoun.es) ? VerbPronoun.es : VerbPronoun.er_sie_es;
+  return [VerbPronoun.ich, VerbPronoun.du, thirdPronoun, VerbPronoun.wir, VerbPronoun.ihr, VerbPronoun.sie_Sie].map(
+    (pronoun): [string, string] => {
+      const conjugation = conjugations.find((c) => c.pronoun === pronoun);
+      if (!conjugation) return [getPronounDisplayName(pronoun), '-'];
+      return [getPronounDisplayName(pronoun), conjugation.value];
+    },
+  );
 }

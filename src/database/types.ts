@@ -31,6 +31,7 @@ export enum VerbPronoun {
   ich,
   du,
   er_sie_es,
+  es,
   wir,
   ihr,
   sie_Sie,

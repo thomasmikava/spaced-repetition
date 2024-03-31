@@ -359,5 +359,46 @@ export const pronouns: Pronoun[] = [
         ],
       },
     ],
-  }
+  },
+  { type: CardType.PRONOUN, value: 'welch', translation: 'what', variants: [] },
+  { type: CardType.PRONOUN, value: 'einander', translation: 'each other; one another', variants: [] },
+  {
+    type: CardType.PRONOUN,
+    value: 'nichts',
+    translation: 'nothing; nil - nothing; bubkes auch: bupkes, bupkis, bupkus jiddisch',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'nichts', 'nichts'],
+          [Case.Genitiv, 'nichts', 'nichts'],
+          [Case.Dativ, 'nichts', 'nichts'],
+          [Case.Akkusativ, 'nichts', 'nichts'],
+        ],
+      },
+    ],
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'jemand',
+    translation: 'anybody; anyone; somebody; someone',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'jemand', null],
+          [Case.Genitiv, 'jemands/jemandes', null],
+          [Case.Dativ, 'jemand/jemandem', null],
+          [Case.Akkusativ, 'jemand/jemanden', null],
+        ],
+      },
+    ],
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'sich',
+    translation: 'herself; himself; itself; themselves; oneself; each other; Yourself (formal)',
+    variants: [],
+  },{"type":CardType.PRONOUN,"value":"dieser","translation":"this Adj.; that","variants":[{"function":PronounFunction.Declanation,"values":[[Case.Nominativ,"dieser","diese"],[Case.Genitiv,"dieses","dieser"],[Case.Dativ,"diesem","dieser"],[Case.Akkusativ,"diesen","diese"]]}]},
+
 ];
