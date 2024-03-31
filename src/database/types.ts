@@ -44,6 +44,7 @@ export interface VerbConjugationVariant {
 
 interface VerbTenseVariants {
   tense: VerbTense;
+  priority?: number;
   conjugations: VerbConjugationVariant[];
 }
 

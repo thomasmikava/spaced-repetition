@@ -10,12 +10,11 @@ import type {
   VerbTestableCard,
 } from './reviews';
 
-function isVerbMoodDisabled(mood: VerbMood): boolean {
-  return mood !== VerbMood.Indikativ;
-}
 function isVerbTenseDisabled(tense: VerbTense, mood: VerbMood): boolean {
-  return mood !== null && tense !== VerbTense.Präsens && tense !== VerbTense.Perfekt;
+  return mood !== VerbMood.Indikativ || (mood !== null && tense !== VerbTense.Präsens && tense !== VerbTense.Perfekt);
 }
+
+const VERB_MAX_TENSES = 2;
 
 function isNounVariantDisabled(number: NounNumber, case_: Case): boolean {
   if (number === NounNumber.singular) return case_ !== Case.Genitiv;
@@ -46,26 +45,34 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         hasIndividualViewMode: true,
       },
     ];
-    for (const variant of card.variants) {
-      if (isVerbMoodDisabled(variant.mood)) continue;
-      for (const tense of variant.tenses) {
-        if (isVerbTenseDisabled(tense.tense, variant.mood)) continue;
-        for (const conjugation of tense.conjugations) {
-          allVariants.push({
-            type: CardType.VERB,
-            card,
-            initial: false,
-            variant: {
-              mood: variant.mood,
-              tense: tense.tense,
-              conjugation,
-            },
-            testKey: `${valueKey}#${variant.mood}.${tense.tense}.${conjugation.pronoun}.${conjugation.value}`,
-            groupViewKey: `${valueKey}#${variant.mood}.${tense.tense}`,
-            hasGroupViewMode: true,
-            hasIndividualViewMode: false,
-          });
+    const tenseVariants = card.variants
+      .flatMap((mood) => mood.tenses.map((tense) => ({ mood: mood.mood, tense })))
+      .sort((a, b) => {
+        if (typeof a.tense.priority === 'number' && typeof b.tense.priority === 'number') {
+          return a.tense.priority - b.tense.priority;
         }
+        if (typeof a.tense.priority === 'number') return -1;
+        if (typeof b.tense.priority === 'number') return 1;
+        // TODO: build object of default priorities
+        return 0;
+      })
+      .slice(0, VERB_MAX_TENSES);
+    for (const { mood, tense } of tenseVariants) {
+      for (const conjugation of tense.conjugations) {
+        allVariants.push({
+          type: CardType.VERB,
+          card,
+          initial: false,
+          variant: {
+            mood,
+            tense: tense.tense,
+            conjugation,
+          },
+          testKey: `${valueKey}#${mood}.${tense.tense}.${conjugation.pronoun}.${conjugation.value}`,
+          groupViewKey: `${valueKey}#${mood}.${tense.tense}`,
+          hasGroupViewMode: true,
+          hasIndividualViewMode: false,
+        });
       }
     }
     return allVariants;
