@@ -54,10 +54,14 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       })
       .slice(0, VERB_MAX_TENSES);
     for (const { mood, tense } of tenseVariants) {
-      const areAllConjugationsStandard = tense.conjugations.every(
-        (conjugation) => conjugation.value === getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun),
+      const firstPronounForm = tense.conjugations.find((e) => e.pronoun === VerbPronoun.ich)?.value;
+      const standardness = tense.conjugations.map(
+        (conjugation) =>
+          conjugation.value === getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun, firstPronounForm),
       );
-      for (const conjugation of tense.conjugations) {
+      const areAllConjugationsStandard = standardness.every((correct) => !!correct);
+      for (let i = 0; i < tense.conjugations.length; i++) {
+        const conjugation = tense.conjugations[i];
         allVariants.push({
           type: CardType.VERB,
           card,
@@ -71,7 +75,8 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
           groupViewKey: `${valueKey}#${mood}.${tense.tense}`,
           hasGroupViewMode: true,
           hasIndividualViewMode: false,
-          isStandardForm: areAllConjugationsStandard,
+          isStandardForm: standardness[i],
+          isGroupStandardForm: areAllConjugationsStandard,
         });
       }
     }
@@ -327,30 +332,66 @@ const getAdjectiveStandardForm = (
 ): string | null => {
   const lastLetter = adjective[adjective.length - 1];
   if (degree === AdjectiveDegree.Komparativ) return lastLetter === 'e' ? `${adjective}r` : `${adjective}er`;
-  if (degree === AdjectiveDegree.Superlativ)
-    return lastLetter === 'e' ? `am ${adjective}st` : `am ${adjective}st/${adjective}est`;
+  if (degree === AdjectiveDegree.Superlativ) {
+    return lastLetter === 'u' ? `am ${adjective}sten/${adjective}esten` : `am ${adjective}sten`;
+  }
   return null;
 };
 
-function getVerbStandardForm(verb: string, mood: VerbMood, tense: VerbTense, pronoun: VerbPronoun): string | null {
+function getVerbStandardForm(
+  verb: string,
+  mood: VerbMood,
+  tense: VerbTense,
+  pronoun: VerbPronoun,
+  firstPronounForm?: string,
+): string | null {
   const lastLetters = verb.slice(-2);
   if (lastLetters !== 'en') return null;
+  if (firstPronounForm && pronoun !== VerbPronoun.ich) {
+    const guessValue = getVerbStandardFormBasedOnFirstPronoun(mood, tense, pronoun, firstPronounForm);
+    if (guessValue) return guessValue;
+  }
   const root = verb.slice(0, -2);
+  const rootLastLetter = root.slice(-1);
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
     if (pronoun === VerbPronoun.ich) return root + 'e';
-    if (pronoun === VerbPronoun.du) return root + 'st';
+    if (pronoun === VerbPronoun.du) return rootLastLetter === 's' || rootLastLetter === 'ß' ? root + 't' : root + 'st';
     if (pronoun === VerbPronoun.er_sie_es) return root + 't';
     if (pronoun === VerbPronoun.wir) return root + 'en';
     if (pronoun === VerbPronoun.ihr) return root + 't';
     if (pronoun === VerbPronoun.sie_Sie) return root + 'en';
   } else if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
     const perfectRoot = 'ge' + root + 't';
-    if (pronoun === VerbPronoun.ich) return 'habe ' + perfectRoot;
-    if (pronoun === VerbPronoun.du) return 'hast ' + perfectRoot;
-    if (pronoun === VerbPronoun.er_sie_es) return 'hat ' + perfectRoot;
-    if (pronoun === VerbPronoun.wir) return 'haben' + perfectRoot;
-    if (pronoun === VerbPronoun.ihr) return 'habt ' + perfectRoot;
-    if (pronoun === VerbPronoun.sie_Sie) return 'haben' + perfectRoot;
+    return DEFAULT_VERBS.haben_present[pronoun] + ' ' + perfectRoot;
   }
   return null;
 }
+
+function getVerbStandardFormBasedOnFirstPronoun(
+  mood: VerbMood,
+  tense: VerbTense,
+  pronoun: VerbPronoun,
+  firstPronounForm: string,
+): string | null {
+  if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
+    const spaceIndex = firstPronounForm.indexOf(' ');
+    const firstPart = firstPronounForm.substring(0, spaceIndex);
+    const secondPart = firstPronounForm.substring(spaceIndex + 1);
+    if (firstPart === 'habe') {
+      return DEFAULT_VERBS.haben_present[pronoun] + ' ' + secondPart;
+    }
+  }
+  return null;
+}
+
+const DEFAULT_VERBS = {
+  haben_present: {
+    [VerbPronoun.ich]: 'habe',
+    [VerbPronoun.du]: 'hast',
+    [VerbPronoun.er_sie_es]: 'hat',
+    [VerbPronoun.es]: 'hat',
+    [VerbPronoun.wir]: 'haben',
+    [VerbPronoun.ihr]: 'habt',
+    [VerbPronoun.sie_Sie]: 'haben',
+  },
+};

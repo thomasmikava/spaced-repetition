@@ -87,7 +87,13 @@ export class Reviewer {
   };
 
   private calculateProbabilities = (currentDate = Date.now()) => {
-    type GroupMeta = { lastViewDate: number; numOfCards: number; numOfTestedCards: number; minReviewDue: number };
+    type GroupMeta = {
+      lastViewDate: number;
+      numOfCards: number;
+      numOfTestableCards: number;
+      numOfTestedCards: number;
+      minReviewDue: number;
+    };
     const groupsMetaData: {
       [key in string]?: GroupMeta;
     } = {};
@@ -102,14 +108,17 @@ export class Reviewer {
         const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView);
 
         if (record.groupViewKey) {
+          const isTestable = !record.isStandardForm || record.isGroupStandardForm === false ? 1 : 0;
           const groupRecord: GroupMeta = groupsMetaData[record.groupViewKey] || {
             lastViewDate: 0,
             numOfCards: 0,
             numOfTestedCards: 0,
+            numOfTestableCards: 0,
             minReviewDue: Infinity,
           };
           groupRecord.numOfCards++;
           if (historyRecord) groupRecord.numOfTestedCards++;
+          if (isTestable) groupRecord.numOfTestableCards++;
           const lastViewDate = historyRecord
             ? historyRecord.lastDate
             : (groupVewRecord ?? individualViewRecord)?.lastDate;
@@ -121,6 +130,7 @@ export class Reviewer {
           grouplessMetaData[getSingleKey(record.card)] = {
             lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
             numOfCards: 1,
+            numOfTestableCards: !record.isStandardForm || record.isGroupStandardForm === false ? 1 : 0,
             numOfTestedCards: historyRecord ? 1 : 0,
             minReviewDue: Infinity,
           };
@@ -190,7 +200,7 @@ export class Reviewer {
               ? undefined
               : grouplessMetaData[getSingleKey(record.card)];
           const isBlockedByPreviousGroup = prevGroupMeta
-            ? prevGroupMeta.numOfTestedCards < prevGroupMeta.numOfCards
+            ? prevGroupMeta.numOfTestedCards < prevGroupMeta.numOfTestableCards
             : false;
           const prevGroupReviewDue = record.previousGroupViewKey
             ? (groupsMetaData[record.previousGroupViewKey]?.minReviewDue ?? -Infinity) - 1
@@ -263,7 +273,11 @@ export class Reviewer {
         return { ...a, shouldBe, viewMode };
       })
       .filter((a) => {
-        return a.viewMode !== CardViewMode.test || !a.record.isStandardForm;
+        return (
+          a.viewMode !== CardViewMode.test ||
+          !a.record.isStandardForm ||
+          (a.record.isGroupStandardForm === false && !a.isTested)
+        );
       })
       .sort((a, b) => {
         if (a.shouldBe && !b.shouldBe) return -1;

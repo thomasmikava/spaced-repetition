@@ -605,6 +605,7 @@ export const courses: Course[] = [
         cards: [
           { type: CardType.VERB, value: 'regnen' },
           { type: CardType.VERB, value: 'sein' },
+          { type: CardType.VERB, value: 'vergessen' },
         ],
       },
     ],
