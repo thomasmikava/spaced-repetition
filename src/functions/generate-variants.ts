@@ -169,7 +169,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         testKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
         groupViewKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
         value: card.superlativ,
-        isStandardForm: card.komparativ === getAdjectiveStandardForm(card.value, AdjectiveDegree.Superlativ),
+        isStandardForm: card.superlativ === getAdjectiveStandardForm(card.value, AdjectiveDegree.Superlativ),
       } as never);
     }
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
@@ -348,18 +348,13 @@ function getVerbStandardForm(
   const lastLetters = verb.slice(-2);
   if (lastLetters !== 'en') return null;
   if (firstPronounForm && pronoun !== VerbPronoun.ich) {
-    const guessValue = getVerbStandardFormBasedOnFirstPronoun(mood, tense, pronoun, firstPronounForm);
+    const guessValue = getVerbStandardFormBasedOnFirstPronoun(verb, mood, tense, pronoun, firstPronounForm);
     if (guessValue) return guessValue;
   }
   const root = verb.slice(0, -2);
-  const rootLastLetter = root.slice(-1);
+  // const rootLastLetter = root.slice(-1);
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
-    if (pronoun === VerbPronoun.ich) return root + 'e';
-    if (pronoun === VerbPronoun.du) return rootLastLetter === 's' || rootLastLetter === 'ß' ? root + 't' : root + 'st';
-    if (pronoun === VerbPronoun.er_sie_es) return root + 't';
-    if (pronoun === VerbPronoun.wir) return root + 'en';
-    if (pronoun === VerbPronoun.ihr) return root + 't';
-    if (pronoun === VerbPronoun.sie_Sie) return root + 'en';
+    return getDefaultPresentConjugation(verb, pronoun);
   } else if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
     const perfectRoot = 'ge' + root + 't';
     return DEFAULT_VERBS.haben_present[pronoun] + ' ' + perfectRoot;
@@ -367,22 +362,53 @@ function getVerbStandardForm(
   return null;
 }
 
+const getDefaultPresentConjugation = (verb: string, pronoun: VerbPronoun): string | null => {
+  const root = verb.slice(0, -2);
+  const rootLastLetter = root.slice(-1);
+  if (pronoun === VerbPronoun.ich) return root + 'e';
+  if (pronoun === VerbPronoun.du) return rootLastLetter === 's' || rootLastLetter === 'ß' ? root + 't' : root + 'st';
+  if (pronoun === VerbPronoun.er_sie_es) return root + 't';
+  if (pronoun === VerbPronoun.wir) return root + 'en';
+  if (pronoun === VerbPronoun.ihr) return root + 't';
+  if (pronoun === VerbPronoun.sie_Sie) return root + 'en';
+  return null;
+};
+
 function getVerbStandardFormBasedOnFirstPronoun(
+  verb: string,
   mood: VerbMood,
   tense: VerbTense,
   pronoun: VerbPronoun,
   firstPronounForm: string,
 ): string | null {
-  if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
-    const spaceIndex = firstPronounForm.indexOf(' ');
-    const firstPart = firstPronounForm.substring(0, spaceIndex);
-    const secondPart = firstPronounForm.substring(spaceIndex + 1);
-    if (firstPart === 'habe') {
-      return DEFAULT_VERBS.haben_present[pronoun] + ' ' + secondPart;
+  if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
+    const [, secondPart] = separateBySpace(firstPronounForm);
+    if (secondPart === DEFAULT_PRONOUNS.a[VerbPronoun.ich]) {
+      return getDefaultPresentConjugation(verb, pronoun) + ' ' + DEFAULT_PRONOUNS.a[pronoun];
     }
+  }
+  if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
+    const [firstPart, secondPart] = separateBySpace(firstPronounForm);
+    let prefix = '';
+    if (firstPart === 'habe') {
+      prefix = DEFAULT_VERBS.haben_present[pronoun];
+    } else if (firstPart === 'bin') {
+      prefix = DEFAULT_VERBS.sein_present[pronoun];
+    }
+    if (!prefix) return null;
+    const [part2, part3] = separateBySpace(secondPart);
+    if (part3 && part2 === DEFAULT_PRONOUNS.a[VerbPronoun.ich]) {
+      return prefix + ' ' + DEFAULT_PRONOUNS.a[pronoun] + ' ' + part3;
+    }
+    return prefix + ' ' + secondPart;
   }
   return null;
 }
+
+const separateBySpace = (value: string): [string, string] => {
+  const spaceIndex = value.indexOf(' ');
+  return [value.substring(0, spaceIndex), value.substring(spaceIndex + 1)];
+};
 
 const DEFAULT_VERBS = {
   haben_present: {
@@ -393,5 +419,26 @@ const DEFAULT_VERBS = {
     [VerbPronoun.wir]: 'haben',
     [VerbPronoun.ihr]: 'habt',
     [VerbPronoun.sie_Sie]: 'haben',
+  },
+  sein_present: {
+    [VerbPronoun.ich]: 'bin',
+    [VerbPronoun.du]: 'bist',
+    [VerbPronoun.er_sie_es]: 'ist',
+    [VerbPronoun.es]: 'ist',
+    [VerbPronoun.wir]: 'sind',
+    [VerbPronoun.ihr]: 'seid',
+    [VerbPronoun.sie_Sie]: 'sind',
+  },
+};
+
+const DEFAULT_PRONOUNS = {
+  a: {
+    [VerbPronoun.ich]: 'mich',
+    [VerbPronoun.du]: 'dich',
+    [VerbPronoun.er_sie_es]: 'sich',
+    [VerbPronoun.es]: 'sich',
+    [VerbPronoun.wir]: 'uns',
+    [VerbPronoun.ihr]: 'euch',
+    [VerbPronoun.sie_Sie]: 'sich',
   },
 };

@@ -1,9 +1,9 @@
-import cssModule from './App.module.css';
+import cssModule from '../App.module.css';
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { courses } from './courses/lessons';
-import ReviewButtons from './ReviewButtons';
-import { paths } from './routes/paths';
+import { courses } from '../courses/lessons';
+import ReviewButtons from '../ReviewButtons';
+import { paths } from '../routes/paths';
 
 const CoursePage = () => {
   const params = useParams();

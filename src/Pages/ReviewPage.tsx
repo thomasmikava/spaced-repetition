@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import cssModule from './App.module.css';
-import { getCardTestContent, getCardViewContent } from './functions/generate-card-content';
-import { Reviewer } from './functions/reviewer';
-import { CardViewMode } from './functions/reviews';
-import Content from './Content';
-import { TestContextProvider } from './contexts/testContext';
+import cssModule from '../App.module.css';
+import { getCardTestContent, getCardViewContent } from '../functions/generate-card-content';
+import { Reviewer } from '../functions/reviewer';
+import { CardViewMode } from '../functions/reviews';
+import Content from '../Content';
+import { TestContextProvider } from '../contexts/testContext';
 
 const ReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;

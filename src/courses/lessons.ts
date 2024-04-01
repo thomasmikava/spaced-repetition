@@ -606,6 +606,7 @@ export const courses: Course[] = [
           { type: CardType.VERB, value: 'regnen' },
           { type: CardType.VERB, value: 'sein' },
           { type: CardType.VERB, value: 'vergessen' },
+          { type: CardType.VERB, value: 'freuen' },
         ],
       },
     ],
@@ -978,6 +979,218 @@ export const courses: Course[] = [
           { type: CardType.CONJUNCTION, value: 'als' },
           { type: CardType.ADJECTIVE, value: 'schläfrig' },
           { type: CardType.VERB, value: 'einschlafen' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 5,
+    title: 'Nk',
+    lessons: [
+      {
+        id: 1,
+        title: '1',
+        cards: [
+          {
+            type: CardType.NOUN,
+            value: 'Eile',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'reinlich',
+          },
+          {
+            type: CardType.VERB,
+            value: 'entzweien',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Dreck',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'andauernd',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'unlängst',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Tonfall',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'fleißig',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'hierdurch',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Beichte',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Pfütze',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Pfote',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'trübe',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Unverschämtheit',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Lüsternheit',
+          },
+          {
+            type: CardType.VERB,
+            value: 'leimen',
+          },
+          {
+            type: CardType.VERB,
+            value: 'jauchzen',
+          },
+          {
+            type: CardType.VERB,
+            value: 'läuten',
+          },
+          {
+            type: CardType.VERB,
+            value: 'hinausfliegen',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Tropfen',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Regentropfen',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'unverkennbar',
+          },
+          {
+            type: CardType.VERB,
+            value: 'ausstehen',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Abfluss',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'überdies',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Kessel',
+          },
+          {
+            type: CardType.VERB,
+            value: 'verdauen',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Kleingeld',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'anspruchsvoll',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'keck',
+          },
+          {
+            type: CardType.VERB,
+            value: 'weiden',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'aufregend',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Bammel',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'fragwürdig',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'unversehens',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Ankunft',
+          },
+          {
+            type: CardType.VERB,
+            value: 'verdrießen',
+          },
+          {
+            type: CardType.VERB,
+            value: 'begehren',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'umgehend',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'zielstrebig',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'preiswert',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'tapfer',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Verstand',
+          },
+          {
+            type: CardType.VERB,
+            value: 'abschwächen',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Entlassung',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Vorgehensweise',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Sünde',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'unpassend',
+          },
+          {
+            type: CardType.ADJECTIVE,
+            value: 'fahrlässig',
+          },
+          {
+            type: CardType.NOUN,
+            value: 'Versteifung',
+          },
         ],
       },
     ],

@@ -1,12 +1,12 @@
-import cssModule from './App.module.css';
+import cssModule from '../App.module.css';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { LessonCard } from './courses/lessons';
-import { courses } from './courses/lessons';
-import { generateIndexedDatabase } from './functions/generateIndexedDatabase';
-import { CardType } from './database/types';
-import ReviewButtons from './ReviewButtons';
-import { Reviewer } from './functions/reviewer';
+import type { LessonCard } from '../courses/lessons';
+import { courses } from '../courses/lessons';
+import { generateIndexedDatabase } from '../functions/generateIndexedDatabase';
+import { CardType } from '../database/types';
+import ReviewButtons from '../ReviewButtons';
+import { Reviewer } from '../functions/reviewer';
 
 const LessonPage = () => {
   const params = useParams();
@@ -37,7 +37,10 @@ const LessonPage = () => {
   return (
     <div className='body'>
       <div>
-        <span onClick={goToCourse}>{myCourse.title}</span> - {myLesson.title}
+        <span onClick={goToCourse} style={{ textDecoration: 'underline', cursor: 'pointer' }}>
+          {myCourse.title}
+        </span>{' '}
+        - {myLesson.title} ({myLesson.cards.length} items)
       </div>
       <ReviewButtons courseId={courseId} lessonId={lessonId} />
       <table className={cssModule.lessonTable}>

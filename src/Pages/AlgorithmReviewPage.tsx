@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
-import cssModule from './App.module.css';
-import { getCardTestContent, getCardViewContent } from './functions/generate-card-content';
-import type { CardWithProbability } from './functions/reviewer';
-import { Reviewer } from './functions/reviewer';
-import { CardViewMode, secondsUntilProbabilityIsHalf } from './functions/reviews';
-import Content from './Content';
-import { TestContextProvider } from './contexts/testContext';
-import { CardType } from './database/types';
-import { formatTime } from './utils/time';
+import cssModule from '../App.module.css';
+import { getCardTestContent, getCardViewContent } from '../functions/generate-card-content';
+import type { CardWithProbability } from '../functions/reviewer';
+import { Reviewer } from '../functions/reviewer';
+import { CardViewMode, secondsUntilProbabilityIsHalf } from '../functions/reviews';
+import Content from '../Content';
+import { TestContextProvider } from '../contexts/testContext';
+import { CardType } from '../database/types';
+import { formatTime } from '../utils/time';
 
 const AlgorithmReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
