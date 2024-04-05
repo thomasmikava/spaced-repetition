@@ -148,6 +148,8 @@ const Input = ({
         autoFocus={autoFocus}
         style={style}
         autoComplete='off'
+        autoCorrect='off'
+        spellCheck={false}
         autoCapitalize='none'
         readOnly={mode === 'readonly'}
       />

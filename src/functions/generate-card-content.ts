@@ -420,6 +420,7 @@ export const getCardViewContent = (
           }
         : undefined,
     ];
+    const translation = record.card.translation;
     return [
       getTopRow(tags, rootValue),
       { type: 'hr', style: { opacity: 0 } },
@@ -428,6 +429,8 @@ export const getCardViewContent = (
         content: record.variant.gender !== null ? getWithSymbolArticle(rootValue, record.variant.gender) : rootValue,
         style: { textAlign: 'center', fontSize: 20, display: 'block' },
       },
+      { type: 'hr', style: { opacity: 0.2 } },
+      { type: 'paragraph', content: translation, style: { textAlign: 'center', fontSize: 20 } },
       { type: 'hr', style: { opacity: 0.2 } },
       ...getTableViewContent(record),
     ];

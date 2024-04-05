@@ -7,6 +7,7 @@ import { generateIndexedDatabase } from '../functions/generateIndexedDatabase';
 import { CardType } from '../database/types';
 import ReviewButtons from '../ReviewButtons';
 import { Reviewer } from '../functions/reviewer';
+import { formatTime } from '../utils/time';
 
 const LessonPage = () => {
   const params = useParams();
@@ -66,7 +67,7 @@ const LessonPage = () => {
                     ? null
                     : closestDueDate < 0
                       ? 'Ready'
-                      : 'In ' + Math.round(closestDueDate / 60) + ' min'}
+                      : 'In ' + formatTime(closestDueDate)}
                 </td>
               </tr>
             );

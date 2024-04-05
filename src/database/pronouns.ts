@@ -329,7 +329,7 @@ export const pronouns: Pronoun[] = [
   {
     type: CardType.PRONOUN,
     value: 'euer',
-    translation: 'your',
+    translation: 'your (plural)',
     variants: [
       {
         function: PronounFunction.Attributive,
@@ -399,6 +399,28 @@ export const pronouns: Pronoun[] = [
     value: 'sich',
     translation: 'herself; himself; itself; themselves; oneself; each other; Yourself (formal)',
     variants: [],
-  },{"type":CardType.PRONOUN,"value":"dieser","translation":"this Adj.; that","variants":[{"function":PronounFunction.Declanation,"values":[[Case.Nominativ,"dieser","diese"],[Case.Genitiv,"dieses","dieser"],[Case.Dativ,"diesem","dieser"],[Case.Akkusativ,"diesen","diese"]]}]},
-
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'dieser',
+    translation: 'this Adj.; that',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'dieser', 'diese'],
+          [Case.Genitiv, 'dieses', 'dieser'],
+          [Case.Dativ, 'diesem', 'dieser'],
+          [Case.Akkusativ, 'diesen', 'diese'],
+        ],
+      },
+    ],
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'alles',
+    translation:
+      'all - the only thing; followed by a relative clause; anything; everything; all Adj. - used before noun; owt - northern English dialect: "anything"; the whole lot',
+    variants: [],
+  },
 ];

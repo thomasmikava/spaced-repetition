@@ -15,6 +15,7 @@ const AlgorithmReviewPage = () => {
   const courseId = !searchParams.get('courseId') ? undefined : +(searchParams.get('courseId') as string);
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
   const [mainKey, setMainKey] = useState(0);
+  const [maxCards, setMaxCards] = useState(400);
 
   const [correctness, setCorrectness] = useState<boolean[]>([]);
 
@@ -67,9 +68,13 @@ const AlgorithmReviewPage = () => {
       questions.push(question);
       reviewer.markViewed(currentCard, question.type, correctness[index] !== false, lastDate);
       index++;
-    } while (cards.length < 400);
+    } while (cards.length < maxCards);
     return { cards, questions };
-  }, [courseId, lessonId, mode, getQuestion, correctness]);
+  }, [courseId, lessonId, mode, getQuestion, correctness, maxCards]);
+
+  const showMore = (count: number) => {
+    setMaxCards(maxCards + count);
+  };
 
   const changeCorrectness = (index: number, currentValue: boolean) => {
     const nextValue = currentValue === false ? true : false;
@@ -110,6 +115,23 @@ const AlgorithmReviewPage = () => {
           </div>
         );
       })}
+      {entries.questions.length === maxCards && (
+        <div>
+          <br />
+          <br />
+          <button
+            onClick={() => showMore(100)}
+            style={{ fontSize: 20, padding: '10px 20px', cursor: 'pointer', marginRight: 5 }}
+          >
+            Show +100
+          </button>
+          <button onClick={() => showMore(300)} style={{ fontSize: 20, padding: '10px 20px', cursor: 'pointer' }}>
+            Show +300
+          </button>
+          <br />
+          <br />
+        </div>
+      )}
     </div>
   );
 };

@@ -43,7 +43,7 @@ export class Reviewer {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
     courseId: number | undefined = undefined,
-    lessonId: number | undefined = undefined,
+    private lessonId: number | undefined = undefined,
     private mode: 'endless' | 'normal' = 'normal',
     avoidStorage = false,
     private cardsDatabase = generateIndexedDatabase(),
@@ -64,6 +64,7 @@ export class Reviewer {
         }
       }
     }
+    console.log(this.allTestableCards);
   }
 
   getClosestDueDate = (card: AnyCard) => {
@@ -83,10 +84,22 @@ export class Reviewer {
 
   getDueCardsCount = (accordingToDate = Date.now()) => {
     const probabilities = this.calculateProbabilities(accordingToDate);
-    return probabilities.filter((record) => record.isReadyForReview).length;
+    return probabilities.filter((record) => record.isCriticalForReview || record.isReadyForReview).length;
   };
 
   private calculateProbabilities = (currentDate = Date.now()) => {
+    const lastCards = this.prevReviews.getHistoryForLastPeriod(LAST_PERIOD_TO_CONSIDER, currentDate);
+
+    const lastNCards = this.prevReviews.getLastNHistory(LAST_CARDS_COUNT_TO_CONSIDER);
+
+    const numOfViewedCard = lastCards.filter(
+      (e) => e.mode === CardViewMode.groupView || e.mode === CardViewMode.individualView,
+    ).length;
+    const numOfGroupViewedCard = Math.max(
+      lastCards.filter((e) => e.mode === CardViewMode.groupView).length,
+      lastNCards.filter((e) => e.mode === CardViewMode.groupView).length,
+    );
+
     type GroupMeta = {
       lastViewDate: number;
       numOfCards: number;
@@ -232,24 +245,7 @@ export class Reviewer {
             ...{ lastNormalizedViewDate, lastGroupViewDate, reviewDue1: reviewDue, finalReviewDue, prevGroupReviewDue },
           };
         },
-      );
-  };
-
-  getNextCard = (currentDate = Date.now()) => {
-    console.log('#q', this.prevReviews.getLastNHistory(Infinity).length + 1);
-    const lastCards = this.prevReviews.getHistoryForLastPeriod(LAST_PERIOD_TO_CONSIDER, currentDate);
-
-    const lastNCards = this.prevReviews.getLastNHistory(LAST_CARDS_COUNT_TO_CONSIDER);
-
-    const numOfViewedCard = lastCards.filter(
-      (e) => e.mode === CardViewMode.groupView || e.mode === CardViewMode.individualView,
-    ).length;
-    const numOfGroupViewedCard = Math.max(
-      lastCards.filter((e) => e.mode === CardViewMode.groupView).length,
-      lastNCards.filter((e) => e.mode === CardViewMode.groupView).length,
-    );
-
-    const sorted = this.calculateProbabilities(currentDate)
+      )
       .filter((e) => !e.isBlockedByPreviousGroup)
       .sort((a, b) => {
         if (a.isCriticalForReview && !b.isCriticalForReview) return -1;
@@ -260,17 +256,21 @@ export class Reviewer {
       })
       .map((a) => {
         const viewMode = getCardViewMode(a);
-        let shouldBe = true;
+        let isTestNotRecommended = false;
+        let isViewNotRecommended = false;
         if (
           (viewMode !== CardViewMode.test && numOfViewedCard >= MAX_NUM_OF_VIEW_CARDS) ||
-          (viewMode === CardViewMode.groupView && numOfGroupViewedCard >= MAX_NUM_OF_GROUP_VIEW_CARDS) ||
-          this.prevReviews.isInSession(a.record, CardViewMode.individualView, lastNCards) ||
-          this.prevReviews.isInSession(a.record, viewMode, lastNCards)
+          (viewMode === CardViewMode.groupView && numOfGroupViewedCard >= MAX_NUM_OF_GROUP_VIEW_CARDS)
         ) {
-          shouldBe = false;
-          // eslint-disable-next-line sonarjs/no-duplicated-branches
+          isViewNotRecommended = true;
+          isTestNotRecommended = true;
+        } else if (
+          this.prevReviews.isInSession(a.record, viewMode, lastNCards) ||
+          this.prevReviews.isInSession(a.record, CardViewMode.individualView, lastNCards)
+        ) {
+          isTestNotRecommended = true;
         }
-        return { ...a, shouldBe, viewMode };
+        return { ...a, isViewNotRecommended, isTestNotRecommended, viewMode };
       })
       .filter((a) => {
         return (
@@ -280,28 +280,39 @@ export class Reviewer {
         );
       })
       .sort((a, b) => {
-        if (a.shouldBe && !b.shouldBe) return -1;
-        if (!a.shouldBe && b.shouldBe) return 1;
+        if (!a.isTestNotRecommended && b.isTestNotRecommended) return -1;
+        if (a.isTestNotRecommended && !b.isTestNotRecommended) return 1;
+        if (!a.isViewNotRecommended && b.isViewNotRecommended) return -1;
+        if (a.isViewNotRecommended && !b.isViewNotRecommended) return 1;
         return 0;
       });
+  };
+
+  getNextCard = (currentDate = Date.now()) => {
+    console.log('#q', this.prevReviews.getLastNHistory(Infinity).length + 1);
+
+    const sorted = this.calculateProbabilities(currentDate);
     console.log(sorted);
     const topCard = sorted[0];
-    if (
-      !topCard ||
-      (this.mode === 'normal' && topCard.isTested && !topCard.isCriticalForReview && !topCard.isReadyForReview)
-    ) {
+    const shouldFinish =
+      this.mode === 'normal' &&
+      sorted.every((card) => card.isTested && !card.isCriticalForReview && !card.isReadyForReview);
+    if (!topCard || shouldFinish) {
       return undefined;
     }
     const topCardViewType = getCardViewMode(topCard);
-    if (topCardViewType === CardViewMode.groupView || topCardViewType === CardViewMode.individualView) {
-      const newSorted = sorted
-        .filter(
-          (e) => e.shouldBe && (e.viewMode === CardViewMode.groupView || e.viewMode === CardViewMode.individualView),
-        )
-        .sort((a, b) => {
-          if (a.groupLevel !== b.groupLevel) return (a.groupLevel ?? 0) - (b.groupLevel ?? 0);
-          return 0;
-        });
+    if (
+      typeof this.lessonId === 'number' &&
+      (topCardViewType === CardViewMode.groupView || topCardViewType === CardViewMode.individualView)
+    ) {
+      // only prioritize next cards of lower group-level in case user is inside the specific lesson
+      const newSorted = sorted.filter(
+        (e) => e.viewMode === CardViewMode.groupView || e.viewMode === CardViewMode.individualView,
+      );
+      newSorted.sort((a, b) => {
+        if (a.groupLevel !== b.groupLevel) return (a.groupLevel ?? 0) - (b.groupLevel ?? 0);
+        return 0;
+      });
       if (newSorted[0]) return newSorted[0];
     }
     return topCard;
