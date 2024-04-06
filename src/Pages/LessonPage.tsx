@@ -35,18 +35,20 @@ const LessonPage = () => {
   const myLesson = myCourse.lessons.find((lesson) => lesson.id === lessonId);
   if (!myLesson) return <div>Lesson not found</div>;
 
+  const lessonCards = myLesson.cards.filter((e) => !e.hidden);
+
   return (
     <div className='body'>
       <div>
         <span onClick={goToCourse} style={{ textDecoration: 'underline', cursor: 'pointer' }}>
           {myCourse.title}
         </span>{' '}
-        - {myLesson.title} ({myLesson.cards.length} items)
+        - {myLesson.title} ({lessonCards.length} items)
       </div>
       <ReviewButtons courseId={courseId} lessonId={lessonId} />
       <table className={cssModule.lessonTable}>
         <tbody>
-          {myLesson.cards.map((lessonCard) => {
+          {lessonCards.map((lessonCard) => {
             const key = lessonCard.type + lessonCard.value;
             const card = getCard(lessonCard);
             if (!card) {

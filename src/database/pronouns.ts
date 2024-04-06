@@ -423,4 +423,68 @@ export const pronouns: Pronoun[] = [
       'all - the only thing; followed by a relative clause; anything; everything; all Adj. - used before noun; owt - northern English dialect: "anything"; the whole lot',
     variants: [],
   },
+  {
+    type: CardType.PRONOUN,
+    value: 'alle',
+    translation: 'everybody; everyone; all and sundry; all of them',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'aller', 'alle'],
+          [Case.Genitiv, 'allen', 'aller'],
+          [Case.Dativ, 'allem', 'aller'],
+          [Case.Akkusativ, 'allen', 'alle'],
+        ],
+      },
+    ],
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'der',
+    translation: 'which; who; that (masc)',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'der', 'die'],
+          [Case.Genitiv, 'dessen', 'derer/deren'],
+          [Case.Dativ, 'dem', 'denen'],
+          [Case.Akkusativ, 'den', 'die'],
+        ],
+      },
+    ],
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'die',
+    translation: 'which; who; that (fem)',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'die', 'die'],
+          [Case.Genitiv, 'deren', 'derer/deren'],
+          [Case.Dativ, 'der', 'denen'],
+          [Case.Akkusativ, 'die', 'die'],
+        ],
+      },
+    ],
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'das',
+    translation: 'which; that (neut.)',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'das', 'die'],
+          [Case.Genitiv, 'dessen', 'derer/deren'],
+          [Case.Dativ, 'dem', 'denen'],
+          [Case.Akkusativ, 'das', 'die'],
+        ],
+      },
+    ],
+  },
 ];

@@ -56,6 +56,7 @@ export class Reviewer {
       for (const lesson of course.lessons) {
         if (lessonId && lesson.id !== lessonId) continue;
         for (const lessonCard of lesson.cards) {
+          if (lessonCard.hidden) continue;
           const card = this.cardsDatabase[lessonCard.type]?.[lessonCard.value];
           if (!card) continue;
           const testableCards = generateTestableCards(card);

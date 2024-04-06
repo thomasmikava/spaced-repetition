@@ -9,6 +9,7 @@ import {
   VerbPronoun,
   VerbTense,
 } from '../database/types';
+import { slashSplit } from '../utils/split';
 
 export const getAdjectiveStandardForm = (
   adjective: string | null,
@@ -18,6 +19,11 @@ export const getAdjectiveStandardForm = (
   case_: Case,
 ): string | null => {
   if (!adjective) return null;
+  if (adjective.includes('/')) {
+    return slashSplit(adjective)
+      .map((v) => getAdjectiveStandardForm(v, degree, inflection, gender, case_))
+      .join('/');
+  }
   let word = adjective;
   if (degree === AdjectiveDegree.Superlativ) {
     const [firstValue, secondValue] = separateBySpace(adjective);

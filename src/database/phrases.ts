@@ -49,4 +49,9 @@ export const phrases: Phrase[] = [
     value: 'Na',
     translation: 'well; why',
   },
+  {
+    type: CardType.PHRASE,
+    value: 'Achtung',
+    translation: 'Attention!; Heads up!; Look out!; Caution!',
+  },
 ];
