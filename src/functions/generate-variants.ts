@@ -14,6 +14,7 @@ import type {
   AdjectiveTestableCard,
   AnyTestableCard,
   ArticleTestableCard,
+  GeneralTestableCard,
   NounTestableCard,
   PronounTestableCard,
   VerbTestableCard,
@@ -22,6 +23,7 @@ import {
   generateNounStandardVariant,
   getAdjectiveStandardForm,
   getAdjectiveTrioStandardForm,
+  getPronounStandardForm,
   getVerbStandardForm,
 } from './standard-forms';
 import { getPartOfSentenceNames } from './texts';
@@ -276,14 +278,15 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       ];
     }
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
+    const restVariants: PronounTestableCard[] = [];
     for (const variant of card.variants) {
       for (const [case_, ...rest] of variant.values) {
         rest.forEach((value, index, arr) => {
           if (value === null) return;
-          const gender = variant.function === PronounFunction.Declanation ? null : genders[index];
+          const gender = variant.function === PronounFunction.Declanation && rest.length < 4 ? null : genders[index];
           const pluralIndex = arr.length - 1;
           const number = index >= pluralIndex ? NounNumber.plural : NounNumber.singular;
-          allVariants.push({
+          restVariants.push({
             type: CardType.PRONOUN,
             card,
             initial: false,
@@ -292,6 +295,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
             hasGroupViewMode: true,
             hasIndividualViewMode: false,
             function: variant.function,
+            isStandardForm: getPronounStandardForm(card.value, variant.function, number, gender, case_) === value,
             variant: {
               case: case_,
               gender,
@@ -303,10 +307,24 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         });
       }
     }
+    const standardFormed = addGroupStandardFormFlag(restVariants);
+    allVariants.push(...standardFormed);
     return allVariants;
   }
   throw new Error('Unsupported card type ' + (card as Record<string, unknown>).type);
 }
+
+const addGroupStandardFormFlag = <T extends GeneralTestableCard>(variants: T[]): T[] => {
+  return groupArray(
+    variants,
+    (e) => e.groupViewKey,
+    (grouped): T[] => {
+      const areAllStandard = grouped.every((e) => e.isStandardForm);
+      if (!areAllStandard) return grouped;
+      return grouped.map((e) => ({ ...e, isGroupStandardForm: true }));
+    },
+  ).flat(1);
+};
 
 function addPreviousGroups(allVariants: AnyTestableCard[]): AnyTestableCard[] {
   let lastGroupKey: string | null = null;

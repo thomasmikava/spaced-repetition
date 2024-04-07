@@ -431,10 +431,10 @@ export const pronouns: Pronoun[] = [
       {
         function: PronounFunction.Declanation,
         values: [
-          [Case.Nominativ, 'aller', 'alle'],
-          [Case.Genitiv, 'allen', 'aller'],
-          [Case.Dativ, 'allem', 'aller'],
-          [Case.Akkusativ, 'allen', 'alle'],
+          [Case.Nominativ, 'aller', 'alle', 'alles', 'alle'],
+          [Case.Genitiv, 'allen', 'aller', 'allen', 'aller'],
+          [Case.Dativ, 'allem', 'aller', 'allem', 'allen'],
+          [Case.Akkusativ, 'allen', 'alle', 'alles', 'alle'],
         ],
       },
     ],

@@ -1,4 +1,5 @@
 import { formatTime } from '../utils/time';
+import { globalHistory } from './history';
 import type {
   AllCardsReviewHistory,
   AnyReviewHistory,
@@ -17,21 +18,22 @@ import {
   secondsUntilProbabilityIsHalf,
 } from './reviews';
 
-const REVIEWS_HISTORY_KEY = 'lastReviewHistory';
-
 type SessionHistory = { card: CardKeys; mode: CardViewMode; success: boolean; date: number; key: string };
 
 export class PreviousReviews {
-  constructor(private avoidStorage = false) {}
+  constructor(private avoidStorage = false) {
+    if (!this.avoidStorage) {
+      globalHistory.subscribe((value) => {
+        if (value.updater !== this.id) {
+          this._history = value.data;
+        }
+      });
+    }
+  }
+  private id = Math.random();
   getLastReviewHistory = (): AllCardsReviewHistory => {
     if (this.avoidStorage) return {};
-    try {
-      const value = JSON.parse(localStorage.getItem(REVIEWS_HISTORY_KEY) || '');
-      if (!value || typeof value !== 'object') return {};
-      return value;
-    } catch (e) {
-      return {};
-    }
+    return globalHistory.getMetaData() || {};
   };
 
   markAsSavedInDb = (keys: string[]) => {
@@ -68,7 +70,10 @@ export class PreviousReviews {
   }
   private set history(value: AllCardsReviewHistory) {
     this._history = value;
-    if (!this.avoidStorage) localStorage.setItem(REVIEWS_HISTORY_KEY, JSON.stringify(value));
+    if (!this.avoidStorage) {
+      globalHistory.broadcast({ updater: this.id, data: value });
+      globalHistory.setMetaData(value);
+    }
   }
 
   getCardHistory(card: CardKeys, mode: CardViewMode.test): TestReviewHistory | undefined;

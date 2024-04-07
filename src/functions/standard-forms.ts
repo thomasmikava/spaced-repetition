@@ -5,6 +5,7 @@ import {
   Case,
   NounGender,
   NounNumber,
+  PronounFunction,
   VerbMood,
   VerbPronoun,
   VerbTense,
@@ -271,4 +272,17 @@ export const getAdjectiveTrioStandardForm = (
 const addSuffixSafely = (word: string, suffix: string): string => {
   if (word.endsWith(suffix[0])) return word + suffix.substring(1);
   return word + suffix;
+};
+
+export const getPronounStandardForm = (
+  pronoun: string,
+  function_: PronounFunction,
+  _number: NounNumber,
+  gender: NounGender | null,
+  case_: Case,
+): string | null => {
+  if (function_ === PronounFunction.Declanation && gender !== null) {
+    return getAdjectiveStandardForm(pronoun, AdjectiveDegree.Positiv, AdjectiveInflection.Strong, gender, case_);
+  }
+  return null;
 };

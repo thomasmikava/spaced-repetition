@@ -169,7 +169,10 @@ export enum PronounFunction {
 
 interface PronounVariantDeclaration {
   function: PronounFunction.Declanation;
-  values: [Case, singularValue: string | null, pluralValue: string | null][];
+  values: (
+    | [Case, singularValue: string | null, pluralValue: string | null]
+    | [Case, masculineValue: string, feminineValue: string, neutralValue: string, pluralValue: string]
+  )[];
 }
 interface PronounVariantRegular {
   function:

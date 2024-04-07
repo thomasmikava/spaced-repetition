@@ -3853,6 +3853,11 @@ simple-get@^4.0.0, simple-get@^4.0.1:
     once "^1.3.1"
     simple-concat "^1.0.0"
 
+simple-subscriptions@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/simple-subscriptions/-/simple-subscriptions-0.0.3.tgz#b5b4df2f84d68b9c85df450cbd9a1fcb2c023bd0"
+  integrity sha512-pKrF4WvmCrVDPtOnSynMh3E2Jh1ah9KyPPJw/2XXNmD9o/ODFxhf1/O+GOtxPwF85V3mGH3KmRaRe43uSv6H6Q==
+
 simple-swizzle@^0.2.2:
   version "0.2.2"
   resolved "https://registry.npmjs.org/simple-swizzle/-/simple-swizzle-0.2.2.tgz"

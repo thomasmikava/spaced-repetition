@@ -76,7 +76,7 @@ export type CardKeys = {
   previousGroupViewKey?: string | null;
   groupLevel?: number;
 };
-type GeneralTestableCard = CardKeys & {
+export type GeneralTestableCard = CardKeys & {
   hasGroupViewMode: boolean;
   hasIndividualViewMode: boolean;
   isStandardForm?: boolean;
