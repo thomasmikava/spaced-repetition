@@ -59,7 +59,14 @@ const normalizeError = <T>(promise: Promise<AxiosResponse<T>>): Promise<T> => {
   return promise
     .then((response) => response.data)
     .catch((error) => {
+      console.log(JSON.stringify(error), error);
       if (isAxiosError(error)) {
+        if (error.message === 'Network Error') {
+          throw {
+            status: null,
+            networkError: true,
+          };
+        }
         const standardError: GeneralError = {
           status: error.response && !isNaN(error.response.status) ? +error.response.status : 0,
           data: error.response?.data,

@@ -33,7 +33,11 @@ export class PreviousReviews {
   private id = Math.random();
   getLastReviewHistory = (): AllCardsReviewHistory => {
     if (this.avoidStorage) return {};
-    return globalHistory.getMetaData() || {};
+    try {
+      return globalHistory.getMetaData() || {};
+    } catch (e) {
+      return {};
+    }
   };
 
   markAsSavedInDb = (keys: string[]) => {
@@ -58,7 +62,11 @@ export class PreviousReviews {
   ) => {
     const history = overwrite ? {} : { ...this.history };
     for (const record of data) {
-      history[record.key] = { ...record, savedInDb: true };
+      history[record.key.toLowerCase()] = {
+        ...record,
+        ...{ key: record.key.toLowerCase() },
+        savedInDb: true,
+      };
     }
     this.history = history;
   };
@@ -84,7 +92,7 @@ export class PreviousReviews {
     return this.history[key];
   }
   private getFinalKey = (card: CardKeys, mode: CardViewMode) =>
-    mode + '@' + (mode === CardViewMode.groupView ? card.groupViewKey : card.testKey);
+    mode + '@' + (mode === CardViewMode.groupView ? card.groupViewKey : card.testKey)?.toLowerCase();
 
   private currentSessionCards: SessionHistory[] = [];
 

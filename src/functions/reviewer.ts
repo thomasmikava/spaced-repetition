@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/cognitive-complexity */
 import type { LessonCard } from '../courses/lessons';
 import { courses } from '../courses/lessons';
 import type { AnyCard } from '../database/types';
@@ -65,7 +66,7 @@ export class Reviewer {
         }
       }
     }
-    console.log(this.allTestableCards);
+    console.log('this.allTestableCards', this.allTestableCards);
   }
 
   getClosestDueDate = (card: AnyCard) => {
@@ -85,7 +86,12 @@ export class Reviewer {
 
   getDueCardsCount = (accordingToDate = Date.now()) => {
     const probabilities = this.calculateProbabilities(accordingToDate);
-    return probabilities.filter((record) => record.isCriticalForReview || record.isReadyForReview).length;
+    const dueReview = probabilities.filter((record) => record.isCriticalForReview || record.isReadyForReview);
+    const uniqueCards = new Set(dueReview.map((e) => e.record.card));
+    return {
+      dueReview: dueReview.length,
+      uniqueCards: uniqueCards.size,
+    };
   };
 
   private calculateProbabilities = (currentDate = Date.now()) => {
@@ -107,19 +113,35 @@ export class Reviewer {
       numOfTestableCards: number;
       numOfTestedCards: number;
       minReviewDue: number;
+      prevGroupMetaKey: string | null | undefined;
     };
     const groupsMetaData: {
       [key in string]?: GroupMeta;
     } = {};
-    const grouplessMetaData: {
-      [key in string]?: GroupMeta;
-    } = {};
     const getSingleKey = (card: AnyTestableCard['card']) => card.type + '*' + (card.uniqueValue ?? card.value);
+    const blockCache: Record<string, boolean | undefined> = {};
+    const updateIsAnyPrevGroupBlocked = (groupKey: string): boolean => {
+      if (typeof blockCache[groupKey] === 'boolean') return blockCache[groupKey] ?? false;
+      let isBlocked: boolean;
+      const groupRecord = groupsMetaData[groupKey];
+      if (!groupRecord) isBlocked = false;
+      else if (groupRecord.numOfTestedCards < groupRecord.numOfTestableCards) isBlocked = true;
+      else if (groupRecord.prevGroupMetaKey) isBlocked = updateIsAnyPrevGroupBlocked(groupRecord.prevGroupMetaKey);
+      else isBlocked = false;
+      blockCache[groupKey] = isBlocked;
+      return isBlocked;
+    };
     return this.allTestableCards
       .map((record) => {
         const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
         const individualViewRecord = this.prevReviews.getCardHistory(record, CardViewMode.individualView);
         const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView);
+
+        const prevKey = record.previousGroupViewKey
+          ? record.previousGroupViewKey
+          : record.initial
+            ? undefined
+            : getSingleKey(record.card);
 
         if (record.groupViewKey) {
           const isTestable = !record.isStandardForm || record.isGroupStandardForm === false ? 1 : 0;
@@ -129,6 +151,7 @@ export class Reviewer {
             numOfTestedCards: 0,
             numOfTestableCards: 0,
             minReviewDue: Infinity,
+            prevGroupMetaKey: prevKey,
           };
           groupRecord.numOfCards++;
           if (historyRecord) groupRecord.numOfTestedCards++;
@@ -141,12 +164,13 @@ export class Reviewer {
           }
           groupsMetaData[record.groupViewKey] = groupRecord;
         } else if (record.initial) {
-          grouplessMetaData[getSingleKey(record.card)] = {
+          groupsMetaData[getSingleKey(record.card)] = {
             lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
             numOfCards: 1,
             numOfTestableCards: !record.isStandardForm || record.isGroupStandardForm === false ? 1 : 0,
             numOfTestedCards: historyRecord ? 1 : 0,
             minReviewDue: Infinity,
+            prevGroupMetaKey: prevKey,
           };
         }
         return {
@@ -180,7 +204,7 @@ export class Reviewer {
           const groupRecord = groupsMetaData[record.groupViewKey];
           if (groupRecord) groupRecord.minReviewDue = Math.min(groupRecord.minReviewDue, reviewDue);
         } else if (record.initial) {
-          const meta = grouplessMetaData[getSingleKey(record.card)];
+          const meta = groupsMetaData[getSingleKey(record.card)];
           if (meta) meta.minReviewDue = reviewDue;
         }
 
@@ -208,19 +232,17 @@ export class Reviewer {
         }): CardWithProbability => {
           // if (i === 0) console.log(groupLastViewDates);
           const isTested = !!historyRecord;
-          const prevGroupMeta = record.previousGroupViewKey
-            ? groupsMetaData[record.previousGroupViewKey]
+          const prevKey = record.previousGroupViewKey
+            ? record.previousGroupViewKey
             : record.initial
               ? undefined
-              : grouplessMetaData[getSingleKey(record.card)];
-          const isBlockedByPreviousGroup = prevGroupMeta
-            ? prevGroupMeta.numOfTestedCards < prevGroupMeta.numOfTestableCards
-            : false;
-          const prevGroupReviewDue = record.previousGroupViewKey
-            ? (groupsMetaData[record.previousGroupViewKey]?.minReviewDue ?? -Infinity) - 1
-            : record.initial
-              ? -Infinity
-              : (grouplessMetaData[getSingleKey(record.card)]?.minReviewDue ?? -Infinity) - 1;
+              : getSingleKey(record.card);
+          const prevGroupMeta = prevKey ? groupsMetaData[prevKey] : undefined;
+          const isAnyPrevGroupBlocked = prevKey ? updateIsAnyPrevGroupBlocked(prevKey) : false;
+          const isBlockedByPreviousGroup =
+            isAnyPrevGroupBlocked ||
+            (prevGroupMeta ? prevGroupMeta.numOfTestedCards < prevGroupMeta.numOfTestableCards : false);
+          const prevGroupReviewDue = prevKey ? (groupsMetaData[prevKey]?.minReviewDue ?? -Infinity) - 1 : -Infinity;
           // console.log(minReviewDue);
           const finalReviewDue =
             isTested && prevGroupReviewDue !== -Infinity && prevGroupReviewDue - reviewDue <= 60

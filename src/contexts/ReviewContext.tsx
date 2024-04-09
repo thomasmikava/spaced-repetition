@@ -1,5 +1,5 @@
 import type { FC, ReactElement } from 'react';
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useRef, useState } from 'react';
 import { useInterval } from '../utils/hooks';
 import { PreviousReviews } from '../functions/previous-reviews';
 import type { PostHistoryRecordsReqDTO } from '../api/controllers/history/history.schema';
@@ -14,14 +14,31 @@ export const ReviewContextProvider: FC<{ children: ReactElement }> = ({ children
   const { isSignedIn } = useAuth();
   const { data } = useHistoryRecords(!isSignedIn);
   const [updated, setUpdated] = useState(false);
+  const updatingCountRef = useRef(0);
 
   const { mutateAsync } = useHistoryPushChange();
   useInterval(() => {
     const updatedItems = getUpdatedItems();
-    if (updatedItems.length > 0) {
-      mutateAsync(updatedItems).then(() => {
-        updateStorage(updatedItems);
-      });
+    function update(items: PostHistoryRecordsReqDTO) {
+      updatingCountRef.current++;
+      return mutateAsync(items)
+        .then(() => {
+          updatingCountRef.current--;
+          updateStorage(updatedItems);
+        })
+        .catch((e) => {
+          console.log(JSON.stringify(e), JSON.parse(JSON.stringify(e)), isNetworkError(e));
+          if (!isNetworkError(e) && items.length > 1) {
+            const firstHalf = items.slice(0, Math.floor(items.length / 2));
+            const secondHalf = items.slice(Math.floor(items.length / 2));
+            update(firstHalf);
+            update(secondHalf);
+          }
+          updatingCountRef.current--;
+        });
+    }
+    if (updatedItems.length > 0 && !updatingCountRef.current) {
+      update(updatedItems);
       console.log('updatedItems', updatedItems);
     }
   }, 5 * 1000);
@@ -34,6 +51,10 @@ export const ReviewContextProvider: FC<{ children: ReactElement }> = ({ children
 
   if (!updated && isSignedIn) return <div className='body'>Loading...</div>;
   return <ReviewContext.Provider value={{}}>{children}</ReviewContext.Provider>;
+};
+
+const isNetworkError = (e: unknown): boolean => {
+  return typeof e === 'object' && !!e && 'networkError' in e && !!e.networkError;
 };
 
 function getUpdatedItems() {

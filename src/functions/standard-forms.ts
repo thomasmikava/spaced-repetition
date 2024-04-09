@@ -12,17 +12,68 @@ import {
 } from '../database/types';
 import { slashSplit } from '../utils/split';
 
+export const getAdjectiveTrioStandardForm = (
+  adjective: string,
+  degree: AdjectiveDegree.Komparativ | AdjectiveDegree.Superlativ,
+): string | null => {
+  if (degree === AdjectiveDegree.Komparativ) {
+    if (containsOneUmlautableVowel(adjective)) return null; //can't guess if it should be replaced to umlaut or not
+    return addSuffixSafely(adjective, 'er');
+  }
+
+  const lastLetter = adjective[adjective.length - 1];
+  if (degree === AdjectiveDegree.Superlativ) {
+    if (lastLetter === 'u') return `am ${adjective}sten/${adjective}esten`;
+    return requiredAddingVowelE(adjective, 't') ? `am ${adjective}esten` : `am ${adjective}sten`;
+  }
+  return null;
+};
+
+/**
+ * Checks if the word contains exactly one vowel and that is umlautable vowel - [aou]
+ */
+const containsOneUmlautableVowel = (word: string): boolean => {
+  const vowels = 'aeiouäöü';
+  const umlautableVowels = 'aou';
+  let vowelsCount = 0;
+  let umlautableVowelsCount = 0;
+  for (let i = 0; i < word.length; i++) {
+    if (umlautableVowels.includes(word[i])) {
+      umlautableVowelsCount++;
+    }
+    if (vowels.includes(word[i])) {
+      vowelsCount++;
+    }
+  }
+  return vowelsCount === 1 && umlautableVowelsCount === 1;
+};
+
 export const getAdjectiveStandardForm = (
   adjective: string | null,
+  nominativeValue: string | null,
   degree: AdjectiveDegree,
   inflection: AdjectiveInflection,
   gender: NounGender,
   case_: Case,
 ): string | null => {
   if (!adjective) return null;
+  if (nominativeValue && nominativeValue.includes('/')) {
+    return slashSplit(nominativeValue)
+      .map((v) => getAdjectiveStandardForm(adjective, v, degree, inflection, gender, case_))
+      .join('/');
+  }
+  if (nominativeValue) {
+    const suffix = AdjectiveSuffixes[inflection][NounGender.Maskulinum][Case.Nominativ];
+    if (!nominativeValue.endsWith(suffix)) return null;
+    return (
+      nominativeValue.substring(0, nominativeValue.length - suffix.length) +
+      AdjectiveSuffixes[inflection][gender][case_]
+    );
+  }
+
   if (adjective.includes('/')) {
     return slashSplit(adjective)
-      .map((v) => getAdjectiveStandardForm(v, degree, inflection, gender, case_))
+      .map((v) => getAdjectiveStandardForm(v, nominativeValue, degree, inflection, gender, case_))
       .join('/');
   }
   let word = adjective;
@@ -133,6 +184,8 @@ export function getVerbStandardForm(
   // const rootLastLetter = root.slice(-1);
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
     return getDefaultPresentConjugation(verb, pronoun);
+  } else if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präteritum) {
+    return getDefaultPastConjugation(verb, pronoun);
   } else if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
     const perfectRoot = 'ge' + root + 't';
     return DEFAULT_VERBS.haben_present[pronoun] + ' ' + perfectRoot;
@@ -144,12 +197,38 @@ const getDefaultPresentConjugation = (verb: string, pronoun: VerbPronoun): strin
   const root = verb.slice(0, -2);
   const rootLastLetter = root.slice(-1);
   if (pronoun === VerbPronoun.ich) return root + 'e';
-  if (pronoun === VerbPronoun.du) return rootLastLetter === 's' || rootLastLetter === 'ß' ? root + 't' : root + 'st';
-  if (pronoun === VerbPronoun.er_sie_es) return root + 't';
+  if (pronoun === VerbPronoun.du) {
+    if (rootLastLetter === 's' || rootLastLetter === 'ß') return root + 't';
+    return requiredAddingVowelE(root, 't') ? root + 'est' : root + 'st';
+  }
+  if (pronoun === VerbPronoun.er_sie_es) return requiredAddingVowelE(root, 't') ? root + 'et' : root + 't';
   if (pronoun === VerbPronoun.wir) return verb;
-  if (pronoun === VerbPronoun.ihr) return root + 't';
+  if (pronoun === VerbPronoun.ihr) return requiredAddingVowelE(root, 't') ? root + 'et' : root + 't';
   if (pronoun === VerbPronoun.sie_Sie) return verb;
   return null;
+};
+
+const getDefaultPastConjugation = (verb: string, pronoun: VerbPronoun): string | null => {
+  const root = verb.slice(0, -2);
+  const pastRoot = requiredAddingVowelE(root, 't') ? root + 'et' : root + 't';
+  return getConjugatedPastFromRoot(pastRoot, pronoun);
+};
+const getConjugatedPastFromRoot = (pastRoot: string, pronoun: VerbPronoun) => {
+  if (pronoun === VerbPronoun.ich) return pastRoot + 'e';
+  if (pronoun === VerbPronoun.du) return requiredAddingVowelE(pastRoot, 't') ? pastRoot + 'est' : pastRoot + 'st';
+  if (pronoun === VerbPronoun.er_sie_es) return pastRoot + 'e'; // different from present form
+  if (pronoun === VerbPronoun.wir) return pastRoot + 'en';
+  if (pronoun === VerbPronoun.ihr) return requiredAddingVowelE(pastRoot, 't') ? pastRoot + 'et' : pastRoot + 't';
+  if (pronoun === VerbPronoun.sie_Sie) return pastRoot + 'en';
+  return null;
+};
+
+const requiredAddingVowelE = (word: string, toAdd: string): boolean => {
+  const lastLetter = word.slice(-1);
+  if (toAdd === 't') {
+    return lastLetter === 't' || lastLetter === 'd';
+  }
+  return false;
 };
 
 function getVerbStandardFormBasedOnFirstPronoun(
@@ -164,6 +243,11 @@ function getVerbStandardFormBasedOnFirstPronoun(
     if (secondPart === DEFAULT_PRONOUNS.a[VerbPronoun.ich]) {
       return getDefaultPresentConjugation(verb, pronoun) + ' ' + DEFAULT_PRONOUNS.a[pronoun];
     }
+  }
+  if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präteritum) {
+    if (pronoun === VerbPronoun.er_sie_es || pronoun === VerbPronoun.es) return firstPronounForm;
+    const firstRoot = firstPronounForm.endsWith('e') ? firstPronounForm.slice(0, -1) : firstPronounForm;
+    return getConjugatedPastFromRoot(firstRoot, pronoun);
   }
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
     const [firstPart, secondPart] = separateBySpace(firstPronounForm);
@@ -256,19 +340,6 @@ export const generateNounStandardVariant = (
   return null;
 };
 
-export const getAdjectiveTrioStandardForm = (
-  adjective: string,
-  degree: AdjectiveDegree.Komparativ | AdjectiveDegree.Superlativ,
-): string | null => {
-  if (degree === AdjectiveDegree.Komparativ) return addSuffixSafely(adjective, 'er');
-
-  const lastLetter = adjective[adjective.length - 1];
-  if (degree === AdjectiveDegree.Superlativ) {
-    return lastLetter === 'u' ? `am ${adjective}sten/${adjective}esten` : `am ${adjective}sten`;
-  }
-  return null;
-};
-
 const addSuffixSafely = (word: string, suffix: string): string => {
   if (word.endsWith(suffix[0])) return word + suffix.substring(1);
   return word + suffix;
@@ -276,13 +347,22 @@ const addSuffixSafely = (word: string, suffix: string): string => {
 
 export const getPronounStandardForm = (
   pronoun: string,
+  _nominativeValue: string | null,
+  nominativeMasculineValue: string | null,
   function_: PronounFunction,
   _number: NounNumber,
   gender: NounGender | null,
   case_: Case,
 ): string | null => {
   if (function_ === PronounFunction.Declanation && gender !== null) {
-    return getAdjectiveStandardForm(pronoun, AdjectiveDegree.Positiv, AdjectiveInflection.Strong, gender, case_);
+    return getAdjectiveStandardForm(
+      pronoun,
+      nominativeMasculineValue,
+      AdjectiveDegree.Positiv,
+      AdjectiveInflection.Strong,
+      gender,
+      case_,
+    );
   }
   return null;
 };

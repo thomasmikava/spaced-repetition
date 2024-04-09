@@ -190,8 +190,10 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
     }
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
     for (const variant of card.variants) {
-      const additionalVariants: AdjectiveTestableCard[] = [];
+      const nominativeCase = variant.values.find((e) => e[0] === Case.Nominativ);
+      const nominativeMasculine = (nominativeCase as string[] | undefined)?.[1] ?? null;
       for (const [case_, ...rest] of variant.values) {
+        const additionalVariants: AdjectiveTestableCard[] = [];
         rest.forEach((value, index) => {
           let rootValue: string | null = card.value;
           if (variant.degree === AdjectiveDegree.Komparativ) rootValue = card.komparativ;
@@ -207,7 +209,15 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
             hasGroupViewMode: true,
             hasIndividualViewMode: false,
             isStandardForm:
-              value === getAdjectiveStandardForm(rootValue, variant.degree, variant.inflection, gender, case_),
+              value ===
+              getAdjectiveStandardForm(
+                rootValue,
+                case_ === Case.Nominativ && gender === NounGender.Maskulinum ? null : nominativeMasculine,
+                variant.degree,
+                variant.inflection,
+                gender,
+                case_,
+              ),
             variant: {
               case: case_,
               degree: variant.degree,
@@ -280,12 +290,15 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
     const restVariants: PronounTestableCard[] = [];
     for (const variant of card.variants) {
+      const nominativeCase = variant.values.find((e) => e[0] === Case.Nominativ);
+      const nominativeMasculine = (nominativeCase as string[] | undefined)?.[1] ?? null;
       for (const [case_, ...rest] of variant.values) {
         rest.forEach((value, index, arr) => {
           if (value === null) return;
           const gender = variant.function === PronounFunction.Declanation && rest.length < 4 ? null : genders[index];
           const pluralIndex = arr.length - 1;
           const number = index >= pluralIndex ? NounNumber.plural : NounNumber.singular;
+          const nominativeValue = (nominativeCase as string[] | undefined)?.[index + 1] ?? null;
           restVariants.push({
             type: CardType.PRONOUN,
             card,
@@ -295,7 +308,18 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
             hasGroupViewMode: true,
             hasIndividualViewMode: false,
             function: variant.function,
-            isStandardForm: getPronounStandardForm(card.value, variant.function, number, gender, case_) === value,
+            isStandardForm:
+              getPronounStandardForm(
+                card.value,
+                case_ === Case.Nominativ ? null : nominativeValue,
+                (case_ === Case.Nominativ && gender === NounGender.Maskulinum) || gender === null
+                  ? null
+                  : nominativeMasculine,
+                variant.function,
+                number,
+                gender,
+                case_,
+              ) === value,
             variant: {
               case: case_,
               gender,
@@ -373,5 +397,16 @@ function removeUnnecessaryGroups(allVariants: AnyTestableCard[]): AnyTestableCar
 }
 
 export function generateTestableCards(card: AnyCard): AnyTestableCard[] {
-  return removeUnnecessaryGroups(addPreviousGroups(_generateTestableCards(card)));
+  return removeUnnecessaryGroups(addPreviousGroups(lowercaseKeys(_generateTestableCards(card))));
 }
+
+const lowercaseKeys = <T extends GeneralTestableCard>(variants: T[]): T[] => {
+  return variants.map((variant) => {
+    return {
+      ...variant,
+      groupViewKey: variant.groupViewKey?.toLowerCase() ?? null,
+      testKey: variant.testKey.toLowerCase(),
+      previousGroupViewKey: variant.previousGroupViewKey?.toLowerCase() ?? null,
+    };
+  });
+};

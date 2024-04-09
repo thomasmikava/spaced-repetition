@@ -14,7 +14,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
 
   const [reviewer] = useState(() => new Reviewer(courseId, lessonId));
 
-  const dueCardsCount = reviewer.getDueCardsCount();
+  const { dueReview, uniqueCards } = reviewer.getDueCardsCount();
 
   const handleReview = (endless: boolean) => {
     const params = [];
@@ -26,7 +26,15 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
 
   return (
     <div className={cssModule.buttonsContainer}>
-      <button onClick={() => handleReview(false)}>Review {`(${dueCardsCount})`}</button>
+      <button onClick={() => handleReview(false)}>
+        Review
+        {dueReview > 0 && (
+          <>
+            : {`${dueReview} `}
+            <sup>{`(${uniqueCards})`}</sup>
+          </>
+        )}
+      </button>
       <button onClick={() => handleReview(true)}>Endless review</button>
     </div>
   );
