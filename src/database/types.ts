@@ -57,6 +57,7 @@ export interface Verb extends Card {
   type: CardType.VERB;
   value: string;
   translation: string;
+  translations: [schema: string, translation: string][];
   variants: VerbVariant[];
 }
 

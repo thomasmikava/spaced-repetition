@@ -57,6 +57,11 @@ export interface ContentAfterAnswer {
   content: (AnyContent | null | undefined)[] | InnerContent;
 }
 
+export interface ContentBeforeAnswer {
+  type: 'beforeAnswer';
+  content: (AnyContent | null | undefined)[] | InnerContent;
+}
+
 export interface ContentInput {
   type: 'input';
   inputId?: string;
@@ -89,5 +94,6 @@ export type AnyContent =
   | ContentTable
   | ContentInput
   | ContentAfterAnswer
+  | ContentBeforeAnswer
   | ContentExpandable;
 type InnerContent = string | number | AnyContent;

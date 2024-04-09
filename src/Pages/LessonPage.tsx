@@ -4,10 +4,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { LessonCard } from '../courses/lessons';
 import { courses } from '../courses/lessons';
 import { generateIndexedDatabase } from '../functions/generateIndexedDatabase';
+import type { AnyCard } from '../database/types';
 import { CardType } from '../database/types';
 import ReviewButtons from '../ReviewButtons';
 import { Reviewer } from '../functions/reviewer';
 import { formatTime } from '../utils/time';
+import { getWithArticle } from '../functions/texts';
 
 const LessonPage = () => {
   const params = useParams();
@@ -37,6 +39,13 @@ const LessonPage = () => {
 
   const lessonCards = myLesson.cards.filter((e) => !e.hidden);
 
+  const getCardDisplay = (card: AnyCard) => {
+    if (card.type === CardType.NOUN) {
+      return getWithArticle(card.value, card.gender);
+    }
+    return card.value;
+  };
+
   return (
     <div className='body'>
       <div>
@@ -62,7 +71,7 @@ const LessonPage = () => {
             return (
               <tr key={key} className={cssModule.row}>
                 <td className={cssModule.lessonCardType}>{toReadableType(card.type)}</td>
-                <td className={cssModule.lessonCardValue}>{card.value}</td>
+                <td className={cssModule.lessonCardValue}>{getCardDisplay(card)}</td>
                 <td className={cssModule.lessonCardTranslation}>{card.translation}</td>
                 <td className={cssModule.lessonCardTranslation}>
                   {closestDueDate === Infinity

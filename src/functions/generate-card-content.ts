@@ -242,6 +242,38 @@ const getPrepositionsTranslation = (variations: Preposition['variations']): AnyC
   });
 };
 
+const getVerbTranslationsContent = (translations: [string, string][], cardValue: string | null): AnyContent[] => {
+  return translations
+    .map(([info, translation]): AnyContent | AnyContent[] => {
+      return [
+        {
+          type: 'div',
+          content: [
+            {
+              type: 'paragraph',
+              content: cardValue ? info.replace(/#/g, cardValue) : info,
+              style: { display: 'inline', background: '#fffe002b', padding: '2px 10px' },
+            },
+            {
+              type: 'paragraph',
+              content: translation,
+              style: { display: 'inline', border: '1px solid rgba(255, 254, 0, 0.17)', padding: '1px 10px' },
+            },
+          ],
+          style: { margin: '10px 0', fontSize: 18 },
+        },
+      ];
+    })
+    .flat(1);
+};
+
+const getVerbTranslationBeforeAndAfterAnswer = (translations: [string, string][], cardValue: string): AnyContent[] => {
+  return [
+    { type: 'beforeAnswer', content: getVerbTranslationsContent(translations, '*') },
+    { type: 'afterAnswer', content: getVerbTranslationsContent(translations, cardValue) },
+  ];
+};
+
 export const getCardViewContent = (
   record: AnyTestableCard,
   mode: CardViewMode.individualView | CardViewMode.groupView,
@@ -249,7 +281,13 @@ export const getCardViewContent = (
   if (record.type === CardType.VERB) {
     if (record.initial) {
       const tags = [getPartOfSentenceNames(record.type)];
-      return getDefaultViewContent(tags, record.card.value, record.card.translation);
+      return [
+        getTopRow(tags, record.card.value),
+        { type: 'header', variant: 'h1', content: record.card.value, style: { textAlign: 'center' } },
+        { type: 'hr', style: { opacity: 0.2 } },
+        { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
+        ...getVerbTranslationsContent(record.card.translations, record.card.value),
+      ];
     } else if (mode === CardViewMode.groupView) {
       const meta = getVerbMeta(record.variant.mood, record.variant.tense);
       const tags: ContentTag[] = [
@@ -468,6 +506,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
           style: { textAlign: 'center' },
           audioProps: prepareInputAudio(correctValues),
         },
+        ...getVerbTranslationBeforeAndAfterAnswer(record.card.translations, record.card.value),
         ...getAfterAnswerMetaInfo(record),
       ];
     } else {
@@ -500,7 +539,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
               placeholder: 'tipp',
               autoFocus: true,
               correctValues,
-              style: { textAlign: 'center' },
+              style: { textAlign: 'center', marginBottom: 10 },
               fullWidth: true,
               audioProps: prepareInputAudio(
                 correctValues,
@@ -511,6 +550,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
         },
         ...getAfterAnswerTranslation(record.card.translation),
         ...getAfterAnswerMetaInfo(record),
+        { type: 'afterAnswer', content: getVerbTranslationsContent(record.card.translations, record.card.value) },
       ];
     }
   } else if (record.type === CardType.NOUN) {

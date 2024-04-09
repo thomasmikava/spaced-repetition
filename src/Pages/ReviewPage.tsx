@@ -115,7 +115,7 @@ const WithNextButton = ({ children, onClick }: { children: React.ReactNode; onCl
   return (
     <div className={cssModule.withNextButton}>
       {children}
-      <div>
+      <div className={cssModule.nextButtonContainer}>
         <button onClick={onClick} className={cssModule.nextButton}>
           <span>›</span>
         </button>

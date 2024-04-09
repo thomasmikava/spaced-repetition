@@ -305,4 +305,23 @@ export const prepositions: Preposition[] = [
     translation: 'since; for; ever since; in',
     variations: [{ translation: 'since; for; ever since; in', cases: [Case.Dativ] }],
   },
+  {
+    type: CardType.PREPOSITION,
+    value: 'gleich',
+    translation: 'like',
+    variations: [{ translation: 'like', cases: [Case.Dativ] }],
+  },
+  {
+    type: CardType.PREPOSITION,
+    value: 'zuwider',
+    translation: 'contrary to; against; in defiance of; opposed to',
+    variations: [{ translation: 'contrary to; against; in defiance of; opposed to', cases: [Case.Dativ] }],
+  },
+  {
+    type: CardType.PREPOSITION,
+    value: 'nah/nahe',
+    uniqueValue: 'nah',
+    translation: 'near; close to; on the verge of',
+    variations: [{ translation: 'near; close to; on the verge of', cases: [Case.Dativ] }],
+  },
 ];

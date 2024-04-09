@@ -8,6 +8,7 @@ import { pronouns } from '../database/pronouns';
 import type { Adjective, Article, Noun, Phrase, Pronoun, Verb } from '../database/types';
 import { CardType } from '../database/types';
 import { verbs } from '../database/verbs';
+import { groupArray } from '../utils/array';
 import { slashSplit } from '../utils/split';
 
 const createIndexedObject = <T extends { value: string; uniqueValue?: string }>(array: T[]) => {
@@ -186,3 +187,16 @@ function addVariants(words: Map<string, string>, value: string | null, uniqueVal
   if (!value) return;
   slashSplit(value).forEach((v) => words.set(v, uniqueValue));
 }
+
+export function logSameTranslations() {
+  const duplicateTranslations = groupArray(
+    verbs,
+    (v) => v.translation,
+    (grouped) => {
+      if (grouped.length === 1) return [];
+      return [grouped];
+    },
+  ).flat(1);
+  console.log('ggg', duplicateTranslations);
+}
+// (window as any).logSameTranslations = logSameTranslations;

@@ -1,6 +1,13 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cssModule from './App.module.css';
-import type { AnyContent, ContentAfterAnswer, ContentExpandable, ContentInput, ContentVoice } from './content-types';
+import type {
+  AnyContent,
+  ContentAfterAnswer,
+  ContentBeforeAnswer,
+  ContentExpandable,
+  ContentInput,
+  ContentVoice,
+} from './content-types';
 import { useTestContext } from './contexts/testContext';
 
 const renderContent = (
@@ -86,6 +93,8 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
       return <Input {...content} />;
     case 'afterAnswer':
       return <AfterAnswer {...content} />;
+    case 'beforeAnswer':
+      return <BeforeAnswer {...content} />;
     case 'expandable':
       return <Expandable {...content} />;
   }
@@ -94,6 +103,11 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
 const AfterAnswer = ({ content }: ContentAfterAnswer) => {
   const { mode } = useTestContext();
   if (mode === 'edit') return null;
+  return <>{renderContent(content)}</>;
+};
+const BeforeAnswer = ({ content }: ContentBeforeAnswer) => {
+  const { mode } = useTestContext();
+  if (mode !== 'edit') return null;
   return <>{renderContent(content)}</>;
 };
 
