@@ -17,6 +17,7 @@ import {
   LAST_CARDS_COUNT_TO_CONSIDER,
   LAST_PERIOD_TO_CONSIDER,
 } from './reviews';
+import { addUpdatedItemsInStorage, getDbRecord } from './storage';
 
 export interface CardWithProbability {
   record: AnyTestableCard;
@@ -46,7 +47,7 @@ export class Reviewer {
     courseId: number | undefined = undefined,
     private lessonId: number | undefined = undefined,
     private mode: 'endless' | 'normal' = 'normal',
-    avoidStorage = false,
+    private avoidStorage = false,
     private cardsDatabase = generateIndexedDatabase(),
   ) {
     this.prevReviews = new PreviousReviews(avoidStorage);
@@ -342,7 +343,10 @@ export class Reviewer {
   };
 
   markViewed = (card: CardWithProbability, mode: CardViewMode, success: boolean, currentDate = Date.now()) => {
-    this.prevReviews.saveCardResult(card.record, mode, success, currentDate);
+    const { newValue, key } = this.prevReviews.saveCardResult(card.record, mode, success, currentDate);
+    if (!this.avoidStorage) {
+      addUpdatedItemsInStorage([getDbRecord(key, newValue)]);
+    }
   };
 }
 

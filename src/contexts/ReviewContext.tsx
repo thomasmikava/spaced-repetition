@@ -6,17 +6,22 @@ import type { PostHistoryRecordsReqDTO } from '../api/controllers/history/histor
 import type { TestReviewHistory } from '../functions/reviews';
 import { useHistoryPushChange, useHistoryRecords } from '../api/controllers/history/history.queries';
 import { useAuth } from './Auth';
+import {
+  getDbRecord,
+  getUpdatableItemsFromStorage,
+  removeSuccessfullySavedItemsFromStorage,
+} from '../functions/storage';
 
 interface ReviewContextProps {}
 const ReviewContext = createContext<ReviewContextProps | undefined>(undefined);
 
 export const ReviewContextProvider: FC<{ children: ReactElement }> = ({ children }) => {
   const { isSignedIn } = useAuth();
+  const { mutateAsync } = useHistoryPushChange();
   const { data } = useHistoryRecords(!isSignedIn);
   const [updated, setUpdated] = useState(false);
   const updatingCountRef = useRef(0);
 
-  const { mutateAsync } = useHistoryPushChange();
   useInterval(() => {
     const updatedItems = getUpdatedItems();
     function update(items: PostHistoryRecordsReqDTO) {
@@ -45,7 +50,7 @@ export const ReviewContextProvider: FC<{ children: ReactElement }> = ({ children
 
   useEffect(() => {
     if (!data || updated) return;
-    loadInDb(data);
+    loadInDb(data, getUpdatableItemsFromStorage());
     setUpdated(true);
   }, [data, updated]);
 
@@ -68,17 +73,6 @@ function getUpdatedItems() {
   return updatedRecord;
 }
 
-const getDbRecord = (key: string, record: TestReviewHistory): PostHistoryRecordsReqDTO[number] => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { savedInDb, ...rest } = record as TestReviewHistory;
-  return {
-    key,
-    ...rest,
-    lastS: rest.lastS ?? null,
-    lastHasFailed: 'lastHasFailed' in record ? !!record.lastHasFailed : null,
-  };
-};
-
 function updateStorage(updatedItems: PostHistoryRecordsReqDTO) {
   const cls = new PreviousReviews();
   const reviews = cls.getLastReviewHistory();
@@ -94,9 +88,10 @@ function updateStorage(updatedItems: PostHistoryRecordsReqDTO) {
     }
   }
   cls.markAsSavedInDb(successfullySavedKeys);
+  removeSuccessfullySavedItemsFromStorage(successfullySavedKeys);
 }
 
-function loadInDb(data: PostHistoryRecordsReqDTO) {
+function loadInDb(data: PostHistoryRecordsReqDTO, notSavedData: PostHistoryRecordsReqDTO) {
   const cls = new PreviousReviews();
-  cls.loadInDb(data, true);
+  cls.loadInDb(data, notSavedData, true);
 }

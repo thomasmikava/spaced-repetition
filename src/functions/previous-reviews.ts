@@ -1,4 +1,5 @@
 import { formatTime } from '../utils/time';
+import type { StrictOmit } from '../utils/types';
 import { globalHistory } from './history';
 import type {
   AllCardsReviewHistory,
@@ -53,11 +54,8 @@ export class PreviousReviews {
   };
 
   loadInDb = (
-    data: ((
-      | Omit<TestReviewHistory, 'savedInDb'>
-      | Omit<IndividualReviewHistory, 'savedInDb'>
-      | Omit<GroupReviewHistory, 'savedInDb'>
-    ) & { key: string })[],
+    data: (StrictOmit<AnyReviewHistory, 'savedInDb'> & { key: string })[],
+    notSavedData: (StrictOmit<AnyReviewHistory, 'savedInDb'> & { key: string })[],
     overwrite: boolean,
   ) => {
     const history = overwrite ? {} : { ...this.history };
@@ -66,6 +64,13 @@ export class PreviousReviews {
         ...record,
         ...{ key: record.key.toLowerCase() },
         savedInDb: true,
+      };
+    }
+    for (const record of notSavedData) {
+      history[record.key.toLowerCase()] = {
+        ...record,
+        ...{ key: record.key.toLowerCase() },
+        savedInDb: false,
       };
     }
     this.history = history;
@@ -115,17 +120,19 @@ export class PreviousReviews {
     this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
 
+    let newValue: AnyReviewHistory;
+
     if (mode === CardViewMode.groupView || mode === CardViewMode.individualView) {
       const currentValue = history[key] as IndividualReviewHistory | GroupReviewHistory;
       if (currentValue) {
-        history[key] = {
+        newValue = history[key] = {
           ...currentValue,
           lastDate: dateInSec,
           repetition: currentValue.repetition + 1,
           savedInDb: false,
         };
       } else {
-        history[key] = {
+        newValue = history[key] = {
           firstDate: dateInSec,
           lastDate: dateInSec,
           repetition: 1,
@@ -137,7 +144,7 @@ export class PreviousReviews {
       const currentValue = history[key] as TestReviewHistory;
       if (currentValue) {
         const passedTime = dateInSec - currentValue.lastDate;
-        history[key] = {
+        newValue = history[key] = {
           ...currentValue,
           lastDate: dateInSec,
           repetition: currentValue.repetition + 1,
@@ -146,7 +153,7 @@ export class PreviousReviews {
           savedInDb: false,
         };
       } else {
-        history[key] = {
+        newValue = history[key] = {
           firstDate: dateInSec,
           lastDate: dateInSec,
           repetition: 1,
@@ -157,6 +164,7 @@ export class PreviousReviews {
       }
     }
     this.history = history;
+    return { newValue, key };
   };
 }
 

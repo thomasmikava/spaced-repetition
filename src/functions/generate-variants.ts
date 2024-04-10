@@ -8,6 +8,7 @@ import {
   NounNumber,
   PronounFunction,
   VerbPronoun,
+  VerbTense,
 } from '../database/types';
 import { groupArray, sortArrayByOriginalArray } from '../utils/array';
 import type {
@@ -67,6 +68,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         (conjugation) =>
           conjugation.value === getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun, firstPronounForm),
       );
+      const isGroupStandardFormDisabled = tense.tense === VerbTense.Perfekt;
       const areAllConjugationsStandard = standardness.every((correct) => !!correct);
       for (let i = 0; i < tense.conjugations.length; i++) {
         const conjugation = tense.conjugations[i];
@@ -84,7 +86,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
           hasGroupViewMode: true,
           hasIndividualViewMode: false,
           isStandardForm: standardness[i],
-          isGroupStandardForm: areAllConjugationsStandard,
+          isGroupStandardForm: isGroupStandardFormDisabled ? undefined : areAllConjugationsStandard,
         });
       }
     }
