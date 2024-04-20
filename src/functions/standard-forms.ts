@@ -10,7 +10,7 @@ import {
   VerbPronoun,
   VerbTense,
 } from '../database/types';
-import { slashSplit } from '../utils/split';
+import { mergeSplitted, slashSplit } from '../utils/split';
 
 export const getAdjectiveTrioStandardForm = (
   adjective: string,
@@ -58,9 +58,9 @@ export const getAdjectiveStandardForm = (
 ): string | null => {
   if (!adjective) return null;
   if (nominativeValue && nominativeValue.includes('/')) {
-    return slashSplit(nominativeValue)
-      .map((v) => getAdjectiveStandardForm(adjective, v, degree, inflection, gender, case_))
-      .join('/');
+    return mergeSplitted(
+      slashSplit(nominativeValue).map((v) => getAdjectiveStandardForm(adjective, v, degree, inflection, gender, case_)),
+    );
   }
   if (nominativeValue) {
     const suffix = AdjectiveSuffixes[inflection][NounGender.Maskulinum][Case.Nominativ];
@@ -72,9 +72,9 @@ export const getAdjectiveStandardForm = (
   }
 
   if (adjective.includes('/')) {
-    return slashSplit(adjective)
-      .map((v) => getAdjectiveStandardForm(v, nominativeValue, degree, inflection, gender, case_))
-      .join('/');
+    return mergeSplitted(
+      slashSplit(adjective).map((v) => getAdjectiveStandardForm(v, nominativeValue, degree, inflection, gender, case_)),
+    );
   }
   let word = adjective;
   if (degree === AdjectiveDegree.Superlativ) {
@@ -176,6 +176,9 @@ export function getVerbStandardForm(
   pronoun: VerbPronoun,
   firstPronounForm?: string,
 ): string | null {
+  if (firstPronounForm && firstPronounForm.includes('/')) {
+    return mergeSplitted(slashSplit(firstPronounForm).map((v) => getVerbStandardForm(verb, mood, tense, pronoun, v)));
+  }
   if (firstPronounForm && pronoun !== VerbPronoun.ich) {
     const guessValue = getVerbStandardFormBasedOnFirstPronoun(verb, mood, tense, pronoun, firstPronounForm);
     if (guessValue) return guessValue;
@@ -239,9 +242,11 @@ function getVerbStandardFormBasedOnFirstPronoun(
   firstPronounForm: string,
 ): string | null {
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
-    const [, secondPart] = separateBySpace(firstPronounForm);
+    const [firstPart, secondPart] = separateBySpace(firstPronounForm);
     if (secondPart === DEFAULT_PRONOUNS.a[VerbPronoun.ich]) {
       return getDefaultPresentConjugation(verb, pronoun) + ' ' + DEFAULT_PRONOUNS.a[pronoun];
+    } else {
+      return getDefaultPresentConjugation(firstPart + 'n', pronoun) + ' ' + secondPart;
     }
   }
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präteritum) {

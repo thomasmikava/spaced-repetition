@@ -11,6 +11,7 @@ import {
   VerbTense,
 } from '../database/types';
 import { groupArray, sortArrayByOriginalArray } from '../utils/array';
+import { areSplittedEqual } from '../utils/split';
 import type {
   AdjectiveTestableCard,
   AnyTestableCard,
@@ -64,9 +65,11 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       .slice(0, VERB_MAX_TENSES);
     for (const { mood, tense } of tenseVariants) {
       const firstPronounForm = tense.conjugations.find((e) => e.pronoun === VerbPronoun.ich)?.value;
-      const standardness = tense.conjugations.map(
-        (conjugation) =>
-          conjugation.value === getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun, firstPronounForm),
+      const standardness = tense.conjugations.map((conjugation) =>
+        areSplittedEqual(
+          conjugation.value,
+          getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun, firstPronounForm),
+        ),
       );
       const isGroupStandardFormDisabled = tense.tense === VerbTense.Perfekt;
       const areAllConjugationsStandard = standardness.every((correct) => !!correct);
@@ -87,6 +90,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
           hasIndividualViewMode: false,
           isStandardForm: standardness[i],
           isGroupStandardForm: isGroupStandardFormDisabled ? undefined : areAllConjugationsStandard,
+          ...{ standardValue: getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun, firstPronounForm) },
         });
       }
     }

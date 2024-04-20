@@ -1,5 +1,7 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 
+import { isNonNullable } from './array';
+
 // Takes a string and outputs an array of strings, splitting on slashes.
 // Supports parentheses for variants.
 // Examples:
@@ -124,3 +126,17 @@ examples.forEach((example) => {
   console.log('Output:', combine(processSegment(example)));
 });
  */
+
+export function areSplittedEqual(v1: string | null | undefined, v2: string | null | undefined): boolean {
+  if (!v1 || !v2 || !v1.includes('/') || !v2.includes('/')) return v1 === v2;
+  const s1 = slashSplit(v1);
+  const s2 = slashSplit(v2);
+  return s1.join('^') === s2.join('^');
+}
+
+export function mergeSplitted(splitted: (string | null | undefined)[]): string {
+  return splitted
+    .filter(isNonNullable)
+    .map((e) => (e.match(/\s/) ? `(${e})` : e))
+    .join('/');
+}
