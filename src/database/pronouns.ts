@@ -487,4 +487,29 @@ export const pronouns: Pronoun[] = [
       },
     ],
   },
+  {
+    type: CardType.PRONOUN,
+    value: 'welcher',
+    translation: 'which; whichever; whichsoever; whatever',
+    variants: [
+      {
+        function: PronounFunction.Relative,
+        values: [
+          [Case.Nominativ, 'welcher', 'welche', 'welches', 'welche'],
+          [Case.Genitiv, null, null, null, null],
+          [Case.Dativ, 'welchem', 'welcher', 'welchem', 'welchen'],
+          [Case.Akkusativ, 'welchen', 'welche', 'welches', 'welche'],
+        ],
+      },
+      {
+        function: PronounFunction.Interrogative,
+        values: [
+          [Case.Nominativ, 'welcher', 'welche', 'welches', 'welche'],
+          [Case.Genitiv, 'welches/welchen', 'welcher', 'welches/welchen', 'welcher'],
+          [Case.Dativ, 'welchem', 'welcher', 'welchem', 'welchen'],
+          [Case.Akkusativ, 'welchen', 'welche', 'welches', 'welche'],
+        ],
+      },
+    ],
+  },
 ];

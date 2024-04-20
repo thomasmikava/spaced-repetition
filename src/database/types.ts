@@ -167,6 +167,8 @@ export enum PronounFunction {
   NonAttributiveWithArticle,
   Representative,
   Declanation,
+  Relative,
+  Interrogative,
 }
 
 interface PronounVariantDeclaration {
@@ -181,8 +183,16 @@ interface PronounVariantRegular {
     | PronounFunction.Attributive
     | PronounFunction.NonAttributiveWithArticle
     | PronounFunction.NonAttributiveWithoutArticle
-    | PronounFunction.Representative;
-  values: [Case, masculineValue: string, feminineValue: string, neutralValue: string, pluralValue: string][];
+    | PronounFunction.Representative
+    | PronounFunction.Relative
+    | PronounFunction.Interrogative;
+  values: [
+    Case,
+    masculineValue: string | null,
+    feminineValue: string | null,
+    neutralValue: string | null,
+    pluralValue: string | null,
+  ][];
 }
 
 export type PronounVariant = PronounVariantDeclaration | PronounVariantRegular;

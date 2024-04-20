@@ -41,7 +41,7 @@ export const conjunctions: Conjunction[] = [
   { type: CardType.CONJUNCTION, value: 'seitdem', translation: 'since; ever since; since then' },
   { type: CardType.CONJUNCTION, value: 'jedoch', translation: 'only' },
   { type: CardType.CONJUNCTION, value: 'hingegen', translation: 'whereas' },
-  { type: CardType.CONJUNCTION, value: 'wie', translation: 'as; such as; like; how' },
+  { type: CardType.CONJUNCTION, value: 'wie', translation: 'how; as; such as; like' },
   { type: CardType.CONJUNCTION, value: 'wo', translation: 'where; when' },
   { type: CardType.CONJUNCTION, value: 'soweit', translation: 'as far as; insofar (auch: in so far) as' },
   { type: CardType.CONJUNCTION, value: 'ob', translation: 'if; whether' },

@@ -214,6 +214,8 @@ export function getPronounFunctionDisplayName(function_: PronounFunction) {
     [PronounFunction.Attributive]: 'attributiv (vor Nomen)',
     [PronounFunction.NonAttributiveWithoutArticle]: 'nicht-attibutiv, ohne Artikel',
     [PronounFunction.NonAttributiveWithArticle]: 'nicht-attributiv, mit Artikel',
+    [PronounFunction.Relative]: 'relativ',
+    [PronounFunction.Interrogative]: 'interrogativ',
   }[function_];
 }
 export function getPronounFunctionColor(function_: PronounFunction) {
@@ -223,5 +225,7 @@ export function getPronounFunctionColor(function_: PronounFunction) {
     [PronounFunction.Attributive]: Colors.lightBlue,
     [PronounFunction.NonAttributiveWithoutArticle]: Colors.blue,
     [PronounFunction.NonAttributiveWithArticle]: Colors.pink,
+    [PronounFunction.Relative]: Colors.lightBlue,
+    [PronounFunction.Interrogative]: Colors.violet,
   }[function_];
 }
