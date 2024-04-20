@@ -143,6 +143,7 @@ export interface Adjective extends Card {
 
 export interface Phrase extends Card {
   type: CardType.PHRASE;
+  mainType?: CardType;
   value: string;
   translation: string;
 }

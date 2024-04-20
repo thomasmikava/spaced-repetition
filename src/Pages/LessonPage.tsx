@@ -70,7 +70,11 @@ const LessonPage = () => {
             const closestDueDate = reviewer.getClosestDueDate(card);
             return (
               <tr key={key} className={cssModule.row}>
-                <td className={cssModule.lessonCardType}>{toReadableType(card.type)}</td>
+                <td className={cssModule.lessonCardType}>
+                  {toReadableType(
+                    card.type === CardType.PHRASE && card.mainType !== undefined ? card.mainType : card.type,
+                  )}
+                </td>
                 <td className={cssModule.lessonCardValue}>{getCardDisplay(card)}</td>
                 <td className={cssModule.lessonCardTranslation}>{card.translation}</td>
                 <td className={cssModule.lessonCardTranslation}>

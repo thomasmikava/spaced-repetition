@@ -239,7 +239,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
     return [
       {
         type: null,
-        typeTag: 'Phrase',
+        typeTag: card.mainType !== undefined ? getPartOfSentenceNames(card.mainType) : 'Phrase',
         initial: true,
         card: { value: card.value, type: CardType.PHRASE, translation: card.translation, caseSensitive: false },
         testKey: valueKey,
@@ -274,20 +274,19 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
       },
     ];
   } else if (card.type === CardType.PRONOUN) {
-    const allVariants: PronounTestableCard[] = [];
+    const allVariants: AnyTestableCard[] = [];
+    const initial: AnyTestableCard = {
+      type: null,
+      typeTag: getPartOfSentenceNames(CardType.PRONOUN),
+      initial: true,
+      card: { value: card.value, type: CardType.PRONOUN, translation: card.translation, caseSensitive: false },
+      groupViewKey: null,
+      hasGroupViewMode: false,
+      hasIndividualViewMode: true,
+      testKey: valueKey,
+    };
     if (!card.variants.length) {
-      return [
-        {
-          type: null,
-          typeTag: getPartOfSentenceNames(CardType.PRONOUN),
-          initial: true,
-          card: { value: card.value, type: CardType.PRONOUN, translation: card.translation, caseSensitive: false },
-          groupViewKey: null,
-          hasGroupViewMode: false,
-          hasIndividualViewMode: true,
-          testKey: valueKey,
-        },
-      ];
+      return [initial];
     }
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
     const restVariants: PronounTestableCard[] = [];
@@ -332,6 +331,9 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
           });
         });
       }
+    }
+    if (restVariants.every((e) => e.isStandardForm)) {
+      allVariants.push(initial);
     }
     const standardFormed = addGroupStandardFormFlag(restVariants);
     allVariants.push(...standardFormed);
