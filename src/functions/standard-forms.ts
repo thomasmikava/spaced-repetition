@@ -10,7 +10,7 @@ import {
   VerbPronoun,
   VerbTense,
 } from '../database/types';
-import { mergeSplitted, slashSplit } from '../utils/split';
+import { areSplittedEqual, mergeSplitted, slashSplit } from '../utils/split';
 
 export const getAdjectiveTrioStandardForm = (
   adjective: string,
@@ -245,7 +245,7 @@ function getVerbStandardFormBasedOnFirstPronoun(
     const [firstPart, secondPart] = separateBySpace(firstPronounForm);
     if (secondPart === DEFAULT_PRONOUNS.a[VerbPronoun.ich]) {
       return getDefaultPresentConjugation(verb, pronoun) + ' ' + DEFAULT_PRONOUNS.a[pronoun];
-    } else {
+    } else if (firstPart && secondPart) {
       return getDefaultPresentConjugation(firstPart + 'n', pronoun) + ' ' + secondPart;
     }
   }
@@ -316,7 +316,7 @@ export const generateNounStandardVariant = (
   gender: NounGender,
   number: NounNumber,
   case_: Case,
-): string | null => {
+): string | null | string[] => {
   if (number === NounNumber.singular && case_ === Case.Nominativ) return noun;
   if (gender === NounGender.Femininum && number === NounNumber.singular) return noun;
 
@@ -328,7 +328,8 @@ export const generateNounStandardVariant = (
   }
   if ((gender === NounGender.Maskulinum || gender === NounGender.Neutrum) && number === NounNumber.singular) {
     if (lastLetter === 'e' && case_ === Case.Genitiv) return noun + 's';
-    if (case_ === Case.Genitiv) return `${noun}s/${noun}es`;
+    if (lastLetter === 's' && case_ === Case.Genitiv) return noun + 'es';
+    if (case_ === Case.Genitiv) return [`${noun}s/${noun}es`, `${noun}s`];
     return noun;
   }
 
@@ -340,6 +341,10 @@ export const generateNounStandardVariant = (
     if (lastLetter === 'e') return noun + 'n';
     if (case_ === Case.Dativ) return noun + 'en';
     return noun + 'e';
+  }
+  if (gender === NounGender.Plural) {
+    if (number === NounNumber.singular) return null;
+    return pluralNominative ?? null;
   }
 
   return null;
@@ -371,3 +376,9 @@ export const getPronounStandardForm = (
   }
   return null;
 };
+
+export function isStandard(value: string, standardForm: string | null | string[]) {
+  if (!standardForm) return false;
+  if (typeof standardForm === 'string') return areSplittedEqual(value, standardForm);
+  return standardForm.some((form) => areSplittedEqual(value, form));
+}

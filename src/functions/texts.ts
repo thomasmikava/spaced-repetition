@@ -82,7 +82,7 @@ export function getWithArticle(word: string, gender: NounGender) {
     [NounGender.Maskulinum]: 'der ',
     [NounGender.Femininum]: 'die ',
     [NounGender.Neutrum]: 'das ',
-    [NounGender.Plural]: '',
+    [NounGender.Plural]: 'die ',
   }[gender];
   return prefix + word;
 }

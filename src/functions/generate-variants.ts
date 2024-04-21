@@ -8,10 +8,8 @@ import {
   NounNumber,
   PronounFunction,
   VerbPronoun,
-  VerbTense,
 } from '../database/types';
 import { groupArray, sortArrayByOriginalArray } from '../utils/array';
-import { areSplittedEqual } from '../utils/split';
 import type {
   AdjectiveTestableCard,
   AnyTestableCard,
@@ -27,6 +25,7 @@ import {
   getAdjectiveTrioStandardForm,
   getPronounStandardForm,
   getVerbStandardForm,
+  isStandard,
 } from './standard-forms';
 import { getPartOfSentenceNames } from './texts';
 
@@ -66,12 +65,12 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
     for (const { mood, tense } of tenseVariants) {
       const firstPronounForm = tense.conjugations.find((e) => e.pronoun === VerbPronoun.ich)?.value;
       const standardness = tense.conjugations.map((conjugation) =>
-        areSplittedEqual(
+        isStandard(
           conjugation.value,
           getVerbStandardForm(value, mood, tense.tense, conjugation.pronoun, firstPronounForm),
         ),
       );
-      const isGroupStandardFormDisabled = tense.tense === VerbTense.Perfekt;
+      const isGroupStandardFormDisabled = standardness.filter((correct) => !correct).length <= 1;
       const areAllConjugationsStandard = standardness.every((correct) => !!correct);
       for (let i = 0; i < tense.conjugations.length; i++) {
         const conjugation = tense.conjugations[i];
@@ -113,7 +112,9 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
     for (const variant of card.variants) {
       const standardVariant = generateNounStandardVariant(
         card.value,
-        variant.case === Case.Nominativ && variant.number === NounNumber.plural ? undefined : pluralNominative,
+        variant.case === Case.Nominativ && variant.number === NounNumber.plural && card.gender !== NounGender.Plural
+          ? undefined
+          : pluralNominative,
         card.gender,
         variant.number,
         variant.case,
@@ -127,7 +128,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         groupViewKey: `${valueKey}#${variant.number}`,
         hasGroupViewMode: true,
         hasIndividualViewMode: false,
-        isStandardForm: standardVariant === variant.value,
+        isStandardForm: isStandard(variant.value, standardVariant),
       });
     }
     return allVariants;
@@ -180,7 +181,10 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         testKey: `${valueKey}#${AdjectiveDegree.Komparativ}`,
         groupViewKey: `${valueKey}#${AdjectiveDegree.Komparativ}`,
         value: card.komparativ,
-        isStandardForm: card.komparativ === getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Komparativ),
+        isStandardForm: isStandard(
+          card.komparativ,
+          getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Komparativ),
+        ),
       } as never);
     }
     if (card.superlativ) {
@@ -191,7 +195,10 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
         testKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
         groupViewKey: `${valueKey}#${AdjectiveDegree.Superlativ}`,
         value: card.superlativ,
-        isStandardForm: card.superlativ === getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Superlativ),
+        isStandardForm: isStandard(
+          card.superlativ,
+          getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Superlativ),
+        ),
       } as never);
     }
     const genders = [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural];
@@ -214,8 +221,8 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
             groupViewKey: `${valueKey}#${variant.degree}.${variant.inflection}.${gender}`,
             hasGroupViewMode: true,
             hasIndividualViewMode: false,
-            isStandardForm:
-              value ===
+            isStandardForm: isStandard(
+              value,
               getAdjectiveStandardForm(
                 rootValue,
                 case_ === Case.Nominativ && gender === NounGender.Maskulinum ? null : nominativeMasculine,
@@ -224,6 +231,7 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
                 gender,
                 case_,
               ),
+            ),
             variant: {
               case: case_,
               degree: variant.degree,
@@ -313,7 +321,8 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
             hasGroupViewMode: true,
             hasIndividualViewMode: false,
             function: variant.function,
-            isStandardForm:
+            isStandardForm: isStandard(
+              value,
               getPronounStandardForm(
                 card.value,
                 case_ === Case.Nominativ ? null : nominativeValue,
@@ -324,7 +333,8 @@ function _generateTestableCards(card: AnyCard): AnyTestableCard[] {
                 number,
                 gender,
                 case_,
-              ) === value,
+              ),
+            ),
             variant: {
               case: case_,
               gender,

@@ -602,7 +602,7 @@ export const courses: Course[] = [
         ],
       },
       {
-        id: 6,
+        id: 5,
         title: 'Possessive pronouns',
         cards: [
           { type: CardType.PRONOUN, value: 'mein' },
@@ -614,12 +614,14 @@ export const courses: Course[] = [
         ],
       },
       {
-        id: 5,
+        id: 6,
         title: 'Custom verbs',
         cards: [
           // { type: CardType.VERB, value: 'zurücksetzen' },
-          { type: CardType.VERB, value: 'freuen' },
+          // { type: CardType.VERB, value: 'freuen' },
+          { type: CardType.VERB, value: 'wohnen' },
           // { type: CardType.VERB, value: 'dastehen' },
+          // { type: CardType.VERB, value: 'können' },
           // { type: CardType.VERB, value: 'machen' },
           // { type: CardType.VERB, value: 'sein' },
           // { type: CardType.VERB, value: 'freuen' },
@@ -629,7 +631,8 @@ export const courses: Course[] = [
         id: 7,
         title: 'test',
         cards: [
-          { type: CardType.ADJECTIVE, value: 'spät' },
+          // { type: CardType.ADJECTIVE, value: 'spät' },
+          { type: CardType.NOUN, value: 'Leute' },
           // { type: CardType.ADJECTIVE, value: 'ganz' },
           // { type: CardType.ADJECTIVE, value: 'hoch' },
           // { type: CardType.ADJECTIVE, value: 'neu' },
