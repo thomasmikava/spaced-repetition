@@ -254,3 +254,37 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+.authButton {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  background: #00aeff;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.authButton:focus {
+  outline: 4px solid greenyellow;
+}
+
+.authLink {
+  color: white;
+  text-decoration: underline;
+}
+.authInput {
+  padding: 10px;
+  font-size: 20px;
+  border: none;
+  border-radius: 5px;
+  border: 2px solid white;
+  border-radius: 8px;
+  height: 47px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+.authLink:hover {
+  color: white;
+}

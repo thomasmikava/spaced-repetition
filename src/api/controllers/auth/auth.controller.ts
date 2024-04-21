@@ -3,6 +3,8 @@ import type { IRequest } from '../../request';
 import type {
   LoginReqDTO,
   LoginResDTO,
+  RegisterReqDTO,
+  RegisterResDTO,
   RenewAccessTokenReqDTO,
   RenewAccessTokenResDTO,
   RevokeTokensReqDTO,
@@ -25,6 +27,12 @@ class AuthController {
 
   revokeTokens = (args: RevokeTokensReqDTO): Promise<void> => {
     return this.request.post('auth/revoke-tokens', args, {
+      headers: { Authorization: undefined },
+    });
+  };
+
+  register = (args: RegisterReqDTO): Promise<RegisterResDTO> => {
+    return this.request.post('auth/register', args, {
       headers: { Authorization: undefined },
     });
   };

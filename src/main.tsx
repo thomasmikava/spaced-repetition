@@ -14,6 +14,7 @@ import { AuthProvider } from './contexts/Auth.tsx';
 import { paths } from './routes/paths.ts';
 import { PageGuard } from './routes/PageGuard.tsx';
 import LoginPage from './Pages/Login/index.tsx';
+import RegistrationPage from './Pages/Registration/index.tsx';
 import { ReviewContextProvider } from './contexts/ReviewContext.tsx';
 
 const router = createBrowserRouter(
@@ -21,6 +22,14 @@ const router = createBrowserRouter(
     {
       path: '/',
       element: <PageGuard authPage={<App />} publicPage={<LoginPage />} />,
+    },
+    {
+      path: paths.registration.routePath,
+      element: (
+        <PageGuard onlyPublic>
+          <RegistrationPage />
+        </PageGuard>
+      ),
     },
     {
       path: paths.app.course.routePath,

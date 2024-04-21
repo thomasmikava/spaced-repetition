@@ -9,6 +9,13 @@ export const useAuthLogin = () => {
   });
 };
 
+export const useAuthRegistration = () => {
+  return useMutation({
+    mutationFn: authController.register,
+    mutationKey: ['registration'],
+  });
+};
+
 export const useAuthLoginState = () => useLastMutationState(['login'], authController.login);
 export const useAuthLoginCleaner = createMutationSuccessAutoDestroyer(['login']);
 

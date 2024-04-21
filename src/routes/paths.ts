@@ -2,6 +2,7 @@ import { addPrefix, withParams } from 'link-builders';
 
 export const paths = addPrefix('/')({
   loginPage: '/',
+  registration: '/reg',
   app: addPrefix('/')({
     main: '/',
     course: withParams((id: number) => `/course/${id}`, '/course/:courseId'),
