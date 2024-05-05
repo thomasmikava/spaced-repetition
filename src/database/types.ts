@@ -80,7 +80,6 @@ export interface NounVariant {
 }
 
 interface Card {
-  guessFromTranslation?: boolean;
   uniqueValue?: string;
 }
 
@@ -205,3 +204,47 @@ export interface Pronoun extends Card {
 }
 
 export type AnyCard = Verb | Noun | Article | Adjective | Phrase | Conjunction | Preposition | Pronoun;
+
+/// New standard types
+
+export type IdType = number;
+
+export type StandardCardType = IdType;
+export type StandardCardAttributes = Record<string, IdType | IdType[]>; // key: attribute id, value: attribute record id
+export type StandardCardVariant = {
+  attrs: StandardCardAttributes;
+  value: string;
+};
+
+export type TranslationVariant = {
+  schema?: string;
+  attrs?: Record<string, IdType | IdType[]>;
+  translation: string;
+};
+
+export type StandardCard = {
+  type: StandardCardType;
+  mainType?: StandardCardType;
+  value: string;
+  uniqueValue?: string;
+  translation: string;
+  attributes?: StandardCardAttributes;
+  topAttributesPriority?: Record<string, IdType | null>[];
+  childrenAttributesPriority?: Record<string, IdType | null>[];
+  variants?: StandardCardVariant[];
+  translationVariants?: TranslationVariant[];
+  topVariants?: StandardCardVariant[]; // comperative, superlative, etc.
+};
+
+export interface Attribute {
+  id: IdType;
+  name: string;
+}
+
+export interface AttributeRecord {
+  id: IdType;
+  attributeId: IdType;
+  name: string;
+  // color: string;
+  level?: number; // 1 - parent level; 2 - both parent & child level; null | undefined - child level
+}

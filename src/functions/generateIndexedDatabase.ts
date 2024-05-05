@@ -5,11 +5,12 @@ import { nouns } from '../database/nouns';
 import { phrases } from '../database/phrases';
 import { prepositions } from '../database/prepositions';
 import { pronouns } from '../database/pronouns';
-import type { Adjective, Article, Noun, Phrase, Pronoun, Verb } from '../database/types';
+import type { Adjective, Article, Noun, Phrase, Pronoun, StandardCard, Verb } from '../database/types';
 import { CardType } from '../database/types';
 import { verbs } from '../database/verbs';
 import { groupArray } from '../utils/array';
 import { slashSplit } from '../utils/split';
+import { convertToStandardCard } from './old-convertor';
 
 const createIndexedObject = <T extends { value: string; uniqueValue?: string }>(array: T[]) => {
   const indexedObject: Record<string, T | undefined> = {};
@@ -36,6 +37,26 @@ export const generateIndexedDatabase = () => {
     [CardType.PHRASE]: createIndexedObject(phrases),
   } satisfies Record<CardType, unknown>;
 };
+
+export const generateIndexedDatabase2 = () => {
+  const database = generateIndexedDatabase();
+  const cache: { [key in CardType]?: Map<string, StandardCard> } = {};
+  const getCard = (type: CardType, uniqueValue: string) => {
+    let map = cache[type];
+    if (!map) map = cache[type] = new Map();
+    const vl = map.get(uniqueValue);
+    if (vl) return vl;
+    const rawValue = database[type][uniqueValue];
+    if (!rawValue) return null;
+    const standardValue = convertToStandardCard(rawValue);
+    map.set(uniqueValue, standardValue);
+    return standardValue;
+  };
+  return { getCard };
+};
+
+type DbT = ReturnType<typeof generateIndexedDatabase>;
+export type RawCard = NonNullable<DbT[keyof DbT][string]>;
 
 export const generateAllVariants = (): Record<CardType, Map<string, string>> => {
   return {
@@ -228,3 +249,4 @@ export function logSameValues() {
 }
 (window as any).logSameTranslations = logSameTranslations;
 (window as any).logSameValues = logSameValues;
+(window as any).generateIndexedDatabase2 = generateIndexedDatabase2;
