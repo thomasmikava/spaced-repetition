@@ -10,6 +10,7 @@ export const phrases: Phrase[] = [
   {
     type: CardType.PHRASE,
     value: 'Bitte',
+    uniqueValue: 'ph-Bitte',
     translation:
       "please; You're welcome!; Not at all.; if you please; Don't mention it!; It's all right!; Never mind!; Pardon?; There you go!; Here you are!;",
   },
@@ -52,6 +53,7 @@ export const phrases: Phrase[] = [
   {
     type: CardType.PHRASE,
     value: 'Achtung',
+    uniqueValue: 'ph-Achtung',
     translation: 'Attention!; Heads up!; Look out!; Caution!',
   },
   { type: CardType.PHRASE, mainType: CardType.VERB, value: 'frei haben', translation: 'to have time off' },

@@ -195,7 +195,7 @@ const Voice = ({ text, language, autoplay, size, style }: ContentVoice) => {
     if (autoplay) {
       setTimeout(() => {
         if (!isCanceled) handleSound();
-      }, 200);
+      }, 0);
     }
     return () => {
       isCanceled = true;

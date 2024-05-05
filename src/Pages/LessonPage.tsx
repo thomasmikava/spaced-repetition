@@ -10,6 +10,7 @@ import ReviewButtons from '../ReviewButtons';
 import { Reviewer } from '../functions/reviewer';
 import { formatTime } from '../utils/time';
 import { getWithArticle } from '../functions/texts';
+import { roundNumber } from '../utils/number';
 
 const LessonPage = () => {
   const params = useParams();
@@ -46,28 +47,36 @@ const LessonPage = () => {
     return card.value;
   };
 
+  const lessonsInfo = lessonCards.map((lessonCard) => {
+    const card = getCard(lessonCard);
+    if (!card) return { lessonCard, isUnknown: true as const };
+    const closestDueDate = reviewer.getClosestDueDate(card);
+    return { lessonCard, isUnknown: false as const, closestDueDate, card };
+  });
+  const studiedCards = lessonsInfo.filter((item) => !item.isUnknown && item.closestDueDate !== Infinity).length;
+  const allCards = lessonsInfo.length;
+
   return (
     <div className='body'>
       <div>
         <span onClick={goToCourse} style={{ textDecoration: 'underline', cursor: 'pointer' }}>
           {myCourse.title}
         </span>{' '}
-        - {myLesson.title} ({lessonCards.length} items)
+        - {myLesson.title} ({lessonCards.length} items. Studied: {roundNumber((studiedCards / allCards) * 100, 1)}%)
       </div>
       <ReviewButtons courseId={courseId} lessonId={lessonId} />
       <table className={cssModule.lessonTable}>
         <tbody>
-          {lessonCards.map((lessonCard) => {
-            const key = lessonCard.type + lessonCard.value;
-            const card = getCard(lessonCard);
-            if (!card) {
+          {lessonsInfo.map((item) => {
+            const key = item.lessonCard.type + item.lessonCard.value;
+            if (item.isUnknown) {
               return (
                 <div key={key}>
-                  Card {lessonCard.value} ({toReadableType(lessonCard.type)}) not found
+                  Card {item.lessonCard.value} ({toReadableType(item.lessonCard.type)}) not found
                 </div>
               );
             }
-            const closestDueDate = reviewer.getClosestDueDate(card);
+            const { closestDueDate, card } = item;
             return (
               <tr key={key} className={cssModule.row}>
                 <td className={cssModule.lessonCardType}>

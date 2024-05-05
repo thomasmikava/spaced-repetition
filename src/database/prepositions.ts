@@ -29,6 +29,7 @@ export const prepositions: Preposition[] = [
   {
     type: CardType.PREPOSITION,
     value: 'gegen',
+    uniqueValue: 'pre-gegen',
     translation:
       'against; towardesp, towardsesp,; versus [Abk.: v., vs.] [JURA][SPORT]; contrary to; compared with; contra; in comparison with; anti; to; in countercurrent with [TECH.]',
     variations: [
@@ -98,6 +99,7 @@ export const prepositions: Preposition[] = [
   {
     type: CardType.PREPOSITION,
     value: 'zu',
+    uniqueValue: 'pre-zu',
     translation: 'to; towardesp, towardsesp,; in; at; for; onto',
     variations: [{ translation: 'to; towardesp, towardsesp,; in; at; for; onto', cases: [Case.Dativ] }],
   },
@@ -289,6 +291,7 @@ export const prepositions: Preposition[] = [
   {
     type: CardType.PREPOSITION,
     value: 'laut',
+    uniqueValue: 'pre-laut',
     translation:
       'under - provisions, regulations, terms; according to; in accordance with; as per; in conformity with; by virtue of; in pursuance of; on the strength of; pursuant to',
     variations: [
@@ -308,6 +311,7 @@ export const prepositions: Preposition[] = [
   {
     type: CardType.PREPOSITION,
     value: 'gleich',
+    uniqueValue: 'pre-gleich',
     translation: 'like',
     variations: [{ translation: 'like', cases: [Case.Dativ] }],
   },
@@ -320,8 +324,33 @@ export const prepositions: Preposition[] = [
   {
     type: CardType.PREPOSITION,
     value: 'nah/nahe',
-    uniqueValue: 'nah',
+    uniqueValue: 'pre-nah',
     translation: 'near; close to; on the verge of',
     variations: [{ translation: 'near; close to; on the verge of', cases: [Case.Dativ] }],
+  },
+  {
+    type: CardType.PREPOSITION,
+    value: 'per',
+    translation: 'by',
+    variations: [{ translation: 'by', cases: [Case.Akkusativ] }],
+  },
+  {
+    type: CardType.PREPOSITION,
+    value: 'pro',
+    translation: 'a; per; for',
+    variations: [{ translation: 'a; per; for', cases: [Case.Akkusativ] }],
+  },
+  {
+    type: CardType.PREPOSITION,
+    value: 'hinsichtlich',
+    translation:
+      'as to sth.; with regard to; concerning; in terms of sth.; in view of; regarding; in respect of; in consideration of; in reference to; in regard to; with respect to [Abk.: w. r. t.]',
+    variations: [
+      {
+        translation:
+          'as to sth.; with regard to; concerning; in terms of sth.; in view of; regarding; in respect of; in consideration of; in reference to; in regard to; with respect to [Abk.: w. r. t.]',
+        cases: [Case.Genitiv],
+      },
+    ],
   },
 ];

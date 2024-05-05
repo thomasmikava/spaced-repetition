@@ -38,6 +38,7 @@ export const initialViewS = calculateHalfLifeCoefficient(40);
 export const minS = calculateHalfLifeCoefficient(30);
 export const maxS = calculateHalfLifeCoefficient(60 * 60 * 24 * 60); // 60 days
 export const DEFAULT_REVIEW_DUE = 30;
+export const REVIEW_MAX_DUE = 4 * 60;
 
 export const MAX_NUM_OF_VIEW_CARDS = 2;
 export const MAX_NUM_OF_GROUP_VIEW_CARDS = 1;

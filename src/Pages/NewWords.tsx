@@ -1,24 +1,45 @@
 import { useMemo, useRef, useState } from 'react';
 import { generateAllVariants } from '../functions/generateIndexedDatabase';
-import type { CardType } from '../database/types';
+import { CardType } from '../database/types';
 import Select from '../ui/Select';
 import { courses } from '../courses/lessons';
 import { uniquelize } from '../utils/array';
+import { PreviousReviews } from '../functions/previous-reviews';
+import { CardViewMode, calculateHalfLifeCoefficient } from '../functions/reviews';
+import { Reviewer } from '../functions/reviewer';
 
 const NewWordsPage = () => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [database] = useState(() => generateAllVariants());
   const [results, setResults] = useState<ReturnType<typeof getTokens>>();
 
-  const courseOptions = useMemo(() => courses.map((course) => ({ value: '' + course.id, label: course.title })), []);
+  const courseOptions = useMemo(
+    () =>
+      courses
+        .map((course) => ({ value: '' + course.id, label: course.title }))
+        .concat([
+          { value: 'existing', label: 'Words that I started' },
+          { value: 'well-known', label: 'Words that I know well' },
+        ]),
+    [],
+  );
   const [currentCourse, setCurrentCourse] = useState('');
 
   const calculate = () => {
     if (!textAreaRef.current) return;
     const courseId = currentCourse ? +currentCourse : '';
-    const existingTokens = courseId ? getCourseTokens(courseId) : [];
+    const existingTokens =
+      currentCourse === 'existing'
+        ? getExistingTokens(false)
+        : currentCourse === 'well-known'
+          ? getExistingTokens(true)
+          : courseId
+            ? getCourseTokens(courseId)
+            : [];
     const value = textAreaRef.current.value;
+    console.log('existingTokens', existingTokens);
     const tokens = getTokens(value, existingTokens, database);
+    console.log('tokens', tokens);
     setResults(tokens);
   };
   const copyResults = () => {
@@ -85,6 +106,22 @@ const getCourseTokens = (courseId: number) => {
     for (const card of lesson.cards) {
       tokens.push({ type: card.type, value: card.value });
     }
+  }
+  return tokens;
+};
+
+const getExistingTokens = (wellKnown: boolean) => {
+  const tokens: { type: CardType; value: string }[] = [];
+  const prevReviews = new PreviousReviews(false);
+  const reviewer = new Reviewer();
+  const testableCards = reviewer.getAllTestableCards();
+  const wellKnownCoefficient = calculateHalfLifeCoefficient(60 * 60 * 24);
+  for (const card of testableCards) {
+    if (!card.initial) continue;
+    const testHistory = prevReviews.getCardHistory(card, CardViewMode.test);
+    if (!testHistory) continue;
+    if (wellKnown && testHistory.lastS < wellKnownCoefficient) continue;
+    tokens.push({ type: card.type ?? CardType.PHRASE, value: card.card.value });
   }
   return tokens;
 };

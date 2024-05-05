@@ -16,6 +16,7 @@ import {
   MAX_NUM_OF_GROUP_VIEW_CARDS,
   LAST_CARDS_COUNT_TO_CONSIDER,
   LAST_PERIOD_TO_CONSIDER,
+  REVIEW_MAX_DUE,
 } from './reviews';
 import { addUpdatedItemsInStorage, getDbRecord } from './storage';
 
@@ -70,6 +71,10 @@ export class Reviewer {
     console.log('this.allTestableCards', this.allTestableCards);
   }
 
+  getAllTestableCards() {
+    return [...this.allTestableCards];
+  }
+
   getClosestDueDate = (card: AnyCard) => {
     const testableCards = generateTestableCards(card);
     return Math.min(...testableCards.map((record) => this.getDueDate(record)));
@@ -87,7 +92,10 @@ export class Reviewer {
 
   getDueCardsCount = (accordingToDate = Date.now()) => {
     const probabilities = this.calculateProbabilities(accordingToDate);
-    const dueReview = probabilities.filter((record) => record.isCriticalForReview || record.isReadyForReview);
+    const dueReview = probabilities.filter(
+      (record) =>
+        record.isCriticalForReview || (record.reviewDue <= REVIEW_MAX_DUE && record.viewMode === CardViewMode.test),
+    );
     const uniqueCards = new Set(dueReview.map((e) => e.record.card));
     return {
       dueReview: dueReview.length,
@@ -253,8 +261,8 @@ export class Reviewer {
             record,
             historyRecord,
             probability,
-            isCriticalForReview: historyRecord && isCriticalToBeReviewed(probability, reviewDue),
-            isReadyForReview: historyRecord && isReadyToBeReviewed(probability, reviewDue),
+            isCriticalForReview: historyRecord && isCriticalToBeReviewed(probability, finalReviewDue),
+            isReadyForReview: historyRecord && isReadyToBeReviewed(probability, finalReviewDue),
             reviewCoefficient: historyRecord
               ? probability
               : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode, currentDate),
@@ -378,7 +386,7 @@ function isCriticalToBeReviewed(probability: number, reviewDue: number) {
 }
 
 function isReadyToBeReviewed(probability: number, reviewDue: number) {
-  return probability <= 0.55 || reviewDue <= 4 * 60;
+  return probability <= 0.55 || reviewDue <= REVIEW_MAX_DUE;
 }
 
 // function calculateReviewCoefficient(probability: number) {

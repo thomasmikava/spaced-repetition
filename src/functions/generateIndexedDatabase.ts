@@ -86,7 +86,7 @@ function getAllVerbVariantsSet(verbs: Verb[]) {
   const words = new Map<string, string>();
   for (const verb of verbs) {
     const uniqueValue = verb.value;
-    words.set(verb.value, uniqueValue);
+    addVariant(words, verb.value, uniqueValue);
     for (const mood of verb.variants) {
       for (const tense of mood.tenses) {
         for (const variant of tense.conjugations) {
@@ -122,10 +122,10 @@ function getBasicSet(array: { uniqueValue?: string; value: string; variants?: { 
   for (const each of array) {
     const vls = slashSplit(each.value);
     for (const v of vls) {
-      words.set(v, each.value);
+      addVariant(words, v, each.value);
     }
     const uniqueValue = vls[0];
-    if (vls.length > 1) words.set(each.value, uniqueValue);
+    if (vls.length > 1) addVariant(words, each.value, uniqueValue);
     if (each.variants) {
       for (const variant of each.variants) {
         addVariants(words, variant.value, uniqueValue);
@@ -147,15 +147,15 @@ function getAllAdjectivesSet(adjectives: Adjective[]) {
   const words = new Map<string, string>();
   for (const adjective of adjectives) {
     const uniqueValue = adjective.value;
-    words.set(adjective.value, uniqueValue);
-    adjective.komparativ && words.set(adjective.komparativ, uniqueValue);
-    adjective.superlativ && words.set(adjective.superlativ, uniqueValue);
+    addVariant(words, adjective.value, uniqueValue);
+    adjective.komparativ && addVariant(words, adjective.komparativ, uniqueValue);
+    adjective.superlativ && addVariant(words, adjective.superlativ, uniqueValue);
     for (const variant of adjective.variants) {
       for (const v of variant.values) {
-        words.set(v[1], uniqueValue);
-        words.set(v[2], uniqueValue);
-        words.set(v[3], uniqueValue);
-        words.set(v[4], uniqueValue);
+        addVariant(words, v[1], uniqueValue);
+        addVariant(words, v[2], uniqueValue);
+        addVariant(words, v[3], uniqueValue);
+        addVariant(words, v[4], uniqueValue);
       }
     }
   }
@@ -170,7 +170,7 @@ function getAllPronounsSet(pronouns: Pronoun[]) {
   const words = new Map<string, string>();
   for (const adjective of pronouns) {
     const uniqueValue = adjective.value;
-    words.set(adjective.value, uniqueValue);
+    addVariant(words, adjective.value, uniqueValue);
     for (const variant of adjective.variants) {
       for (const v of variant.values as string[][]) {
         addVariants(words, v[1], uniqueValue);
@@ -185,7 +185,12 @@ function getAllPronounsSet(pronouns: Pronoun[]) {
 
 function addVariants(words: Map<string, string>, value: string | null, uniqueValue: string) {
   if (!value) return;
-  slashSplit(value).forEach((v) => words.set(v, uniqueValue));
+  slashSplit(value).forEach((v) => !words.has(v) && words.set(v, uniqueValue));
+}
+
+function addVariant(words: Map<string, string>, value: string | null, uniqueValue = value) {
+  if (!value || !uniqueValue) return;
+  !words.has(value) && words.set(value, uniqueValue);
 }
 
 export function logSameTranslations() {
@@ -199,4 +204,27 @@ export function logSameTranslations() {
   ).flat(1);
   console.log('ggg', duplicateTranslations);
 }
-// (window as any).logSameTranslations = logSameTranslations;
+export function logSameValues() {
+  const arr: { type: CardType; value: string }[] = [];
+  const db = generateIndexedDatabase();
+  for (const key in db) {
+    const type = key as CardType;
+    const obj = db[key as keyof typeof db];
+    for (const cardValue in obj) {
+      arr.push({ type, value: cardValue });
+    }
+  }
+  const duplicateValues = groupArray(
+    arr,
+    (v) => v.value,
+    (grouped) => {
+      if (grouped.length === 1) return [];
+      return [grouped];
+    },
+  )
+    .flat(1)
+    .sort((a, b) => a[1].type.localeCompare(b[1].type));
+  console.log('ggg2', duplicateValues);
+}
+(window as any).logSameTranslations = logSameTranslations;
+(window as any).logSameValues = logSameValues;

@@ -197,7 +197,7 @@ export function getVerbStandardForm(
 }
 
 const getDefaultPresentConjugation = (verb: string, pronoun: VerbPronoun): string | null => {
-  const root = verb.slice(0, -2);
+  const root = verb.endsWith('en') ? verb.slice(0, -2) : verb.slice(0, -1);
   const rootLastLetter = root.slice(-1);
   if (pronoun === VerbPronoun.ich) return root + 'e';
   if (pronoun === VerbPronoun.du) {

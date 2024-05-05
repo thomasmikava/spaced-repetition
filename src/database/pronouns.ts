@@ -226,6 +226,7 @@ export const pronouns: Pronoun[] = [
   {
     type: CardType.PRONOUN,
     value: 'sein',
+    uniqueValue: 'pr-sein',
     translation: "his; its; one's",
     variants: [
       {
@@ -442,6 +443,7 @@ export const pronouns: Pronoun[] = [
   {
     type: CardType.PRONOUN,
     value: 'der',
+    uniqueValue: 'pr-der',
     translation: 'which; who; that (masc)',
     variants: [
       {
@@ -458,6 +460,7 @@ export const pronouns: Pronoun[] = [
   {
     type: CardType.PRONOUN,
     value: 'die',
+    uniqueValue: 'pr-die',
     translation: 'which; who; that (fem)',
     variants: [
       {
@@ -474,6 +477,7 @@ export const pronouns: Pronoun[] = [
   {
     type: CardType.PRONOUN,
     value: 'das',
+    uniqueValue: 'pr-das',
     translation: 'which; that (neut.)',
     variants: [
       {
@@ -508,6 +512,23 @@ export const pronouns: Pronoun[] = [
           [Case.Genitiv, 'welches/welchen', 'welcher', 'welches/welchen', 'welcher'],
           [Case.Dativ, 'welchem', 'welcher', 'welchem', 'welchen'],
           [Case.Akkusativ, 'welchen', 'welche', 'welches', 'welche'],
+        ],
+      },
+    ],
+  },
+  {
+    type: CardType.PRONOUN,
+    value: 'etwas',
+    translation:
+      'anything; something; a little; a bit (of); slightly Adv.; owt - northern English dialect: "anything"; some - small quantity of; a trifle',
+    variants: [
+      {
+        function: PronounFunction.Declanation,
+        values: [
+          [Case.Nominativ, 'etwas', 'etwas'],
+          [Case.Genitiv, 'etwas', 'etwas'],
+          [Case.Dativ, 'etwas', 'etwas'],
+          [Case.Akkusativ, 'etwas', 'etwas'],
         ],
       },
     ],
