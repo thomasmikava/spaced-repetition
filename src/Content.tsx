@@ -9,6 +9,7 @@ import type {
   ContentVoice,
 } from './content-types';
 import { useTestContext } from './contexts/testContext';
+import { Colors } from './functions/texts';
 
 const renderContent = (
   content: string | number | null | undefined | AnyContent | (AnyContent | null | undefined)[],
@@ -55,7 +56,7 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
           {/* <span>{content.content.map((e) => (typeof e === 'object' && e ? e.text : e || '')).join(', ')}</span> */}
           {content.content.map((tag, idx) => {
             const variant = typeof tag === 'object' && tag ? tag.variant : 'regular';
-            const color = typeof tag === 'object' && tag ? tag.color : undefined;
+            const color = typeof tag === 'object' && tag ? convertColor(tag.color) : undefined;
             const bgColor = variant === 'primary' ? color : undefined;
             const borderColor = variant === 'primary' || variant === 'secondary' ? color : undefined;
             return tag === undefined || tag === null ? null : (
@@ -213,6 +214,11 @@ const Voice = ({ text, language, autoplay, size, style }: ContentVoice) => {
       🔊
     </button>
   );
+};
+
+const convertColor = (color: string) => {
+  if (color.startsWith('_')) return Colors[color.slice(1) as never];
+  return color;
 };
 
 export default Content;

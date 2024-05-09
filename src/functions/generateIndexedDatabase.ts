@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { adjectives } from '../database/adjectives';
 import { articles } from '../database/articles';
 import { conjunctions } from '../database/conjunctions';

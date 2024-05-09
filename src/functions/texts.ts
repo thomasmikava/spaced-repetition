@@ -138,7 +138,7 @@ export function getVerbMeta(mood: VerbMood, tense: VerbTense) {
   };
 }
 
-const Colors = {
+export const Colors = {
   lightBlue: '#1798b6',
   green: '#5ca810',
   orange: '#b65717',

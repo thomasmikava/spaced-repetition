@@ -6,12 +6,15 @@ import type {
   Article,
   CardType,
   Case,
+  IdType,
   Noun,
   NounGender,
   NounNumber,
   Preposition,
   Pronoun,
   PronounFunction,
+  StandardCard,
+  StandardCardVariant,
   Verb,
   VerbConjugationVariant,
   VerbMood,
@@ -161,3 +164,14 @@ export type AnyTestableCard =
   | SingleTestableCard
   | PrepositionTestableCard
   | PronounTestableCard;
+
+export interface StandardTestableCard extends GeneralTestableCard {
+  type: IdType;
+  card: StandardCard;
+  displayType: IdType;
+  variant: StandardCardVariant;
+  translation: string;
+  caseSensitive: boolean;
+  initial: boolean;
+  isTopLevel: boolean;
+}

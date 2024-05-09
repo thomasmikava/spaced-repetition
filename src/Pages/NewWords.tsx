@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { generateAllVariants } from '../functions/generateIndexedDatabase';
-import { CardType } from '../database/types';
+import type { IdType } from '../database/types';
 import Select from '../ui/Select';
 import { courses } from '../courses/lessons';
 import { uniquelize } from '../utils/array';
@@ -101,7 +101,7 @@ const NewWordsPage = () => {
 const getCourseTokens = (courseId: number) => {
   const course = courses.find((course) => course.id === courseId);
   if (!course) return [];
-  const tokens: { type: CardType; value: string }[] = [];
+  const tokens: { type: IdType; value: string }[] = [];
   for (const lesson of course.lessons) {
     for (const card of lesson.cards) {
       tokens.push({ type: card.type, value: card.value });
@@ -111,7 +111,7 @@ const getCourseTokens = (courseId: number) => {
 };
 
 const getExistingTokens = (wellKnown: boolean) => {
-  const tokens: { type: CardType; value: string }[] = [];
+  const tokens: { type: IdType; value: string }[] = [];
   const prevReviews = new PreviousReviews(false);
   const reviewer = new Reviewer();
   const testableCards = reviewer.getAllTestableCards();
@@ -130,12 +130,12 @@ const ignoredWords: string[] = ["geht's", "gibt's", 'Neues', 'los', 'Hause', 'am
 
 const getTokens = (
   value: string,
-  existingTokens: { type: CardType; value: string }[],
+  existingTokens: { type: IdType; value: string }[],
   database: ReturnType<typeof generateAllVariants>,
 ) => {
   const lines = value.split(/[\n+.?!]/);
   const unknownTokens: string[] = [];
-  const knownTokens: { type: CardType; value: string; originalToken: string }[] = [];
+  const knownTokens: { type: IdType; value: string; originalToken: string }[] = [];
   const allWords = new Set<string>(existingTokens.map((token) => token.value));
   ignoredWords.forEach((word) => allWords.add(word));
   for (const line of lines) {
@@ -172,7 +172,7 @@ function isInDatabase(token: string, database: ReturnType<typeof generateAllVari
 function getDatabaseValuePath(token: string, database: ReturnType<typeof generateAllVariants>) {
   for (const [key, value] of Object.entries(database)) {
     if (value.has(token)) {
-      return { type: key as CardType, value: value.get(token) as string, originalToken: token };
+      return { type: key as IdType, value: value.get(token) as string, originalToken: token };
     }
   }
   return null;

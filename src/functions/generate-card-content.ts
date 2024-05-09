@@ -1,13 +1,19 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { AnyContent, ContentTag, ContentVoice } from '../content-types';
+import type { CardTypeConfiguration, CardTypeRecord } from '../database/card-types';
 import type {
   AdjectiveInflection,
   AdjectiveVariant,
   ArticleVariant,
+  Attribute,
+  AttributeRecord,
+  IdType,
   NounVariant,
   Preposition,
   PronounFunction,
   PronounVariant,
+  StandardCardAttributes,
+  TranslationVariant,
   VerbConjugationVariant,
   VerbMood,
   VerbTense,
@@ -16,7 +22,8 @@ import type {
 import { NounGender } from '../database/types';
 import { AdjectiveDegree, CardType, Case, NounNumber, VerbPronoun } from '../database/types';
 import { slashSplit } from '../utils/split';
-import type { AnyTestableCard } from './reviews';
+import { isMatch } from './generate-variants';
+import type { AnyTestableCard, StandardTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
 import {
   getVerbMeta,
@@ -267,11 +274,123 @@ const getVerbTranslationsContent = (translations: [string, string][], cardValue:
     .flat(1);
 };
 
+const getVerbTranslationsContent2 = (translations: TranslationVariant[], cardValue: string | null): AnyContent[] => {
+  return translations
+    .map(({ schema, translation }): AnyContent | AnyContent[] => {
+      if (!schema) return [];
+      return [
+        {
+          type: 'div',
+          content: [
+            {
+              type: 'paragraph',
+              content: cardValue ? schema.replace(/#/g, cardValue) : schema,
+              style: { display: 'inline', background: '#fffe002b', padding: '2px 10px' },
+            },
+            {
+              type: 'paragraph',
+              content: translation,
+              style: { display: 'inline', border: '1px solid rgba(255, 254, 0, 0.17)', padding: '1px 10px' },
+            },
+          ],
+          style: { margin: '10px 0', fontSize: 18 },
+        },
+      ];
+    })
+    .flat(1);
+};
+
 const getVerbTranslationBeforeAndAfterAnswer = (translations: [string, string][], cardValue: string): AnyContent[] => {
   return [
     { type: 'beforeAnswer', content: getVerbTranslationsContent(translations, '*') },
     { type: 'afterAnswer', content: getVerbTranslationsContent(translations, cardValue) },
   ];
+};
+
+const getVerbTranslationBeforeAndAfterAnswer2 = (
+  translations: TranslationVariant[],
+  cardValue: string,
+): AnyContent[] => {
+  return [
+    { type: 'beforeAnswer', content: getVerbTranslationsContent2(translations, '*') },
+    { type: 'afterAnswer', content: getVerbTranslationsContent2(translations, cardValue) },
+  ];
+};
+
+export interface Helper {
+  cardTypes: Record<string, CardTypeRecord | undefined>;
+  attributes: Record<string, Attribute | undefined>;
+  attributeRecords: Record<string, AttributeRecord | undefined>;
+}
+
+const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helper) => {
+  const viewAttrs = helper.cardTypes[record.displayType]?.configuration?.tags;
+  const tags: ContentTag[] = [helper.cardTypes[record.displayType]?.name ?? ''];
+
+  const getAttrInfo = (attrId: IdType | string, value: IdType) => {
+    const attr = helper.attributes[attrId];
+    if (!attr) return null;
+    const record = helper.attributeRecords[value];
+    if (!record) return null;
+    return { color: record.color || '', text: record.name };
+  };
+  if (viewAttrs) {
+    // debugger;
+    viewAttrs.forEach(({ attrId, type, defValue, matcher }) => {
+      if (
+        matcher &&
+        !isMatch<{ category?: IdType | null; attr?: StandardCardAttributes | null; viewMode: CardViewMode }>(
+          { category: record.variant.category, attr: record.variant.attrs, viewMode: mode },
+          matcher,
+        )
+      ) {
+        return null;
+      }
+      const attr = record.variant.attrs?.[attrId] ?? defValue;
+      if (attr === undefined) return null;
+      const info = getAttrInfo(attrId, attr);
+      if (!info) return null;
+      tags.push({
+        text: info.text,
+        color: info.color,
+        variant: type ?? 'regular',
+      });
+    });
+  } else if (record.card.attributes) {
+    for (const id in record.card.attributes) {
+      const attr = record.card.attributes[id];
+      const info = getAttrInfo(id, attr);
+      if (!info) continue;
+      tags.push({
+        text: info.text,
+        color: info.color,
+        variant: 'regular',
+      });
+    }
+  }
+  return tags;
+};
+
+export const getCardViewContent2 = (
+  record: StandardTestableCard,
+  mode: CardViewMode.individualView | CardViewMode.groupView,
+  helper: Helper,
+): (AnyContent | null | undefined)[] => {
+  if (mode === CardViewMode.individualView) {
+    const tags = getTags(record, mode, helper);
+
+    const displayValue = record.variant.value; // TODO: take care of article in case of nouns
+    return [
+      getTopRow(tags, displayValue),
+      { type: 'header', variant: 'h1', content: displayValue, style: { textAlign: 'center' } },
+      { type: 'hr', style: { opacity: 0.2 } },
+      { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
+      ...(record.card.translationVariants
+        ? getVerbTranslationsContent2(record.card.translationVariants, record.card.value)
+        : []),
+    ];
+  }
+  return [];
 };
 
 export const getCardViewContent = (
@@ -487,6 +606,33 @@ const prepareInputAudio = (correctValues: string[], prefix: string = ''): Omit<C
   autoplay: true,
   size: 'mini',
 });
+
+export const getCardTestContent2 = (
+  record: StandardTestableCard,
+  helper: Helper,
+): (AnyContent | null | undefined)[] => {
+  const tags = getTags(record, CardViewMode.test, helper);
+  const correctValues = slashSplit(record.variant.value); // TODO: take care of article in case of nouns
+  return [
+    { type: 'tag', content: tags },
+    { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
+    {
+      type: 'input',
+      inputId: '1',
+      placeholder: 'tipp',
+      fullWidth: true,
+      autoFocus: true,
+      correctValues,
+      style: { textAlign: 'center' },
+      audioProps: prepareInputAudio(correctValues),
+    },
+    ...(record.card.translationVariants
+      ? getVerbTranslationBeforeAndAfterAnswer2(record.card.translationVariants, record.card.value)
+      : []),
+    // ...getAfterAnswerMetaInfo(record),
+  ];
+  return [];
+};
 
 export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null | undefined)[] => {
   if (record.type === CardType.VERB) {
@@ -835,7 +981,7 @@ export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null 
       ...getAfterAnswerMetaInfo(record),
     ];
   }
-  throw new Error('Unsupported card type ' + (record as Record<string, unknown>).type + ' for test');
+  return [];
 };
 
 const getAfterAnswerMetaInfo = (record: AnyTestableCard): AnyContent[] => {

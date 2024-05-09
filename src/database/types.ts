@@ -207,12 +207,14 @@ export type AnyCard = Verb | Noun | Article | Adjective | Phrase | Conjunction |
 
 /// New standard types
 
-export type IdType = number;
+export type IdType = number | string;
 
 export type StandardCardType = IdType;
-export type StandardCardAttributes = Record<string, IdType | IdType[]>; // key: attribute id, value: attribute record id
+export type StandardCardAttributes = Record<string, IdType>; // key: attribute id, value: attribute record id
 export type StandardCardVariant = {
-  attrs: StandardCardAttributes;
+  id?: IdType;
+  attrs?: StandardCardAttributes | null;
+  category?: IdType | null;
   value: string;
 };
 
@@ -222,18 +224,31 @@ export type TranslationVariant = {
   translation: string;
 };
 
+export type VariantPriority = {
+  attrs?: Record<string, IdType | IdType[] | null>;
+  categories?: IdType[];
+};
+
 export type StandardCard = {
+  id?: IdType;
+  lang: string;
   type: StandardCardType;
   mainType?: StandardCardType;
   value: string;
-  uniqueValue?: string;
-  translation: string;
+  /** @deprecated needs to be removed */
+  uniqueValue: string | undefined;
+  /** Describes attributes of initial variant only */
+  initialAttributes?: StandardCardAttributes;
+  /** Describes labels of initial variant only */
+  initialcategories?: IdType[];
   attributes?: StandardCardAttributes;
-  topAttributesPriority?: Record<string, IdType | null>[];
-  childrenAttributesPriority?: Record<string, IdType | null>[];
-  variants?: StandardCardVariant[];
+  categories?: IdType[];
+  variantPriorities?: VariantPriority[];
+  variants: StandardCardVariant[];
+  /** Should be moved into separate table */
+  translation: string;
+  /** Should be moved into separate table */
   translationVariants?: TranslationVariant[];
-  topVariants?: StandardCardVariant[]; // comperative, superlative, etc.
 };
 
 export interface Attribute {
@@ -245,6 +260,10 @@ export interface AttributeRecord {
   id: IdType;
   attributeId: IdType;
   name: string;
-  // color: string;
-  level?: number; // 1 - parent level; 2 - both parent & child level; null | undefined - child level
+  color?: string;
+}
+
+export interface Category {
+  id: IdType;
+  name: string;
 }

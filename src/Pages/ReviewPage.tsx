@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import cssModule from '../App.module.css';
-import { getCardTestContent, getCardViewContent } from '../functions/generate-card-content';
-import { Reviewer } from '../functions/reviewer';
-import { CardViewMode } from '../functions/reviews';
 import Content from '../Content';
 import { TestContextProvider } from '../contexts/testContext';
+import { getCardTestContent2, getCardViewContent2 } from '../functions/generate-card-content';
+import { Reviewer } from '../functions/reviewer';
+import { CardViewMode } from '../functions/reviews';
+import { useHelper } from './hooks/text-helpers';
 
 const ReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
   const mode = !!searchParams.get('mode');
   const courseId = !searchParams.get('courseId') ? undefined : +(searchParams.get('courseId') as string);
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
+  const helper = useHelper();
 
   const [reviewer] = useState(() => new Reviewer(courseId, lessonId, mode ? 'endless' : 'normal'));
   const [questionNumber, setQuestionNumber] = useState(0);
@@ -19,11 +21,11 @@ const ReviewPage = () => {
   const [wasWrong, setWasWrong] = useState(false);
 
   const question = useMemo(() => {
-    if (!currentCard) return null;
+    if (!helper || !currentCard) return null;
     if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
         type: CardViewMode.groupView,
-        content: getCardViewContent(currentCard.record, CardViewMode.groupView),
+        content: getCardViewContent2(currentCard.record, CardViewMode.groupView, helper),
       };
     } else if (
       !currentCard.hasGroupViewMode &&
@@ -32,14 +34,14 @@ const ReviewPage = () => {
     ) {
       return {
         type: CardViewMode.individualView,
-        content: getCardViewContent(currentCard.record, CardViewMode.individualView),
+        content: getCardViewContent2(currentCard.record, CardViewMode.individualView, helper),
       };
     }
     return {
       type: CardViewMode.test,
-      content: getCardTestContent(currentCard.record),
+      content: getCardTestContent2(currentCard.record, helper),
     };
-  }, [currentCard]);
+  }, [currentCard, helper]);
 
   const [isInAnswerReviewMode, setIsInAnswerReviewMode] = useState(false);
 

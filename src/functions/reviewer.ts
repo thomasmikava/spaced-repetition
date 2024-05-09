@@ -1,11 +1,11 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { LessonCard } from '../courses/lessons';
 import { courses } from '../courses/lessons';
-import type { AnyCard } from '../database/types';
+import type { StandardCard } from '../database/types';
 import { generateTestableCards } from './generate-variants';
-import { generateIndexedDatabase } from './generateIndexedDatabase';
+import { generateIndexedDatabase2 } from './generateIndexedDatabase';
 import { PreviousReviews } from './previous-reviews';
-import type { AnyTestableCard, GroupReviewHistory, IndividualReviewHistory, TestReviewHistory } from './reviews';
+import type { GroupReviewHistory, IndividualReviewHistory, StandardTestableCard, TestReviewHistory } from './reviews';
 import {
   CardViewMode,
   DEFAULT_REVIEW_DUE,
@@ -21,7 +21,7 @@ import {
 import { addUpdatedItemsInStorage, getDbRecord } from './storage';
 
 export interface CardWithProbability {
-  record: AnyTestableCard;
+  record: StandardTestableCard;
   historyRecord?: TestReviewHistory;
   reviewRecord?: TestReviewHistory;
   groupVewRecord?: TestReviewHistory;
@@ -41,7 +41,7 @@ export interface CardWithProbability {
 
 export class Reviewer {
   private lessonCards: LessonCard[];
-  private allTestableCards: AnyTestableCard[];
+  private allTestableCards: StandardTestableCard[];
   private prevReviews: PreviousReviews;
   // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
@@ -49,7 +49,7 @@ export class Reviewer {
     private lessonId: number | undefined = undefined,
     private mode: 'endless' | 'normal' = 'normal',
     private avoidStorage = false,
-    private cardsDatabase = generateIndexedDatabase(),
+    private cardsDatabase = generateIndexedDatabase2(),
   ) {
     this.prevReviews = new PreviousReviews(avoidStorage);
     this.lessonCards = [];
@@ -60,7 +60,7 @@ export class Reviewer {
         if (lessonId && lesson.id !== lessonId) continue;
         for (const lessonCard of lesson.cards) {
           if (lessonCard.hidden) continue;
-          const card = this.cardsDatabase[lessonCard.type]?.[lessonCard.value];
+          const card = this.cardsDatabase.getCard(lessonCard.type, lessonCard.value);
           if (!card) continue;
           const testableCards = generateTestableCards(card);
           this.allTestableCards.push(...testableCards);
@@ -75,12 +75,12 @@ export class Reviewer {
     return [...this.allTestableCards];
   }
 
-  getClosestDueDate = (card: AnyCard) => {
+  getClosestDueDate = (card: StandardCard) => {
     const testableCards = generateTestableCards(card);
     return Math.min(...testableCards.map((record) => this.getDueDate(record)));
   };
 
-  getDueDate = (record: AnyTestableCard, accordingToDate = Date.now()): number => {
+  getDueDate = (record: StandardTestableCard, accordingToDate = Date.now()): number => {
     const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
     if (!historyRecord) return Infinity;
     return dueDateUntilProbabilityIsHalf(
@@ -127,7 +127,7 @@ export class Reviewer {
     const groupsMetaData: {
       [key in string]?: GroupMeta;
     } = {};
-    const getSingleKey = (card: AnyTestableCard['card']) => card.type + '*' + (card.uniqueValue ?? card.value);
+    const getSingleKey = (card: StandardTestableCard['card']) => card.type + '*' + (card.uniqueValue ?? card.value);
     const blockCache: Record<string, boolean | undefined> = {};
     const updateIsAnyPrevGroupBlocked = (groupKey: string): boolean => {
       if (typeof blockCache[groupKey] === 'boolean') return blockCache[groupKey] ?? false;

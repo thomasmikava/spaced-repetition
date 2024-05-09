@@ -1,5 +1,6 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import { AttributeMapper, CardTypeMapper } from '../database/attributes';
+import { CATEGORY_MAPPER } from '../database/categories';
 import type {
   StandardCard,
   StandardCardVariant,
@@ -12,18 +13,31 @@ import type {
 import { AdjectiveDegree, CardType, NounGender, NounNumber, PronounFunction } from '../database/types';
 import { isNonNullable } from '../utils/array';
 import type { RawCard } from './generateIndexedDatabase';
+import { getWithArticle } from './texts';
+
+const defaultLang = 'de';
+
+const getInitialVariant = (value: string): StandardCardVariant => {
+  return {
+    value,
+    attrs: null,
+    category: 1,
+  };
+};
 
 export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
   switch (rawCard.type) {
     case CardType.VERB: {
-      const { variants, priorities } = getVarbConjuctions(rawCard.variants);
+      const { variants, priorities } = getVerbConjugations(rawCard.variants);
       return {
         type: CardTypeMapper[CardType.VERB],
         value: rawCard.value,
         uniqueValue: rawCard.uniqueValue,
+        lang: defaultLang,
+        id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
-        childrenAttributesPriority: priorities,
-        variants,
+        variantPriorities: priorities,
+        variants: [getInitialVariant(rawCard.value)].concat(variants),
         translationVariants:
           rawCard.translations.length > 0
             ? rawCard.translations.map(([schema, translation]) => ({
@@ -36,43 +50,52 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
     case CardType.NOUN: {
       return {
         type: CardTypeMapper[CardType.NOUN],
-        value: rawCard.value,
+        value: getWithArticle(rawCard.value, rawCard.gender),
+        lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
+        id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
         attributes: {
           [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[rawCard.gender],
         },
-        variants: getNounVariants(rawCard.variants),
+        variants: [getInitialVariant(rawCard.value)].concat(getNounVariants(rawCard.variants)),
       };
     }
     case CardType.ADJECTIVE: {
+      const topVariants: (StandardCardVariant | null)[] = [
+        getInitialVariant(rawCard.value),
+        rawCard.komparativ
+          ? {
+              attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Komparativ] },
+              value: rawCard.komparativ,
+              category: CATEGORY_MAPPER.comparative,
+            }
+          : null,
+        rawCard.superlativ
+          ? {
+              attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Superlativ] },
+              value: rawCard.superlativ,
+              category: CATEGORY_MAPPER.superlative,
+            }
+          : null,
+      ];
       return {
         type: CardTypeMapper[CardType.ADJECTIVE],
         value: rawCard.value,
+        lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
+        id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
-        topVariants: [
-          rawCard.komparativ
-            ? {
-                attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Komparativ] },
-                value: rawCard.komparativ,
-              }
-            : null,
-          rawCard.superlativ
-            ? {
-                attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Superlativ] },
-                value: rawCard.superlativ,
-              }
-            : null,
-        ].filter(isNonNullable),
-        variants: getAdjectiveVariants(rawCard.variants),
+        variants: topVariants.filter(isNonNullable).concat(getAdjectiveVariants(rawCard.variants)),
       };
     }
     case CardType.ARTICLE: {
       return {
         type: CardTypeMapper[CardType.ARTICLE],
         value: rawCard.value,
+        lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
+        id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
         attributes: {
           [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[rawCard.gender],
@@ -80,13 +103,15 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
           [AttributeMapper.DEFINITENESS.id]:
             AttributeMapper.DEFINITENESS.records[rawCard.isDefinite ? 'true' : 'false'],
         },
-        variants: rawCard.variants.map(
-          (variant): StandardCardVariant => ({
-            value: variant.value,
-            attrs: {
-              [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[variant.case],
-            },
-          }),
+        variants: [getInitialVariant(rawCard.value)].concat(
+          rawCard.variants.map(
+            (variant): StandardCardVariant => ({
+              value: variant.value,
+              attrs: {
+                [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[variant.case],
+              },
+            }),
+          ),
         ),
       };
     }
@@ -94,24 +119,33 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
       return {
         type: CardTypeMapper[CardType.PHRASE],
         value: rawCard.value,
+        lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
+        id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
         mainType: rawCard.mainType ? CardTypeMapper[rawCard.mainType] : undefined,
+        variants: [getInitialVariant(rawCard.value)],
       };
     }
     case CardType.CONJUNCTION: {
       return {
         type: CardTypeMapper[CardType.CONJUNCTION],
         value: rawCard.value,
+        lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
+        id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
+        variants: [getInitialVariant(rawCard.value)],
       };
     }
     case CardType.PREPOSITION: {
       return {
         type: CardTypeMapper[CardType.PREPOSITION],
         value: rawCard.value,
+        lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
+        id: rawCard.uniqueValue ?? rawCard.value,
+        variants: [getInitialVariant(rawCard.value)],
         translation: rawCard.translation,
         translationVariants: rawCard.variations.map((v) => ({
           attrs: { [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[v.cases[0]] },
@@ -123,9 +157,11 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
       return {
         type: CardTypeMapper[CardType.PRONOUN],
         value: rawCard.value,
+        lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
+        id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
-        variants: getPronounVariants(rawCard.variants),
+        variants: [getInitialVariant(rawCard.value)].concat(getPronounVariants(rawCard.variants)),
       };
     }
     default:
@@ -133,7 +169,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
   }
 };
 
-const getVarbConjuctions = (variants: VerbVariant[]) => {
+const getVerbConjugations = (variants: VerbVariant[]) => {
   const newVariants: StandardCardVariant[] = [];
   const priorities: { n: number; mood: IdType; tense: IdType }[] = [];
   for (const variant of variants) {
@@ -160,9 +196,9 @@ const getVarbConjuctions = (variants: VerbVariant[]) => {
       }
     }
   }
-  const pr: StandardCard['childrenAttributesPriority'] = priorities
+  const pr: StandardCard['variantPriorities'] = priorities
     .sort((a, b) => a.n - b.n)
-    .map((v) => ({ [AttributeMapper.MOOD.id]: v.mood, [AttributeMapper.TENSE.id]: v.tense }));
+    .map((v) => ({ attrs: { [AttributeMapper.MOOD.id]: v.mood, [AttributeMapper.TENSE.id]: v.tense } }));
   return { variants: newVariants, priorities: pr && pr.length > 0 ? pr : undefined };
 };
 

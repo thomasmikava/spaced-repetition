@@ -1,13 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 import cssModule from '../App.module.css';
-import { getCardTestContent, getCardViewContent } from '../functions/generate-card-content';
-import type { CardWithProbability } from '../functions/reviewer';
-import { Reviewer } from '../functions/reviewer';
-import { CardViewMode, secondsUntilProbabilityIsHalf } from '../functions/reviews';
 import Content from '../Content';
 import { TestContextProvider } from '../contexts/testContext';
 import { CardType } from '../database/types';
+import { getCardTestContent2, getCardViewContent2 } from '../functions/generate-card-content';
+import type { CardWithProbability } from '../functions/reviewer';
+import { Reviewer } from '../functions/reviewer';
+import { CardViewMode, secondsUntilProbabilityIsHalf } from '../functions/reviews';
 import { formatTime } from '../utils/time';
+import { useHelper } from './hooks/text-helpers';
 
 const AlgorithmReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
@@ -16,31 +17,38 @@ const AlgorithmReviewPage = () => {
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
   const [mainKey, setMainKey] = useState(0);
   const [maxCards, setMaxCards] = useState(400);
+  const helper = useHelper();
 
   const [correctness, setCorrectness] = useState<boolean[]>([]);
 
-  const getQuestion = useCallback((currentCard: CardWithProbability) => {
-    if (!currentCard) return null;
-    if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
+  const getQuestion = useCallback(
+    (currentCard: CardWithProbability) => {
+      if (!helper || !currentCard) return null;
+      if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
+        return {
+          type: CardViewMode.groupView,
+          content: getCardViewContent2(currentCard.record, CardViewMode.groupView, helper),
+          record: currentCard.record,
+        };
+      } else if (
+        !currentCard.hasGroupViewMode &&
+        currentCard.hasIndividualViewMode &&
+        !currentCard.isIndividuallyViewed
+      ) {
+        return {
+          type: CardViewMode.individualView,
+          content: getCardViewContent2(currentCard.record, CardViewMode.individualView, helper),
+          record: currentCard.record,
+        };
+      }
       return {
-        type: CardViewMode.groupView,
-        content: getCardViewContent(currentCard.record, CardViewMode.groupView),
+        type: CardViewMode.test,
+        content: getCardTestContent2(currentCard.record, helper),
+        record: currentCard.record,
       };
-    } else if (
-      !currentCard.hasGroupViewMode &&
-      currentCard.hasIndividualViewMode &&
-      !currentCard.isIndividuallyViewed
-    ) {
-      return {
-        type: CardViewMode.individualView,
-        content: getCardViewContent(currentCard.record, CardViewMode.individualView),
-      };
-    }
-    return {
-      type: CardViewMode.test,
-      content: getCardTestContent(currentCard.record),
-    };
-  }, []);
+    },
+    [helper],
+  );
 
   const entries = useMemo(() => {
     const reviewer = new Reviewer(courseId, lessonId, mode ? 'endless' : 'normal', true);
@@ -108,7 +116,7 @@ const AlgorithmReviewPage = () => {
                   </button>
                 )}
               </div>
-              <ViewCard>
+              <ViewCard {...{ record: question.record }}>
                 <Content content={question.content} />
               </ViewCard>
             </TestContextProvider>

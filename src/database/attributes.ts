@@ -13,7 +13,7 @@ import {
   VerbTense,
 } from './types';
 
-const attrbiutes: Attribute[] = [
+export const attrbiutes: Attribute[] = [
   {
     id: 1,
     name: 'Number',
@@ -56,56 +56,66 @@ const attrbiutes: Attribute[] = [
   },
 ];
 
-const attributeRecords: AttributeRecord[] = [
+export const attributeRecords: AttributeRecord[] = [
   {
     id: 1,
     attributeId: 1,
     name: 'Singular',
+    color: '_lightBlue',
   },
   {
     id: 2,
     attributeId: 1,
     name: 'Plural',
+    color: '_green',
   },
   {
     id: 3,
     attributeId: 2,
     name: 'Masculine',
+    color: '_blue',
   },
   {
     id: 4,
     attributeId: 2,
     name: 'Feminine',
+    color: '_pink',
   },
   {
     id: 5,
     attributeId: 2,
     name: 'Neuter',
+    color: '_violet',
   },
   {
     id: 6,
     attributeId: 2,
     name: 'Plural',
+    color: '_green',
   },
   {
     id: 7,
     attributeId: 3,
     name: 'Nominative',
+    color: '_lightBlue',
   },
   {
     id: 8,
     attributeId: 3,
     name: 'Accusative',
+    color: '_orange',
   },
   {
     id: 9,
     attributeId: 3,
     name: 'Dative',
+    color: '_green',
   },
   {
     id: 10,
     attributeId: 3,
     name: 'Genitive',
+    color: '_pink',
   },
   {
     id: 11,
@@ -206,16 +216,19 @@ const attributeRecords: AttributeRecord[] = [
     id: 30,
     attributeId: 7,
     name: 'Positive',
+    color: '_lightBlue',
   },
   {
     id: 31,
     attributeId: 7,
     name: 'Comparative',
+    color: '_orange',
   },
   {
     id: 32,
     attributeId: 7,
     name: 'Superlative',
+    color: '_green',
   },
   {
     id: 33,
