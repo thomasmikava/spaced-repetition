@@ -1,3 +1,5 @@
+/* eslint-disable sonarjs/cognitive-complexity */
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function uniquelize<T extends number | string | null>(arr: T[]): T[];
 export function uniquelize<T>(arr: T[], elementToKey: (el: T) => string | number | null | undefined): T[];

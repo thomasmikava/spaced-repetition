@@ -56,6 +56,14 @@ export const generateIndexedDatabase2 = () => {
   return { getCard };
 };
 
+// const ina = generateIndexedDatabase2();
+// console.log(
+//   'article',
+//   ['der', 'dieF', 'das', 'dieP', 'einM', 'eine', 'einN']
+//     .map((v) => ina.getCard(CardType.ARTICLE, v))
+//     .map((e) => generateTestableCards(e!)),
+// );
+
 type DbT = ReturnType<typeof generateIndexedDatabase>;
 export type RawCard = NonNullable<DbT[keyof DbT][string]>;
 

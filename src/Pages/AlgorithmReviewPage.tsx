@@ -3,7 +3,7 @@ import cssModule from '../App.module.css';
 import Content from '../Content';
 import { TestContextProvider } from '../contexts/testContext';
 import { CardType } from '../database/types';
-import { getCardTestContent2, getCardViewContent2 } from '../functions/generate-card-content';
+import { getCardViewContent2 } from '../functions/generate-card-content';
 import type { CardWithProbability } from '../functions/reviewer';
 import { Reviewer } from '../functions/reviewer';
 import { CardViewMode, secondsUntilProbabilityIsHalf } from '../functions/reviews';
@@ -43,7 +43,7 @@ const AlgorithmReviewPage = () => {
       }
       return {
         type: CardViewMode.test,
-        content: getCardTestContent2(currentCard.record, helper),
+        content: getCardViewContent2(currentCard.record, CardViewMode.test, helper),
         record: currentCard.record,
       };
     },

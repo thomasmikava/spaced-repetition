@@ -1,6 +1,9 @@
+/* eslint-disable no-case-declarations */
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { AnyContent, ContentTag, ContentVoice } from '../content-types';
-import type { CardTypeConfiguration, CardTypeRecord } from '../database/card-types';
+import { AttributeMapper } from '../database/attributes';
+import type { ViewLine } from '../database/card-types';
+import { ViewLineType, type CardTypeRecord } from '../database/card-types';
 import type {
   AdjectiveInflection,
   AdjectiveVariant,
@@ -21,6 +24,8 @@ import type {
 } from '../database/types';
 import { NounGender } from '../database/types';
 import { AdjectiveDegree, CardType, Case, NounNumber, VerbPronoun } from '../database/types';
+import { isNonNullable } from '../utils/array';
+import { pickKeys } from '../utils/object';
 import { slashSplit } from '../utils/split';
 import { isMatch } from './generate-variants';
 import type { AnyTestableCard, StandardTestableCard } from './reviews';
@@ -48,6 +53,8 @@ import {
   getInflationColor,
   getPronounFunctionDisplayName,
   getPronounFunctionColor,
+  getArticle2,
+  getWithSymbolArticle2,
 } from './texts';
 
 const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
@@ -83,26 +90,30 @@ const getDefaultViewContent = (
 };
 
 const generateColumnedTable = <Row extends string[]>(
-  columns: Row[],
-  getVoiceText: (row: Row) => string,
+  rows: Row[],
+  getVoiceText: (row: Row, index: number) => string,
+  mainValueIndex: number = 1,
+  locale: string = 'de',
 ): AnyContent[] => {
   return [
     {
       type: 'table',
       style: { fontSize: 20, margin: '0 auto' },
-      content: columns.map((row) => {
+      content: rows.map((row, index): AnyContent[] => {
         return [
-          {
-            type: 'div',
-            content: [{ type: 'text', content: row[0] }],
-            style: { textAlign: 'right' },
-          },
+          ...row.slice(0, row.length - 1).map((value, ind): AnyContent => {
+            return {
+              type: 'div',
+              content: [{ type: 'text', content: value }],
+              style: { textAlign: ind === 0 ? 'right' : 'center' },
+            };
+          }),
           {
             type: 'div',
             content: [
               {
                 type: 'div',
-                content: [{ type: 'text', content: row[1] }],
+                content: [{ type: 'text', content: row[row.length - 1] }],
                 style: {
                   flex: 1,
                   padding: '0 10px 0 5px',
@@ -113,13 +124,13 @@ const generateColumnedTable = <Row extends string[]>(
                 content: [
                   {
                     type: 'voice',
-                    language: 'de',
-                    text: getVoiceText(row),
+                    language: locale,
+                    text: getVoiceText(row, index),
                     autoplay: false,
                     size: 'mini',
                   },
                 ],
-                style: { display: row[1] === '-' ? 'none' : undefined },
+                style: { display: row[mainValueIndex] === '-' ? 'none' : undefined },
               },
             ],
             style: { display: 'flex' },
@@ -127,7 +138,7 @@ const generateColumnedTable = <Row extends string[]>(
         ];
       }),
       getCellStyles: (rowIndex, columnIndex) => {
-        const isFaded = columns[rowIndex][1] === '-';
+        const isFaded = rows[rowIndex][mainValueIndex] === '-';
         const commonStyles = { opacity: isFaded ? 0.5 : 1 };
         if (columnIndex === 0) return { ...commonStyles, width: '0', paddingRight: '5px' };
         return { ...commonStyles, minWidth: '50%' };
@@ -335,7 +346,6 @@ const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helpe
     return { color: record.color || '', text: record.name };
   };
   if (viewAttrs) {
-    // debugger;
     viewAttrs.forEach(({ attrId, type, defValue, matcher }) => {
       if (
         matcher &&
@@ -373,24 +383,223 @@ const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helpe
 
 export const getCardViewContent2 = (
   record: StandardTestableCard,
-  mode: CardViewMode.individualView | CardViewMode.groupView,
+  mode: CardViewMode,
   helper: Helper,
 ): (AnyContent | null | undefined)[] => {
-  if (mode === CardViewMode.individualView) {
-    const tags = getTags(record, mode, helper);
+  const config = helper.cardTypes[record.displayType]?.configuration;
+  // const mathcer = config?.variantGroups?.find((e) => e.id === record.groupMeta.matcherId)?.matcher;
+  const myViewId =
+    mode === CardViewMode.test
+      ? record.groupMeta.testViewId
+      : mode === CardViewMode.groupView
+        ? record.groupMeta.groupViewId
+        : record.groupMeta.indViewId;
+  const view = myViewId ? config?.views?.find((e) => e.id === myViewId) : undefined;
+  const defaultLines: ViewLine[] =
+    mode === CardViewMode.test
+      ? [
+          { type: ViewLineType.Translation },
+          { type: ViewLineType.Input },
+          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+        ]
+      : [
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.VariantValue, bigText: true },
+          { type: ViewLineType.Separator },
+          { type: ViewLineType.Translation },
+          { type: ViewLineType.TranslationVariants },
+        ];
+  const viewLines = view?.lines ?? defaultLines;
+  // debugger;
 
-    const displayValue = record.variant.value; // TODO: take care of article in case of nouns
-    return [
-      getTopRow(tags, displayValue),
-      { type: 'header', variant: 'h1', content: displayValue, style: { textAlign: 'center' } },
-      { type: 'hr', style: { opacity: 0.2 } },
-      { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
-      ...(record.card.translationVariants
-        ? getVerbTranslationsContent2(record.card.translationVariants, record.card.value)
-        : []),
-    ];
+  const textStyle: React.CSSProperties = { textAlign: 'center', fontSize: 20, display: 'block' };
+
+  const withArticle = (
+    word: string,
+    attributes: StandardCardAttributes | null | undefined,
+    options: { includeArticleSymbol?: boolean; useArticleAsPrefix?: boolean },
+  ) => {
+    if ((!options.includeArticleSymbol && !options.useArticleAsPrefix) || !attributes) return word;
+    const newWord = options.useArticleAsPrefix ? getArticle2(record.card.lang, attributes, true) + ' ' + word : word;
+    if (options.includeArticleSymbol && AttributeMapper.GENDER.id in attributes) {
+      return getWithSymbolArticle2(record.card.lang, newWord, attributes[AttributeMapper.GENDER.id]);
+    }
+    return newWord;
+  };
+
+  let mainAudioText = null as string | null;
+
+  const lineContents = viewLines
+    .map((line): AnyContent[] | AnyContent | null | undefined => {
+      switch (line.type) {
+        case ViewLineType.Audio:
+          return null;
+        case ViewLineType.Separator:
+          return { type: 'hr', style: { opacity: 0.2 } };
+        case ViewLineType.NewLine:
+          return { type: 'hr', style: { opacity: 0 } };
+        case ViewLineType.CardValue:
+        case ViewLineType.VariantValue: {
+          const rawValue = line.type === ViewLineType.CardValue ? record.card.value : record.variant.value;
+          const displayValue = withArticle(rawValue, record.variant.attrs, line);
+          if (line.useForMainAudio) mainAudioText = displayValue;
+          if (line.bigText) {
+            return { type: 'header', variant: 'h1', content: displayValue, style: { textAlign: 'center' } };
+          }
+          return { type: line.paragraph ? 'paragraph' : 'text', content: displayValue, style: textStyle };
+        }
+        case ViewLineType.CustomCardValue: {
+          if (!line.matcher) return null;
+          const cardVariant = record.card.variants.find((e) =>
+            isMatch<{ category?: IdType | null; attrs?: StandardCardAttributes | null }>(e, line.matcher!),
+          );
+          if (!cardVariant) return null;
+          const displayValue = withArticle(
+            cardVariant.value,
+            { ...record.card.attributes, ...cardVariant.attrs },
+            line,
+          );
+          if (line.useForMainAudio) mainAudioText = displayValue;
+          if (line.bigText) {
+            return { type: 'header', variant: 'h1', content: displayValue, style: { textAlign: 'center' } };
+          }
+          return { type: line.paragraph ? 'paragraph' : 'text', content: displayValue, style: textStyle };
+        }
+        case ViewLineType.Translation:
+          const displayValue = withArticle(record.card.translation, record.variant.attrs, line);
+          return { type: 'paragraph', content: displayValue, style: textStyle };
+        case ViewLineType.TranslationVariants:
+          if (!record.card.translationVariants || record.card.translationVariants.length < 1) return null;
+          if (line.partiallyHiddenBeforeAnswer) {
+            return getVerbTranslationBeforeAndAfterAnswer2(record.card.translationVariants, record.card.value);
+          }
+          return getVerbTranslationsContent2(record.card.translationVariants, record.card.value);
+        case ViewLineType.AttrValue:
+          const attrs = record.variant.attrs || {};
+          const attrValueIds = line.attrs.map((attrId) => attrs[attrId]);
+          const attrValues = attrValueIds
+            .map((attrValueId) => {
+              const record = helper.attributeRecords[attrValueId];
+              return record ? record.name : null;
+            })
+            .filter(isNonNullable);
+          return { type: 'text', content: attrValues.join(line.separator ?? ', '), style: textStyle };
+        case ViewLineType.Input:
+          const correctValues = slashSplit(record.variant.value); // TODO: implement articles
+          return {
+            type: 'input',
+            inputId: '1',
+            placeholder: 'tipp', // TODO: localize placeholder
+            fullWidth: true,
+            autoFocus: true,
+            correctValues,
+            caseInsensitive: record.caseSensitive,
+            style: { textAlign: 'center' },
+            audioProps: prepareInputAudio(correctValues),
+          };
+        case ViewLineType.Table:
+          const mainAttr = line.columns.find((e) => e.type === 'attr' && e.main);
+          if (!mainAttr) return undefined;
+          const attrId = mainAttr.type === 'attr' ? mainAttr.attr : 0;
+          const attr = helper.attributes[attrId];
+          if (!attr) return undefined;
+          const myAttrObjects =
+            mainAttr.type === 'attr' && mainAttr.attrRecordValues
+              ? mainAttr.attrRecordValues
+                  .map((id) => {
+                    if (Array.isArray(id)) {
+                      const firstRecord = id.find((realId) =>
+                        record.groupMeta.variants.some((e) => e.attrs?.[attrId] === realId),
+                      );
+                      return helper.attributeRecords[firstRecord ?? id[0]];
+                    }
+                    return helper.attributeRecords[id];
+                  })
+                  .filter(isNonNullable)
+              : Object.values(helper.attributeRecords)
+                  .filter((e) => e?.attributeId === attrId)
+                  .filter(isNonNullable)
+                  .sort((a, b) => (a.id as number) - (b.id as number));
+          const audioInfo: string[] = [];
+          const rows = myAttrObjects
+            .map((attrValue) => {
+              return { variant: record.groupMeta.variants.find((e) => e.attrs?.[attrId] === attrValue.id), attrValue };
+            })
+            .map(({ variant, attrValue }, index): string[] => {
+              const row: (string | null)[] = [];
+              let audioValueMeta = null as string[] | null;
+              for (const column of line.columns) {
+                if (column.type === 'value') {
+                  row.push(variant?.value ?? '-');
+                } else if (column.type === 'attr') {
+                  const attrId = column.attr;
+                  const valueId = variant?.attrs?.[attrId];
+                  const valueRecord =
+                    attrValue.attributeId === attrId
+                      ? attrValue
+                      : valueId
+                        ? helper.attributeRecords[valueId]
+                        : undefined;
+                  row.push(valueRecord?.name ?? '');
+                } else if (column.type === 'article') {
+                  if (!variant) row.push('');
+                  else
+                    row.push(
+                      getArticle2(
+                        record.card.lang,
+                        pickKeys(
+                          (variant.attrs || {}) as Record<number, number>,
+                          AttributeMapper.NUMBER.id,
+                          AttributeMapper.GENDER.id,
+                          AttributeMapper.CASE.id,
+                        ),
+                      ) ?? '',
+                    );
+                } else if (column.type === 'audio') {
+                  row.push(null);
+                  audioValueMeta = column.values;
+                } else row.push(null);
+              }
+              if (audioValueMeta) {
+                audioInfo[index] = getColumnsFromRow(row, audioValueMeta).join(' ');
+              }
+              return row.filter(isNonNullable);
+            });
+          return generateColumnedTable(rows, (_row, index) => prepareTextForAudio(audioInfo[index] || ''));
+        //
+        default:
+          return undefined;
+      }
+    })
+    .flat(1);
+
+  let audioText = mainAudioText ?? '';
+  const audio = viewLines.find((e) => e.type === ViewLineType.Audio);
+  if (!mainAudioText && audio && audio.type === ViewLineType.Audio) {
+    const rawValue = record.variant.value;
+    audioText = withArticle(rawValue, record.variant.attrs, audio);
   }
-  return [];
+
+  const tags = getTags(record, mode, helper);
+  return [getTopRow(tags, audioText), ...lineContents];
+};
+
+const getColumnsFromRow = (row: (string | null)[], metaKeys: string[]) => {
+  const values: (string | null | undefined)[] = [];
+  for (const meta of metaKeys) {
+    if (!meta.includes('.')) {
+      values.push(row[parseInt(meta, 10)]);
+    } else {
+      const [rowIndex, slashVariantIndex] = meta.split('.');
+      const rowValue = row[parseInt(rowIndex, 10)];
+      if (!rowValue) values.push(null);
+      else {
+        const slashValues = slashSplit(rowValue);
+        values.push(slashValues[parseInt(slashVariantIndex, 10)]);
+      }
+    }
+  }
+  return values.filter(isNonNullable);
 };
 
 export const getCardViewContent = (
@@ -606,33 +815,6 @@ const prepareInputAudio = (correctValues: string[], prefix: string = ''): Omit<C
   autoplay: true,
   size: 'mini',
 });
-
-export const getCardTestContent2 = (
-  record: StandardTestableCard,
-  helper: Helper,
-): (AnyContent | null | undefined)[] => {
-  const tags = getTags(record, CardViewMode.test, helper);
-  const correctValues = slashSplit(record.variant.value); // TODO: take care of article in case of nouns
-  return [
-    { type: 'tag', content: tags },
-    { type: 'paragraph', content: record.card.translation, style: { textAlign: 'center', fontSize: 20 } },
-    {
-      type: 'input',
-      inputId: '1',
-      placeholder: 'tipp',
-      fullWidth: true,
-      autoFocus: true,
-      correctValues,
-      style: { textAlign: 'center' },
-      audioProps: prepareInputAudio(correctValues),
-    },
-    ...(record.card.translationVariants
-      ? getVerbTranslationBeforeAndAfterAnswer2(record.card.translationVariants, record.card.value)
-      : []),
-    // ...getAfterAnswerMetaInfo(record),
-  ];
-  return [];
-};
 
 export const getCardTestContent = (record: AnyTestableCard): (AnyContent | null | undefined)[] => {
   if (record.type === CardType.VERB) {

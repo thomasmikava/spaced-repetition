@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import cssModule from '../App.module.css';
 import Content from '../Content';
 import { TestContextProvider } from '../contexts/testContext';
-import { getCardTestContent2, getCardViewContent2 } from '../functions/generate-card-content';
+import { getCardViewContent2 } from '../functions/generate-card-content';
 import { Reviewer } from '../functions/reviewer';
 import { CardViewMode } from '../functions/reviews';
 import { useHelper } from './hooks/text-helpers';
@@ -39,7 +39,7 @@ const ReviewPage = () => {
     }
     return {
       type: CardViewMode.test,
-      content: getCardTestContent2(currentCard.record, helper),
+      content: getCardViewContent2(currentCard.record, CardViewMode.test, helper),
     };
   }, [currentCard, helper]);
 

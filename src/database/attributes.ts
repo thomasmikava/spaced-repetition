@@ -171,31 +171,37 @@ export const attributeRecords: AttributeRecord[] = [
     id: 21,
     attributeId: 5,
     name: 'Present',
+    color: '_lightBlue',
   },
   {
     id: 22,
     attributeId: 5,
     name: 'Perfect',
+    color: '_green',
   },
   {
     id: 23,
     attributeId: 5,
     name: 'Preterite',
+    color: '_orange',
   },
   {
     id: 24,
     attributeId: 5,
     name: 'Pluperfect',
+    color: '_blue',
   },
   {
     id: 25,
     attributeId: 5,
     name: 'Future I',
+    color: '_pink',
   },
   {
     id: 26,
     attributeId: 5,
     name: 'Future II',
+    color: '_violet',
   },
   {
     id: 27,
@@ -284,11 +290,13 @@ export const attributeRecords: AttributeRecord[] = [
     id: 43,
     attributeId: 10,
     name: 'Definite',
+    color: '_lightBlue',
   },
   {
     id: 44,
     attributeId: 10,
     name: 'Indefinite',
+    color: '_green',
   },
 ];
 

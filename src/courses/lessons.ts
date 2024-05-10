@@ -633,7 +633,9 @@ export const courses: Course[] = [
         id: 7,
         title: 'test',
         cards: [
-          { type: CardType.VERB, value: 'beginnen' },
+          // { type: CardType.VERB, value: 'beginnen' },
+          { type: CardType.VERB, value: 'sein' },
+          // { type: CardType.VERB, value: 'regnen' },
           // { type: CardType.NOUN, value: 'Kopf' },
           // { type: CardType.ADJECTIVE, value: 'spät' },
           // { type: CardType.NOUN, value: 'Leute' },

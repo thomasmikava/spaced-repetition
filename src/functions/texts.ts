@@ -1,4 +1,6 @@
 import { articles } from '../database/articles';
+import { AttributeMapper } from '../database/attributes';
+import type { IdType, StandardCardAttributes } from '../database/types';
 import {
   VerbPronoun,
   VerbMood,
@@ -11,6 +13,8 @@ import {
   AdjectiveInflection,
   PronounFunction,
 } from '../database/types';
+import { removeKeys } from '../utils/object';
+import { isMatch } from './generate-variants';
 
 export function getPronounDisplayName(pronoun: VerbPronoun) {
   return {
@@ -93,6 +97,336 @@ export function getArticle(number: NounNumber, gender: NounGender, isDefinite = 
         a.number === number && a.isDefinite === isDefinite && (number !== NounNumber.singular || a.gender === gender),
     )
     ?.variants.find((v) => v.case === caseId)?.value;
+}
+
+const articleObjects: { value: string; attrs: StandardCardAttributes }[] = [
+  {
+    value: 'der',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '10': 43,
+    },
+  },
+  {
+    value: 'der',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 7,
+      '10': 43,
+    },
+  },
+  {
+    value: 'den',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 8,
+      '10': 43,
+    },
+  },
+  {
+    value: 'dem',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 9,
+      '10': 43,
+    },
+  },
+  {
+    value: 'des',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 10,
+      '10': 43,
+    },
+  },
+  {
+    value: 'die',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '10': 43,
+    },
+  },
+  {
+    value: 'die',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 7,
+      '10': 43,
+    },
+  },
+  {
+    value: 'die',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 8,
+      '10': 43,
+    },
+  },
+  {
+    value: 'der',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 9,
+      '10': 43,
+    },
+  },
+  {
+    value: 'der',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 10,
+      '10': 43,
+    },
+  },
+  {
+    value: 'das',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '10': 43,
+    },
+  },
+  {
+    value: 'das',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 7,
+      '10': 43,
+    },
+  },
+  {
+    value: 'das',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 8,
+      '10': 43,
+    },
+  },
+  {
+    value: 'dem',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 9,
+      '10': 43,
+    },
+  },
+  {
+    value: 'des',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 10,
+      '10': 43,
+    },
+  },
+  {
+    value: 'die',
+    attrs: {
+      '1': 2,
+      '2': 6,
+      '10': 43,
+    },
+  },
+  {
+    value: 'die',
+    attrs: {
+      '1': 2,
+      '2': 6,
+      '3': 7,
+      '10': 43,
+    },
+  },
+  {
+    value: 'die',
+    attrs: {
+      '1': 2,
+      '2': 6,
+      '3': 8,
+      '10': 43,
+    },
+  },
+  {
+    value: 'den',
+    attrs: {
+      '1': 2,
+      '2': 6,
+      '3': 9,
+      '10': 43,
+    },
+  },
+  {
+    value: 'der',
+    attrs: {
+      '1': 2,
+      '2': 6,
+      '3': 10,
+      '10': 43,
+    },
+  },
+  {
+    value: 'ein',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '10': 44,
+    },
+  },
+  {
+    value: 'ein',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 7,
+      '10': 44,
+    },
+  },
+  {
+    value: 'einen',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 8,
+      '10': 44,
+    },
+  },
+  {
+    value: 'einem',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 9,
+      '10': 44,
+    },
+  },
+  {
+    value: 'eines',
+    attrs: {
+      '1': 1,
+      '2': 3,
+      '3': 10,
+      '10': 44,
+    },
+  },
+  {
+    value: 'eine',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '10': 44,
+    },
+  },
+  {
+    value: 'eine',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 7,
+      '10': 44,
+    },
+  },
+  {
+    value: 'eine',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 8,
+      '10': 44,
+    },
+  },
+  {
+    value: 'einer',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 9,
+      '10': 44,
+    },
+  },
+  {
+    value: 'einer',
+    attrs: {
+      '1': 1,
+      '2': 4,
+      '3': 10,
+      '10': 44,
+    },
+  },
+  {
+    value: 'ein',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '10': 44,
+    },
+  },
+  {
+    value: 'ein',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 7,
+      '10': 44,
+    },
+  },
+  {
+    value: 'ein',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 8,
+      '10': 44,
+    },
+  },
+  {
+    value: 'einem',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 9,
+      '10': 44,
+    },
+  },
+  {
+    value: 'eines',
+    attrs: {
+      '1': 1,
+      '2': 5,
+      '3': 10,
+      '10': 44,
+    },
+  },
+];
+export function getArticle2(_locale: string, searchAttrs: Record<PropertyKey, string | number>, onlyFirst = false) {
+  const normalizedSearchAttrs =
+    searchAttrs[AttributeMapper.NUMBER.id] === AttributeMapper.NUMBER.records[NounNumber.plural]
+      ? removeKeys(searchAttrs, AttributeMapper.GENDER.id)
+      : searchAttrs;
+  const articles = articleObjects.filter((art) => isMatch(art.attrs, normalizedSearchAttrs));
+  if (onlyFirst) return articles[0]?.value ?? '';
+  return articles.map((e) => e.value).join('/');
+}
+
+export function getWithSymbolArticle2(_lcoale: string, word: string, gender: IdType) {
+  const prefix = {
+    [AttributeMapper.GENDER.records[NounGender.Maskulinum]]: '♂ ',
+    [AttributeMapper.GENDER.records[NounGender.Femininum]]: '♀ ',
+    [AttributeMapper.GENDER.records[NounGender.Neutrum]]: '⚥ ',
+    [AttributeMapper.GENDER.records[NounGender.Plural]]: '',
+  }[gender];
+  return prefix + word;
 }
 
 export function getWithSymbolArticle(word: string, gender: NounGender) {

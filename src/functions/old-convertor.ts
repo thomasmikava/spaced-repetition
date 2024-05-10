@@ -36,7 +36,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         lang: defaultLang,
         id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
-        variantPriorities: priorities,
+        groupPriorities: priorities,
         variants: [getInitialVariant(rawCard.value)].concat(variants),
         translationVariants:
           rawCard.translations.length > 0
@@ -196,10 +196,8 @@ const getVerbConjugations = (variants: VerbVariant[]) => {
       }
     }
   }
-  const pr: StandardCard['variantPriorities'] = priorities
-    .sort((a, b) => a.n - b.n)
-    .map((v) => ({ attrs: { [AttributeMapper.MOOD.id]: v.mood, [AttributeMapper.TENSE.id]: v.tense } }));
-  return { variants: newVariants, priorities: pr && pr.length > 0 ? pr : undefined };
+  const pr: StandardCard['groupPriorities'] = priorities.sort((a, b) => a.n - b.n).map((v) => `m${v.mood}-t${v.tense}`);
+  return { variants: newVariants, priorities: pr && pr.length > 0 ? ['init', ...pr] : undefined };
 };
 
 const getNounVariants = (variants: NounVariant[]) => {
@@ -253,13 +251,14 @@ const getAdjectiveVariants = (variants: AdjectiveVariant[]) => {
 const getPronounVariants = (variants: PronounVariant[]): StandardCardVariant[] => {
   const newVariants: StandardCardVariant[] = [];
   for (const variant of variants) {
-    if (variant.function === PronounFunction.Declanation && variant.values.length < 4) {
+    if (variant.function === PronounFunction.Declanation && variant.values[0]?.length < 4) {
       // [Case, singularValue: string | null, pluralValue: string | null]
       for (const v of variant.values) {
         if (isNonEmpty(v[1])) {
           newVariants.push({
             value: v[1],
             attrs: {
+              [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[variant.function],
               [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[v[0]],
               [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.singular],
             },
@@ -269,8 +268,9 @@ const getPronounVariants = (variants: PronounVariant[]): StandardCardVariant[] =
           newVariants.push({
             value: v[2],
             attrs: {
+              [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[variant.function],
               [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[v[0]],
-              [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.singular],
+              [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural],
             },
           });
         }
@@ -284,6 +284,7 @@ const getPronounVariants = (variants: PronounVariant[]): StandardCardVariant[] =
             newVariants.push({
               value: v[ind] as string,
               attrs: {
+                [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[variant.function],
                 [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[v[0]],
                 [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[getGenderByInd(ind)],
               },

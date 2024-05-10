@@ -1,16 +1,15 @@
-import cssModule from '../App.module.css';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import cssModule from '../App.module.css';
+import ReviewButtons from '../ReviewButtons';
 import type { LessonCard } from '../courses/lessons';
 import { courses } from '../courses/lessons';
-import { generateIndexedDatabase } from '../functions/generateIndexedDatabase';
-import type { AnyCard } from '../database/types';
-import { CardType } from '../database/types';
-import ReviewButtons from '../ReviewButtons';
+import { CardTypeMapper } from '../database/attributes';
+import type { IdType } from '../database/types';
+import { generateIndexedDatabase2 } from '../functions/generateIndexedDatabase';
 import { Reviewer } from '../functions/reviewer';
-import { formatTime } from '../utils/time';
-import { getWithArticle } from '../functions/texts';
 import { roundNumber } from '../utils/number';
+import { formatTime } from '../utils/time';
 
 const LessonPage = () => {
   const params = useParams();
@@ -24,9 +23,9 @@ const LessonPage = () => {
 
   const [reviewer] = useState(() => new Reviewer(courseId, lessonId));
 
-  const cardsDatabase = useMemo(generateIndexedDatabase, []);
+  const cardsDatabase = useMemo(generateIndexedDatabase2, []);
   const getCard = (card: LessonCard) => {
-    return cardsDatabase[card.type][card.value];
+    return cardsDatabase.getCard(card.type, card.value);
   };
 
   const goToCourse = () => {
@@ -39,13 +38,6 @@ const LessonPage = () => {
   if (!myLesson) return <div>Lesson not found</div>;
 
   const lessonCards = myLesson.cards.filter((e) => !e.hidden);
-
-  const getCardDisplay = (card: AnyCard) => {
-    if (card.type === CardType.NOUN) {
-      return getWithArticle(card.value, card.gender);
-    }
-    return card.value;
-  };
 
   const lessonsInfo = lessonCards.map((lessonCard) => {
     const card = getCard(lessonCard);
@@ -79,12 +71,8 @@ const LessonPage = () => {
             const { closestDueDate, card } = item;
             return (
               <tr key={key} className={cssModule.row}>
-                <td className={cssModule.lessonCardType}>
-                  {toReadableType(
-                    card.type === CardType.PHRASE && card.mainType !== undefined ? card.mainType : card.type,
-                  )}
-                </td>
-                <td className={cssModule.lessonCardValue}>{getCardDisplay(card)}</td>
+                <td className={cssModule.lessonCardType}>{toReadableType(card.mainType ?? card.type)}</td>
+                <td className={cssModule.lessonCardValue}>{card.value}</td>
                 <td className={cssModule.lessonCardTranslation}>{card.translation}</td>
                 <td className={cssModule.lessonCardTranslation}>
                   {closestDueDate === Infinity
@@ -102,25 +90,25 @@ const LessonPage = () => {
   );
 };
 
-const toReadableType = (type: CardType) => {
+const toReadableType = (type: IdType) => {
   switch (type) {
-    case CardType.NOUN:
+    case CardTypeMapper.NOUN:
       return 'n.';
-    case CardType.VERB:
+    case CardTypeMapper.VERB:
       return 'v.';
-    case CardType.ARTICLE:
+    case CardTypeMapper.ARTICLE:
       return 'art.';
-    case CardType.ADJECTIVE:
+    case CardTypeMapper.ADJECTIVE:
       return 'adj.adv.';
-    case CardType.CONJUNCTION:
+    case CardTypeMapper.CONJUNCTION:
       return 'konj.';
-    case CardType.PREPOSITION:
+    case CardTypeMapper.PREPOSITION:
       return 'präp.';
-    case CardType.PHRASE:
+    case CardTypeMapper.PHRASE:
       return 'phrase';
-    case CardType.NUMBER:
+    case CardTypeMapper.NUMBER:
       return 'nummer';
-    case CardType.PRONOUN:
+    case CardTypeMapper.PRONOUN:
       return 'pron.';
     default:
       return 'Unknown';

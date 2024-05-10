@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { VariantGroup } from '../database/card-types';
 import type {
   Adjective,
   AdjectiveDegree,
@@ -165,6 +166,15 @@ export type AnyTestableCard =
   | PrepositionTestableCard
   | PronounTestableCard;
 
+export interface StandardTestableCardGroupMeta {
+  matcherId: string | null;
+  groupViewId: string | null;
+  indViewId: string | null;
+  testViewId: string | null;
+  variants: StandardCardVariant[];
+  gr: VariantGroup | null;
+}
+
 export interface StandardTestableCard extends GeneralTestableCard {
   type: IdType;
   card: StandardCard;
@@ -173,5 +183,5 @@ export interface StandardTestableCard extends GeneralTestableCard {
   translation: string;
   caseSensitive: boolean;
   initial: boolean;
-  isTopLevel: boolean;
+  groupMeta: StandardTestableCardGroupMeta;
 }

@@ -21,6 +21,7 @@ import type {
   NounTestableCard,
   PronounTestableCard,
   StandardTestableCard,
+  StandardTestableCardGroupMeta,
   VerbTestableCard,
 } from './reviews';
 import {
@@ -43,25 +44,60 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
   const testable: StandardTestableCard[] = [];
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
   const groups = divideVariantsInGroups(card);
+  if (card.groupPriorities) {
+    groups.sort((a, b) => {
+      const aIndex = card.groupPriorities!.indexOf(a.matcherId ?? '');
+      const bIndex = card.groupPriorities!.indexOf(b.matcherId ?? '');
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+  }
+  const config = CardTypeConfigurationMapper[card.type];
+  if (config && typeof config.maxNumOfGroups === 'number') {
+    groups.splice(config.maxNumOfGroups);
+  }
+
   const cardIdentifier = card.type + '-' + (card.uniqueValue ?? card.value) + '-' + card.id;
   groups.forEach((group) => {
-    const hasGroupViewMode = group.variants.length > 1;
-    const hasIndividualViewMode = group.variants.length <= 1;
+    const hasGroupViewMode = group.variants.length > 1 || !!group.gr?.forcefullyGroup;
+    const hasIndividualViewMode = !hasGroupViewMode;
     // TODO: go through all tags and set default tags as well
-    group.variants.forEach((variant) => {
+    const variants = group.variants.map(
+      (variant): StandardCardVariant => ({ ...variant, attrs: { ...card.attributes, ...variant.attrs } }),
+    );
+    const groupMeta: StandardTestableCardGroupMeta = {
+      matcherId: group.matcherId,
+      groupViewId: group.groupViewId,
+      indViewId: group.indViewId,
+      testViewId: group.testViewId,
+      variants,
+      gr: group.gr,
+    };
+    group.variants.forEach((variant, i) => {
       testable.push({
         card,
         type: card.type,
         displayType: card.mainType === null || card.mainType === undefined ? card.type : card.mainType,
-        variant: { ...variant, attrs: { ...card.attributes, ...variant.attrs } },
+        variant: variants[i],
         translation: card.translation,
         caseSensitive: CardTypeConfigurationMapper[displayType]?.caseSensitive ?? false,
         initial: variant.category === 1,
-        isTopLevel: !isNonNullable(variant.category),
         groupViewKey: hasGroupViewMode ? cardIdentifier + '-gr-' + group.matcherId : null,
         hasGroupViewMode,
         hasIndividualViewMode,
-        testKey: cardIdentifier + '-' + (group.matcherId || '') + '#' + variant.value, // TODO: replace with variant.id,
+        testKey:
+          cardIdentifier +
+          '-' +
+          (group.matcherId || '') +
+          '#' +
+          JSON.stringify(variants[i].attrs) +
+          '#' +
+          JSON.stringify(variants[i].category || null) +
+          '#' +
+          variant.value, // TODO: replace with variant.id,
+        groupMeta,
       });
     });
   });
@@ -71,7 +107,7 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
 const divideVariantsInGroups = (card: StandardCard) => {
   const config = CardTypeConfigurationMapper[card.type];
   const freeVariants = [...card.variants];
-  const groups: { matcherId: string | null; variants: StandardCardVariant[] }[] = [];
+  const groups: (StandardTestableCardGroupMeta & { variants: StandardCardVariant[] })[] = [];
   if (config && config.variantGroups) {
     for (const pr of config.variantGroups) {
       const matchedVariants: StandardCardVariant[] = [];
@@ -85,11 +121,26 @@ const divideVariantsInGroups = (card: StandardCard) => {
           i--;
         }
       }
-      if (matchedVariants.length && !pr.skip) groups.push({ matcherId: pr.id ?? null, variants: matchedVariants });
+      if (matchedVariants.length && !pr.skip)
+        groups.push({
+          matcherId: pr.id ?? null,
+          groupViewId: pr.groupViewId ?? null,
+          indViewId: pr.indViewId ?? null,
+          testViewId: pr.testViewId ?? null,
+          variants: matchedVariants,
+          gr: pr,
+        });
     }
   }
   freeVariants.forEach((variant) => {
-    groups.push({ matcherId: null, variants: [variant] });
+    groups.push({
+      matcherId: null,
+      groupViewId: null,
+      indViewId: null,
+      testViewId: null,
+      variants: [variant],
+      gr: null,
+    });
   });
   console.log('groups', groups);
   // TODO: sort groups

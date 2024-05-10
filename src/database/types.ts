@@ -224,11 +224,6 @@ export type TranslationVariant = {
   translation: string;
 };
 
-export type VariantPriority = {
-  attrs?: Record<string, IdType | IdType[] | null>;
-  categories?: IdType[];
-};
-
 export type StandardCard = {
   id?: IdType;
   lang: string;
@@ -243,7 +238,7 @@ export type StandardCard = {
   initialcategories?: IdType[];
   attributes?: StandardCardAttributes;
   categories?: IdType[];
-  variantPriorities?: VariantPriority[];
+  groupPriorities?: string[];
   variants: StandardCardVariant[];
   /** Should be moved into separate table */
   translation: string;
