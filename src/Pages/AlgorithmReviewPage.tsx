@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import cssModule from '../App.module.css';
 import Content from '../Content';
 import { TestContextProvider } from '../contexts/testContext';
@@ -9,6 +9,8 @@ import { Reviewer } from '../functions/reviewer';
 import { CardViewMode, secondsUntilProbabilityIsHalf } from '../functions/reviews';
 import { formatTime } from '../utils/time';
 import { useHelper } from './hooks/text-helpers';
+import { withNoEventAction } from '../utils/event';
+import { useLatestCallback } from '../utils/hooks';
 
 const AlgorithmReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
@@ -21,34 +23,35 @@ const AlgorithmReviewPage = () => {
 
   const [correctness, setCorrectness] = useState<boolean[]>([]);
 
-  const getQuestion = useCallback(
-    (currentCard: CardWithProbability) => {
-      if (!helper || !currentCard) return null;
-      if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
-        return {
-          type: CardViewMode.groupView,
-          content: getCardViewContent2(currentCard.record, CardViewMode.groupView, helper),
-          record: currentCard.record,
-        };
-      } else if (
-        !currentCard.hasGroupViewMode &&
-        currentCard.hasIndividualViewMode &&
-        !currentCard.isIndividuallyViewed
-      ) {
-        return {
-          type: CardViewMode.individualView,
-          content: getCardViewContent2(currentCard.record, CardViewMode.individualView, helper),
-          record: currentCard.record,
-        };
-      }
+  const getQuestion = useLatestCallback((currentCard: CardWithProbability) => {
+    if (!helper || !currentCard) return null;
+    if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
-        type: CardViewMode.test,
-        content: getCardViewContent2(currentCard.record, CardViewMode.test, helper),
+        type: CardViewMode.groupView,
+        content: getCardViewContent2(currentCard.record, CardViewMode.groupView, helper),
         record: currentCard.record,
       };
-    },
-    [helper],
-  );
+    } else if (
+      !currentCard.hasGroupViewMode &&
+      currentCard.hasIndividualViewMode &&
+      !currentCard.isIndividuallyViewed
+    ) {
+      return {
+        type: CardViewMode.individualView,
+        content: getCardViewContent2(currentCard.record, CardViewMode.individualView, helper),
+        record: currentCard.record,
+      };
+    }
+    return {
+      type: CardViewMode.test,
+      content: getCardViewContent2(currentCard.record, CardViewMode.test, helper),
+      record: currentCard.record,
+    };
+  });
+
+  const [submitted, setSubmitted] = useState<boolean[]>([]);
+
+  useLogs({ courseId, lessonId, mode, getQuestion, correctness, maxCards });
 
   const entries = useMemo(() => {
     const reviewer = new Reviewer(courseId, lessonId, mode ? 'endless' : 'normal', true);
@@ -84,21 +87,55 @@ const AlgorithmReviewPage = () => {
     setMaxCards(maxCards + count);
   };
 
-  const changeCorrectness = (index: number, currentValue: boolean) => {
+  const changeCorrectness = useLatestCallback((index: number, currentValue: boolean, shouldModifySubmission = true) => {
     const nextValue = currentValue === false ? true : false;
+    if ((correctness[index] ?? true) === nextValue) return;
     const newCorrectness = [...correctness];
     newCorrectness[index] = nextValue;
     setCorrectness(newCorrectness.slice(0, index + 1));
+    if (shouldModifySubmission) {
+      setSubmitted((prev) => {
+        const newLength = index - 1;
+        if (prev.length <= newLength) return prev;
+        return prev.slice(0, newLength);
+      });
+    }
     setMainKey(mainKey + 1);
-  };
+  });
 
-  return (
-    <div className='body'>
-      {entries.questions.map((question, index) => {
+  const handleResult = useLatestCallback((index: number) => () => {
+    setSubmitted((prev) => {
+      const newAnswers = [...prev];
+      newAnswers[index] = true;
+      newAnswers.splice(index + 1);
+      return newAnswers;
+    });
+  });
+
+  const questionCards = useMemo(() => {
+    return entries.questions.map((question) => {
+      return (
+        <ViewCard {...{ record: question.record }}>
+          <Content content={question.content} />
+        </ViewCard>
+      );
+    });
+  }, [entries.questions]);
+
+  const children = useMemo(
+    () =>
+      entries.questions.map((question, index) => {
         const isView = question.type === CardViewMode.groupView || question.type === CardViewMode.individualView;
         return (
-          <div key={mainKey + '_' + index} style={{ margin: '20px 0' }}>
-            <TestContextProvider mode={isView ? 'readonly' : 'edit'} onResult={() => {}}>
+          <form
+            onSubmit={withNoEventAction(handleResult(index))}
+            key={mainKey + '_' + index}
+            style={{ margin: '20px 0' }}
+          >
+            <TestContextProvider
+              mode={isView || typeof submitted[index] === 'boolean' ? 'readonly' : 'edit'}
+              onResult={(areAllCorrect) => changeCorrectness(index, !areAllCorrect, false)}
+            >
               <div style={{ display: 'flex', marginBottom: 5 }}>
                 <span style={{ flex: 1 }}>#{index + 1}</span>
                 {entries.cards[index].historyRecord && (
@@ -111,18 +148,22 @@ const AlgorithmReviewPage = () => {
                   </span>
                 )}
                 {!isView && (
-                  <button onClick={() => changeCorrectness(index, correctness[index])}>
+                  <button type='button' onClick={() => changeCorrectness(index, correctness[index])}>
                     {correctness[index] === false ? 'Mark as correct' : 'Mark as wrong'}
                   </button>
                 )}
               </div>
-              <ViewCard {...{ record: question.record }}>
-                <Content content={question.content} />
-              </ViewCard>
+              {questionCards[index]}
             </TestContextProvider>
-          </div>
+          </form>
         );
-      })}
+      }),
+    [changeCorrectness, handleResult, correctness, entries.cards, questionCards, entries.questions, mainKey, submitted],
+  );
+
+  return (
+    <div className='body'>
+      {children}
       {entries.questions.length === maxCards && (
         <div>
           <br />
@@ -146,6 +187,25 @@ const AlgorithmReviewPage = () => {
 
 const ViewCard = ({ children }: { children: React.ReactNode }) => {
   return <div className={cssModule.viewCard}>{children}</div>;
+};
+
+const useLogs = (rec: Record<string, unknown>) => {
+  const keys = Object.keys(rec);
+  const isMountedRef = useRef(false);
+  for (const key of keys) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useMemo(() => {
+      if (!isMountedRef.current) return;
+      console.log('ჭჭ: ლოგი', key, rec[key]);
+    }, [rec[key]]);
+  }
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 };
 
 export default AlgorithmReviewPage;

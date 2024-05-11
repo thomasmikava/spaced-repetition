@@ -6,6 +6,7 @@ import { getCardViewContent2 } from '../functions/generate-card-content';
 import { Reviewer } from '../functions/reviewer';
 import { CardViewMode } from '../functions/reviews';
 import { useHelper } from './hooks/text-helpers';
+import { withNoEventAction } from '../utils/event';
 
 const ReviewPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
@@ -106,11 +107,6 @@ const ReviewPage = () => {
       </TestContextProvider>
     </div>
   );
-};
-
-const withNoEventAction = (action: () => void) => (e: React.FormEvent) => {
-  e.preventDefault();
-  return action();
 };
 
 const WithNextButton = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => {
