@@ -153,7 +153,8 @@ export class Reviewer {
             : getSingleKey(record.card);
 
         if (record.groupViewKey) {
-          const isTestable = !record.isStandardForm || record.isGroupStandardForm === false ? 1 : 0;
+          const isTestable =
+            !record.skipTest && (!record.isStandardForm || record.isGroupStandardForm === false) ? 1 : 0;
           const groupRecord: GroupMeta = groupsMetaData[record.groupViewKey] || {
             lastViewDate: 0,
             numOfCards: 0,
@@ -173,10 +174,12 @@ export class Reviewer {
           }
           groupsMetaData[record.groupViewKey] = groupRecord;
         } else if (record.initial) {
+          const isTestable =
+            !record.skipTest && (!record.isStandardForm || record.isGroupStandardForm === false) ? 1 : 0;
           groupsMetaData[getSingleKey(record.card)] = {
             lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
             numOfCards: 1,
-            numOfTestableCards: !record.isStandardForm || record.isGroupStandardForm === false ? 1 : 0,
+            numOfTestableCards: isTestable ? 1 : 0,
             numOfTestedCards: historyRecord ? 1 : 0,
             minReviewDue: Infinity,
             prevGroupMetaKey: prevKey,
@@ -305,11 +308,10 @@ export class Reviewer {
         return { ...a, isViewNotRecommended, isTestNotRecommended, viewMode };
       })
       .filter((a) => {
-        return (
-          a.viewMode !== CardViewMode.test ||
-          !a.record.isStandardForm ||
-          (a.record.isGroupStandardForm === false && !a.isTested)
-        );
+        if (a.viewMode !== CardViewMode.test) return true;
+        if (a.record.skipTest) return false;
+        if (!a.record.isStandardForm) return true;
+        return a.record.isGroupStandardForm === false && !a.isTested;
       })
       .sort((a, b) => {
         if (!a.isTestNotRecommended && b.isTestNotRecommended) return -1;

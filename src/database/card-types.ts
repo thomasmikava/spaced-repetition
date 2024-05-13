@@ -1,6 +1,17 @@
 import { CardViewMode } from '../functions/reviews';
 import { AttributeMapper, CardTypeMapper } from './attributes';
-import { AdjectiveDegree, IdType, NounNumber, StandardCardAttributes, VerbMood, VerbPronoun, VerbTense } from './types';
+import {
+  AdjectiveDegree,
+  AdjectiveInflection,
+  IdType,
+  NounGender,
+  NounNumber,
+  PronounFunction,
+  StandardCardAttributes,
+  VerbMood,
+  VerbPronoun,
+  VerbTense,
+} from './types';
 
 export interface CardTypeRecord {
   id: IdType;
@@ -30,7 +41,77 @@ export enum ViewLineType {
   Table,
   Input,
   Audio,
+  AfterAnswer,
+  AfterAnswerDropdown,
 }
+
+type ViewTableLine = {
+  type: ViewLineType.Table;
+  columns: (
+    | { type: 'value' }
+    | { type: 'article' }
+    | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[] }
+    | { type: 'audio'; values: string[] }
+  )[];
+};
+
+const groupTables = {
+  NOUN: {
+    type: ViewLineType.Table,
+    columns: [
+      { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
+      { type: 'article' },
+      { type: 'value' },
+      { type: 'audio', values: ['1.0', '2'] },
+    ],
+  },
+  ARTICLE: {
+    type: ViewLineType.Table,
+    columns: [
+      { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
+      { type: 'value' },
+      { type: 'audio', values: ['1'] },
+    ],
+  },
+  VERB: {
+    type: ViewLineType.Table,
+    columns: [
+      {
+        type: 'attr',
+        main: true,
+        attr: AttributeMapper.PRONOUN.id,
+        attrRecordValues: [
+          AttributeMapper.PRONOUN.records[VerbPronoun.ich],
+          AttributeMapper.PRONOUN.records[VerbPronoun.du],
+          [AttributeMapper.PRONOUN.records[VerbPronoun.er_sie_es], AttributeMapper.PRONOUN.records[VerbPronoun.es]],
+          AttributeMapper.PRONOUN.records[VerbPronoun.wir],
+          AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
+          AttributeMapper.PRONOUN.records[VerbPronoun.sie_Sie],
+        ],
+      },
+      { type: 'value' },
+      { type: 'audio', values: ['0.0', '1'] },
+    ],
+  },
+  PRONOUN: {
+    type: ViewLineType.Table,
+    columns: [
+      { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
+      { type: 'value' },
+      { type: 'audio', values: ['1'] },
+    ],
+  },
+  ADJECTIVE: {
+    type: ViewLineType.Table,
+    columns: [
+      { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
+      { type: 'value' },
+      { type: 'audio', values: ['1'] },
+    ],
+  },
+} satisfies Record<string, ViewTableLine>;
+
+export type AudioAffix = { type: 'attr'; attrId: IdType } | { type: 'text'; text: string };
 
 export type ViewLine =
   | { type: ViewLineType.Separator | ViewLineType.NewLine }
@@ -51,27 +132,23 @@ export type ViewLine =
     }
   | { type: ViewLineType.TranslationVariants; partiallyHiddenBeforeAnswer?: boolean }
   | { type: ViewLineType.AttrValue; attrs: IdType[]; separator?: string }
-  | {
-      type: ViewLineType.Table;
-      columns: (
-        | { type: 'value' }
-        | { type: 'article' }
-        | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[] }
-        | { type: 'audio'; values: string[] }
-      )[];
-    }
+  | ViewTableLine
   | {
       type: ViewLineType.Input;
       useArticleAsPrefix?: boolean;
+      audioPrefix?: AudioAffix;
     }
   | {
       type: ViewLineType.Audio;
       useArticleAsPrefix?: boolean;
-    };
+    }
+  | { type: ViewLineType.AfterAnswer; lines: ViewLine[] }
+  | { type: ViewLineType.AfterAnswerDropdown; lines: ViewLine[] };
 
 export interface VariantGroup {
   id: string;
   matcher: CategoryAttrsMatcher | null;
+  skipTest?: boolean | { only1variant: boolean };
   skip?: boolean;
   groupViewId?: string;
   indViewId?: string;
@@ -99,7 +176,9 @@ export type Matcher<T extends {}> = {
   [k in keyof T]?: T[k] extends Record<PropertyKey, unknown> ? Matcher<T[k]> : Values<T[k]>;
 };
 
-type Values<T> = T | null | T[] | { $not: T | T[] } | { $and: T[] } | { $or: T[] };
+type Values<T> = T | null | T[] | { $not: T | (T | null)[] | null } | { $and: (T | null)[] } | { $or: (T | null)[] };
+
+export const SELF_REF = '#self';
 
 export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
@@ -136,8 +215,9 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
       {
         id: 'gr',
         lines: [
+          { type: ViewLineType.Audio },
           { type: ViewLineType.NewLine },
-          { type: ViewLineType.CardValue },
+          { type: ViewLineType.CardValue, useForMainAudio: true },
           { type: ViewLineType.Separator },
           {
             type: ViewLineType.AttrValue,
@@ -145,29 +225,7 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
             separator: ' - ',
           },
           { type: ViewLineType.Separator },
-          {
-            type: ViewLineType.Table,
-            columns: [
-              {
-                type: 'attr',
-                main: true,
-                attr: AttributeMapper.PRONOUN.id,
-                attrRecordValues: [
-                  AttributeMapper.PRONOUN.records[VerbPronoun.ich],
-                  AttributeMapper.PRONOUN.records[VerbPronoun.du],
-                  [
-                    AttributeMapper.PRONOUN.records[VerbPronoun.er_sie_es],
-                    AttributeMapper.PRONOUN.records[VerbPronoun.es],
-                  ],
-                  AttributeMapper.PRONOUN.records[VerbPronoun.wir],
-                  AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
-                  AttributeMapper.PRONOUN.records[VerbPronoun.sie_Sie],
-                ],
-              },
-              { type: 'value' },
-              { type: 'audio', values: ['0.0', '1'] },
-            ],
-          },
+          groupTables.VERB,
         ],
       },
       {
@@ -177,7 +235,19 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
           { type: ViewLineType.Audio },
           { type: ViewLineType.AttrValue, attrs: [AttributeMapper.PRONOUN.id] },
           { type: ViewLineType.NewLine },
-          { type: ViewLineType.Input },
+          { type: ViewLineType.Input, audioPrefix: { type: 'attr', attrId: AttributeMapper.PRONOUN.id } },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],
+          },
+          {
+            type: ViewLineType.AfterAnswerDropdown,
+            lines: [groupTables.VERB],
+          },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.TranslationVariants }],
+          },
         ],
       },
     ],
@@ -212,7 +282,7 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 }, indViewId: 'init-view' },
+      { id: 'init', matcher: { category: 1 }, indViewId: 'init-view', testViewId: 'init-test' },
       {
         id: 'sng',
         matcher: {
@@ -220,6 +290,7 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
           attrs: { [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.singular] },
         },
         groupViewId: 'gr-view',
+        testViewId: 'gr-test',
       },
       {
         id: 'pl',
@@ -244,25 +315,26 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
         ],
       },
       {
+        id: 'init-test',
+        lines: [
+          { type: ViewLineType.Translation },
+          { type: ViewLineType.Input, useArticleAsPrefix: true },
+          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+        ],
+      },
+      {
         id: 'gr-view',
         lines: [
+          { type: ViewLineType.Audio },
           { type: ViewLineType.NewLine },
-          { type: ViewLineType.CardValue },
+          { type: ViewLineType.CardValue, useForMainAudio: true },
           { type: ViewLineType.Separator },
           {
             type: ViewLineType.AttrValue,
             attrs: [AttributeMapper.NUMBER.id],
           },
           { type: ViewLineType.Separator },
-          {
-            type: ViewLineType.Table,
-            columns: [
-              { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
-              { type: 'article' },
-              { type: 'value' },
-              { type: 'audio', values: ['1.0', '2'] },
-            ],
-          },
+          groupTables.NOUN,
         ],
       },
       {
@@ -272,6 +344,14 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
           {
             type: ViewLineType.Input,
             useArticleAsPrefix: true,
+          },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],
+          },
+          {
+            type: ViewLineType.AfterAnswerDropdown,
+            lines: [groupTables.NOUN],
           },
         ],
       },
@@ -283,15 +363,83 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
       {
         attrId: AttributeMapper.DEGREE.id,
         type: 'primary',
-        defValue: AttributeMapper.DEGREE.records[AdjectiveDegree.Positiv],
-        matcher: null,
+        matcher: { category: { $not: null } },
+      },
+      {
+        attrId: AttributeMapper.DEGREE.id,
+        type: 'secondary',
+        matcher: { category: null },
+      },
+      {
+        attrId: AttributeMapper.INFLECTION.id,
+        type: 'secondary',
+        matcher: { category: null },
+      },
+      {
+        attrId: AttributeMapper.GENDER.id,
+        type: 'primary',
+        matcher: { category: null },
+      },
+      {
+        attrId: AttributeMapper.CASE.id,
+        type: 'primary',
+        matcher: { category: null, viewMode: CardViewMode.test },
       },
     ],
     variantGroups: [
       { id: 'init', matcher: { category: 1 } },
       { id: 'comp', matcher: { category: 2 } },
       { id: 'super', matcher: { category: 3 } },
+      // `${variant.degree}.${variant.inflection}.${gender}`
+      ...cartesianProduct(
+        [AdjectiveDegree.Positiv, AdjectiveDegree.Komparativ, AdjectiveDegree.Superlativ],
+        [AdjectiveInflection.Weak, AdjectiveInflection.Strong, AdjectiveInflection.Mixed],
+        [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural],
+      ).map(([degree, inflection, gender]) => ({
+        id: 'rest',
+        matcher: {
+          category: null,
+          attrs: {
+            [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[degree],
+            [AttributeMapper.INFLECTION.id]: AttributeMapper.INFLECTION.records[inflection],
+            [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[gender],
+          },
+        },
+        groupViewId: 'gr',
+        testViewId: 'gr-test',
+      })),
       { id: 'skip', matcher: null, skip: true },
+    ],
+    views: [
+      {
+        id: 'gr',
+        lines: [
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.NewLine },
+          { type: ViewLineType.CardValue, useForMainAudio: true, includeArticleSymbol: true },
+          { type: ViewLineType.Separator },
+          groupTables.ADJECTIVE,
+        ],
+      },
+      {
+        id: 'gr-test',
+        lines: [
+          { type: ViewLineType.Audio },
+          {
+            type: ViewLineType.CustomCardValue,
+            matcher: { category: { $not: null }, attrs: { [AttributeMapper.DEGREE.id]: SELF_REF } },
+            useForMainAudio: true,
+            includeArticleSymbol: true,
+            paragraph: true,
+          },
+          { type: ViewLineType.Input },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],
+          },
+          { type: ViewLineType.AfterAnswerDropdown, lines: [groupTables.ADJECTIVE] },
+        ],
+      },
     ],
   },
   [CardTypeMapper.ARTICLE]: {
@@ -329,7 +477,7 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
     ],
     variantGroups: [
       { id: 'init', matcher: { category: 1 }, indViewId: 'init', testViewId: 'init-test' },
-      { id: 'rest', matcher: { category: null }, groupViewId: 'gr-view' },
+      { id: 'rest', matcher: { category: null }, groupViewId: 'gr-view', testViewId: 'gr-test' },
     ],
     views: [
       {
@@ -348,17 +496,21 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
       {
         id: 'gr-view',
         lines: [
+          { type: ViewLineType.Audio },
           { type: ViewLineType.NewLine },
           { type: ViewLineType.CardValue },
           { type: ViewLineType.Separator },
-          {
-            type: ViewLineType.Table,
-            columns: [
-              { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
-              { type: 'value' },
-              { type: 'audio', values: ['1'] },
-            ],
-          },
+          groupTables.ARTICLE,
+        ],
+      },
+      {
+        id: 'gr-test',
+        lines: [
+          { type: ViewLineType.Translation },
+          { type: ViewLineType.Input },
+          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          { type: ViewLineType.AfterAnswer, lines: [{ type: ViewLineType.Separator }] },
+          groupTables.ARTICLE,
         ],
       },
     ],
@@ -376,8 +528,18 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
         matcher: { viewMode: { $not: CardViewMode.test } },
       },
       {
+        attrId: AttributeMapper.NUMBER.id,
+        type: 'primary',
+        matcher: { viewMode: { $not: CardViewMode.test } },
+      },
+      {
         attrId: AttributeMapper.FUNCTION.id,
         type: 'secondary',
+        matcher: { viewMode: CardViewMode.test },
+      },
+      {
+        attrId: AttributeMapper.GENDER.id,
+        type: 'primary',
         matcher: { viewMode: CardViewMode.test },
       },
       {
@@ -387,8 +549,95 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 }, skip: true },
+      { id: 'init', matcher: { category: 1 }, skipTest: { only1variant: false } },
+      ...cartesianProduct([PronounFunction.Declanation], [NounNumber.singular, NounNumber.plural]).map(
+        ([func, number]): VariantGroup => ({
+          id: `f${AttributeMapper.FUNCTION.records[func]}-n${AttributeMapper.NUMBER.records[number]}`,
+          matcher: {
+            category: null,
+            attrs: {
+              [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[func],
+              [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[number],
+            },
+          },
+          groupViewId: 'gr',
+          testViewId: 'gr-test',
+          forcefullyGroup: true,
+        }),
+      ),
+      ...cartesianProduct(
+        [
+          PronounFunction.Attributive,
+          PronounFunction.Interrogative,
+          PronounFunction.NonAttributiveWithArticle,
+          PronounFunction.NonAttributiveWithoutArticle,
+          PronounFunction.Relative,
+          PronounFunction.Representative,
+        ],
+        [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural],
+      ).map(
+        ([func, gender]): VariantGroup => ({
+          id: `f${AttributeMapper.FUNCTION.records[func]}-g${AttributeMapper.GENDER.records[gender]}`,
+          matcher: {
+            category: null,
+            attrs: {
+              [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[func],
+              // [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[number],
+              [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[gender],
+            },
+          },
+          groupViewId: 'gr',
+          testViewId: 'gr-test',
+          forcefullyGroup: true,
+        }),
+      ),
       { id: 'rest', matcher: { category: null } },
+    ],
+    views: [
+      {
+        id: 'gr',
+        lines: [
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.NewLine },
+          { type: ViewLineType.CardValue, useForMainAudio: true, includeArticleSymbol: true },
+          { type: ViewLineType.Separator },
+          { type: ViewLineType.Translation },
+          { type: ViewLineType.Separator },
+          groupTables.PRONOUN,
+        ],
+      },
+      {
+        id: 'gr-test',
+        lines: [
+          { type: ViewLineType.Translation, includeArticleSymbol: true, includeLegend: true },
+          { type: ViewLineType.Input },
+          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          { type: ViewLineType.AfterAnswer, lines: [{ type: ViewLineType.Separator }] },
+          { type: ViewLineType.AfterAnswerDropdown, lines: [groupTables.PRONOUN] },
+        ],
+      },
+    ],
+  },
+  [CardTypeMapper.PREPOSITION]: {
+    variantGroups: [{ id: 'init', matcher: { category: 1 }, indViewId: 'init', testViewId: 'init-test' }],
+    views: [
+      {
+        id: 'init',
+        lines: [
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.VariantValue, bigText: true },
+          { type: ViewLineType.Separator },
+          { type: ViewLineType.TranslationVariants },
+        ],
+      },
+      {
+        id: 'init-test',
+        lines: [
+          { type: ViewLineType.TranslationVariants },
+          { type: ViewLineType.NewLine },
+          { type: ViewLineType.Input },
+        ],
+      },
     ],
   },
 };
@@ -433,7 +682,11 @@ export const cardTypeRecords: CardTypeRecord[] = [
     name: 'Adjective',
     configuration: CardTypeConfigurationMapper[CardTypeMapper.ADJECTIVE],
   },
-  { id: CardTypeMapper.PREPOSITION, name: 'Preposition' },
+  {
+    id: CardTypeMapper.PREPOSITION,
+    name: 'Preposition',
+    configuration: CardTypeConfigurationMapper[CardTypeMapper.PREPOSITION],
+  },
   { id: CardTypeMapper.CONJUNCTION, name: 'Conjunction' },
   { id: CardTypeMapper.NUMBER, name: 'Number' },
   { id: CardTypeMapper.PHRASE, name: 'Phrase' },

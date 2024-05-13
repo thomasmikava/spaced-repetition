@@ -86,6 +86,7 @@ export type GeneralTestableCard = CardKeys & {
   hasIndividualViewMode: boolean;
   isStandardForm?: boolean;
   isGroupStandardForm?: boolean;
+  skipTest?: boolean;
 };
 
 export type VerbTestableCard = GeneralTestableCard & {
@@ -177,7 +178,7 @@ export interface StandardTestableCardGroupMeta {
 
 export interface StandardTestableCard extends GeneralTestableCard {
   type: IdType;
-  card: StandardCard;
+  card: StandardCard & { allStandardizedVariants: StandardCardVariant[] };
   displayType: IdType;
   variant: StandardCardVariant;
   translation: string;

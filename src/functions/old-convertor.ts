@@ -63,7 +63,10 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
     }
     case CardType.ADJECTIVE: {
       const topVariants: (StandardCardVariant | null)[] = [
-        getInitialVariant(rawCard.value),
+        {
+          ...getInitialVariant(rawCard.value),
+          attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Positiv] },
+        },
         rawCard.komparativ
           ? {
               attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Komparativ] },
@@ -148,7 +151,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         variants: [getInitialVariant(rawCard.value)],
         translation: rawCard.translation,
         translationVariants: rawCard.variations.map((v) => ({
-          attrs: { [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[v.cases[0]] },
+          attrs: { [AttributeMapper.CASE.id]: v.cases.map((cs) => AttributeMapper.CASE.records[cs]) },
           translation: v.translation,
         })),
       };

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { Matcher } from '../database/card-types';
-import { CardTypeConfigurationMapper } from '../database/card-types';
+import type { Matcher, VariantGroup } from '../database/card-types';
+import { CardTypeConfigurationMapper, SELF_REF } from '../database/card-types';
 import type {
   AnyCard,
   StandardCard,
@@ -54,19 +54,27 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
       return aIndex - bIndex;
     });
   }
+
+  const grandVariants = groups.map((group) =>
+    group.variants.map(
+      (variant): StandardCardVariant => ({ ...variant, attrs: { ...card.attributes, ...variant.attrs } }),
+    ),
+  );
+  const allStandardizedVariants = grandVariants.flat(1);
+
   const config = CardTypeConfigurationMapper[card.type];
   if (config && typeof config.maxNumOfGroups === 'number') {
     groups.splice(config.maxNumOfGroups);
   }
 
+  const newCard = { ...card, allStandardizedVariants };
+
   const cardIdentifier = card.type + '-' + (card.uniqueValue ?? card.value) + '-' + card.id;
-  groups.forEach((group) => {
+  groups.forEach((group, groupIndex) => {
     const hasGroupViewMode = group.variants.length > 1 || !!group.gr?.forcefullyGroup;
     const hasIndividualViewMode = !hasGroupViewMode;
     // TODO: go through all tags and set default tags as well
-    const variants = group.variants.map(
-      (variant): StandardCardVariant => ({ ...variant, attrs: { ...card.attributes, ...variant.attrs } }),
-    );
+    const variants = grandVariants[groupIndex];
     const groupMeta: StandardTestableCardGroupMeta = {
       matcherId: group.matcherId,
       groupViewId: group.groupViewId,
@@ -77,7 +85,7 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
     };
     group.variants.forEach((variant, i) => {
       testable.push({
-        card,
+        card: newCard,
         type: card.type,
         displayType: card.mainType === null || card.mainType === undefined ? card.type : card.mainType,
         variant: variants[i],
@@ -87,6 +95,7 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
         groupViewKey: hasGroupViewMode ? cardIdentifier + '-gr-' + group.matcherId : null,
         hasGroupViewMode,
         hasIndividualViewMode,
+        skipTest: shouldSkipTest(card, group.gr),
         testKey:
           cardIdentifier +
           '-' +
@@ -103,6 +112,13 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
   });
   return addGroupStandardFormFlag(testable);
 }
+
+const shouldSkipTest = (card: StandardCard, variantGroup: VariantGroup | null | undefined): boolean => {
+  if (!variantGroup || typeof variantGroup.skipTest === 'undefined' || variantGroup.skipTest === null) return false;
+  if (typeof variantGroup.skipTest === 'boolean') return true;
+  const is1Variant = card.variants.length === 1;
+  return variantGroup.skipTest.only1variant === is1Variant;
+};
 
 const divideVariantsInGroups = (card: StandardCard) => {
   const config = CardTypeConfigurationMapper[card.type];
@@ -147,8 +163,11 @@ const divideVariantsInGroups = (card: StandardCard) => {
   return groups;
 };
 
-export const isMatch = <T extends {}>(comparisonValue: T, matcher: Matcher<T>): boolean => {
-  const rule = matcher as unknown;
+export const isMatch = <T extends {}>(comparisonValue: T, matcher: Matcher<T>, selfValue?: T): boolean => {
+  let rule = matcher as unknown;
+  if (rule === SELF_REF) {
+    rule = selfValue as never;
+  }
   if (rule === comparisonValue) return true;
   if (rule === null) {
     return comparisonValue === null || comparisonValue === undefined;
@@ -158,15 +177,15 @@ export const isMatch = <T extends {}>(comparisonValue: T, matcher: Matcher<T>): 
   }
   if (typeof rule === 'object' && isMatcherObject(rule)) {
     const op = Object.keys(rule)[0] as '$not' | '$and' | '$or';
-    if (op === '$not') return !isMatch(comparisonValue, rule[op] as never);
-    if (op === '$and') return (rule[op] as Matcher<T>[]).every((m) => isMatch(comparisonValue, m));
-    if (op === '$or') return (rule[op] as Matcher<T>[]).some((m) => isMatch(comparisonValue, m));
+    if (op === '$not') return !isMatch(comparisonValue, rule[op] as never, selfValue);
+    if (op === '$and') return (rule[op] as Matcher<T>[]).every((m) => isMatch(comparisonValue, m, selfValue));
+    if (op === '$or') return (rule[op] as Matcher<T>[]).some((m) => isMatch(comparisonValue, m, selfValue));
     return false;
   }
   if (typeof rule === 'object') {
     if (typeof comparisonValue !== 'object' || comparisonValue === null) return false;
     for (const key in rule) {
-      if (!isMatch(comparisonValue[key as never], rule[key as never] as never)) return false;
+      if (!isMatch(comparisonValue[key as never], rule[key as never] as never, selfValue?.[key as never])) return false;
     }
     return true;
   }
