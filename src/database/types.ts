@@ -232,18 +232,13 @@ export type StandardCard = {
   value: string;
   /** @deprecated needs to be removed */
   uniqueValue: string | undefined;
-  /** Describes attributes of initial variant only */
-  initialAttributes?: StandardCardAttributes;
-  /** Describes labels of initial variant only */
-  initialcategories?: IdType[];
   attributes?: StandardCardAttributes;
-  categories?: IdType[];
   groupPriorities?: string[];
   variants: StandardCardVariant[];
   /** Should be moved into separate table */
   translation: string;
   /** Should be moved into separate table */
-  translationVariants?: TranslationVariant[];
+  advancedTranslation?: TranslationVariant[];
 };
 
 export interface Attribute {

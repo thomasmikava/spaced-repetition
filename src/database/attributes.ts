@@ -397,7 +397,7 @@ export const AttributeMapper = {
 };
 
 export const CardTypeMapper = {
-  [CardType.ARTICLE]: 1,
+  [CardType.PHRASE]: 1,
   [CardType.NOUN]: 2,
   [CardType.VERB]: 3,
   [CardType.PRONOUN]: 4,
@@ -405,5 +405,5 @@ export const CardTypeMapper = {
   [CardType.PREPOSITION]: 6,
   [CardType.CONJUNCTION]: 7,
   [CardType.NUMBER]: 8,
-  [CardType.PHRASE]: 9,
+  [CardType.ARTICLE]: 9,
 };

@@ -511,11 +511,11 @@ export const getCardViewContent2 = (
         const displayValue = withArticle(record.card.translation, record.variant.attrs, line);
         return { type: 'paragraph', content: displayValue, style: textStyle };
       case ViewLineType.TranslationVariants:
-        if (!record.card.translationVariants || record.card.translationVariants.length < 1) return null;
+        if (!record.card.advancedTranslation || record.card.advancedTranslation.length < 1) return null;
         if (line.partiallyHiddenBeforeAnswer) {
-          return getVerbTranslationBeforeAndAfterAnswer2(record.card.translationVariants, record.card.value, helper);
+          return getVerbTranslationBeforeAndAfterAnswer2(record.card.advancedTranslation, record.card.value, helper);
         }
-        return getVerbTranslationsContent2(record.card.translationVariants, record.card.value, helper);
+        return getVerbTranslationsContent2(record.card.advancedTranslation, record.card.value, helper);
       case ViewLineType.AttrValue:
         const attrs = record.variant.attrs || {};
         const attrValueIds = line.attrs.map((attrId) => attrs[attrId]);

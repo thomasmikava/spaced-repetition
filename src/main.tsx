@@ -1,10 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
 import './index.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import CoursePage from './Pages/CoursePage.tsx';
-import LessonPage from './Pages/LessonPage.tsx';
+import CoursePage from './Pages/Course/CoursePage.tsx';
+import LessonPage from './Pages/Lesson/LessonPage.tsx';
 import ReviewPage from './Pages/ReviewPage.tsx';
 import AlgorithmReviewPage from './Pages/AlgorithmReviewPage.tsx';
 import NewWordsPage from './Pages/NewWords.tsx';
@@ -16,12 +15,17 @@ import { PageGuard } from './routes/PageGuard.tsx';
 import LoginPage from './Pages/Login/index.tsx';
 import RegistrationPage from './Pages/Registration/index.tsx';
 import { ReviewContextProvider } from './contexts/ReviewContext.tsx';
+import HomePage from './Pages/Home/HomePage.tsx';
+import AddCoursePage from './Pages/Course/AddCoursePage.tsx';
+import ConfigProvider from 'antd/es/config-provider/index';
+import theme from 'antd/es/theme/index';
+import EditCoursePage from './Pages/Course/EditCoursePage.tsx';
 
 const router = createBrowserRouter(
   [
     {
       path: '/',
-      element: <PageGuard authPage={<App />} publicPage={<LoginPage />} />,
+      element: <PageGuard authPage={<HomePage />} publicPage={<LoginPage />} />,
     },
     {
       path: paths.registration.routePath,
@@ -32,7 +36,23 @@ const router = createBrowserRouter(
       ),
     },
     {
-      path: paths.app.course.routePath,
+      path: paths.app.course.add.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <AddCoursePage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: paths.app.course.edit.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <EditCoursePage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: paths.app.course.page.routePath,
       element: (
         <PageGuard onlyAuth>
           <CoursePage />
@@ -40,7 +60,7 @@ const router = createBrowserRouter(
       ),
     },
     {
-      path: paths.app.lesson.routePath,
+      path: paths.app.lesson.page.routePath,
       element: (
         <PageGuard onlyAuth>
           <LessonPage />
@@ -79,12 +99,18 @@ const router = createBrowserRouter(
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ReviewContextProvider>
-          <RouterProvider router={router} />
-        </ReviewContextProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+      }}
+    >
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ReviewContextProvider>
+            <RouterProvider router={router} />
+          </ReviewContextProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ConfigProvider>
   </React.StrictMode>,
 );

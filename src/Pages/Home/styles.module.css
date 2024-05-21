@@ -1,0 +1,28 @@
+.specialBox {
+  width: 200px;
+  height: 200px;
+  color: white;
+  border: 2px solid white;
+  border-style: dashed;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  font-size: 80px;
+  opacity: 0.5;
+  transition: all 0.2s;
+  font-weight: normal;
+}
+
+.specialBox:hover {
+  opacity: 1;
+  color: white;
+}
+
+.specialBox .title {
+  font-size: 24px;
+  height: 76px;
+}

@@ -642,7 +642,7 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
   },
 };
 
-console.log('CardTypeConfigurationMapper', CardTypeConfigurationMapper[CardTypeMapper.VERB]);
+// console.log('CardTypeConfigurationMapper', CardTypeConfigurationMapper[CardTypeMapper.VERB]);
 
 type FirstElements<T extends any[][]> = T extends [infer U extends any[], ...infer Rest extends any[][]]
   ? [U[number], ...FirstElements<Rest>]

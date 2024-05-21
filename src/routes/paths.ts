@@ -5,10 +5,20 @@ export const paths = addPrefix('/')({
   registration: '/reg',
   app: addPrefix('/')({
     main: '/',
-    course: withParams((id: number) => `/course/${id}`, '/course/:courseId'),
-    lesson: withParams(
-      (lessonId: number, courseId: number) => `/course/${courseId}/lesson/${lessonId}`,
-      '/course/:courseId/lesson/:lessonId',
-    ),
+    course: addPrefix('course/')({
+      add: '/new',
+      edit: withParams((id: number) => `/${id}/edit`, '/:courseId/edit'),
+      page: withParams((id: number) => `/${id}`, '/:courseId'),
+    }),
+    lesson: {
+      page: withParams(
+        (lessonId: number, courseId: number) => `/course/${courseId}/lesson/${lessonId}`,
+        '/course/:courseId/lesson/:lessonId',
+      ),
+      edit: withParams(
+        (lessonId: number, courseId: number) => `/course/${courseId}/lesson/${lessonId}/edit`,
+        '/course/:courseId/lesson/:lessonId/edit',
+      ),
+    },
   }),
 });

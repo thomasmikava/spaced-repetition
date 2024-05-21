@@ -38,7 +38,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         translation: rawCard.translation,
         groupPriorities: priorities,
         variants: [getInitialVariant(rawCard.value)].concat(variants),
-        translationVariants:
+        advancedTranslation:
           rawCard.translations.length > 0
             ? rawCard.translations.map(([schema, translation]) => ({
                 schema,
@@ -150,7 +150,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         id: rawCard.uniqueValue ?? rawCard.value,
         variants: [getInitialVariant(rawCard.value)],
         translation: rawCard.translation,
-        translationVariants: rawCard.variations.map((v) => ({
+        advancedTranslation: rawCard.variations.map((v) => ({
           attrs: { [AttributeMapper.CASE.id]: v.cases.map((cs) => AttributeMapper.CASE.records[cs]) },
           translation: v.translation,
         })),

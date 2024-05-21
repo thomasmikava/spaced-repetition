@@ -68,16 +68,16 @@ export class Reviewer {
         }
       }
     }
-    console.log('this.allTestableCards', this.allTestableCards);
+    // console.log('this.allTestableCards', this.allTestableCards);
   }
 
   getAllTestableCards() {
     return [...this.allTestableCards];
   }
 
-  getClosestDueDate = (card: StandardCard) => {
-    const testableCards = generateTestableCards(card);
-    return Math.min(...testableCards.map((record) => this.getDueDate(record)));
+  getClosestDueDate = (wordId: number) => {
+    // TODO: implement
+    return Infinity;
   };
 
   getDueDate = (record: StandardTestableCard, accordingToDate = Date.now()): number => {

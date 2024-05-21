@@ -158,7 +158,7 @@ const divideVariantsInGroups = (card: StandardCard) => {
       gr: null,
     });
   });
-  console.log('groups', groups);
+  // console.log('groups', groups);
   // TODO: sort groups
   return groups;
 };
