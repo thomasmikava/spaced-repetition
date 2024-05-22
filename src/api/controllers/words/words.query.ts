@@ -2,7 +2,7 @@ import { useQuery } from '../../../utils/queries';
 import { wordController } from './words.controller';
 import type { GetWordsReqDTO, SearchWordReqDTO } from './words.schema';
 
-const WordQueryKeys = {
+export const WordQueryKeys = {
   getCourseWords: (query: GetWordsReqDTO) => [
     `word:getCourseWords${query.courseId}`,
     { courseId: query.courseId },

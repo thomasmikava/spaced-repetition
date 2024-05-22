@@ -66,3 +66,16 @@ export const useCourseById = (id: number) => {
     initialDataUpdatedAt: () => previousDataset && queryClient.getQueryState(previousDataset[0])?.dataUpdatedAt,
   });
 };
+
+export const useUpdateCourseContent = () => {
+  return useMutation({
+    mutationFn: courseController.updateCourseContent,
+    onSuccess: (_, args): Promise<unknown> => {
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getOne(args.courseId) }),
+        queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] }), // TODO: export from lessons.query
+        queryClient.invalidateQueries({ queryKey: [`word:getCourseWords${args.courseId}`] }), // TODO: export from words.query
+      ]);
+    },
+  });
+};

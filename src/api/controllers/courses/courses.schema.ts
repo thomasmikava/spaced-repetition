@@ -1,3 +1,5 @@
+import type { LessonUpdateActionDTO } from '../lessons/lessons.schema';
+
 export interface CourseDTO {
   id: number;
   userId?: number | null;
@@ -51,4 +53,11 @@ export type GetCourseResDTO = CourseDTO;
 export interface DeleteCourseReqDTO {
   id: number;
   removeForEveryone?: boolean;
+}
+
+///
+
+export interface UpdateCourseContentReqDTO {
+  courseId: number;
+  actions: LessonUpdateActionDTO[];
 }

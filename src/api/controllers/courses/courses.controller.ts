@@ -7,6 +7,7 @@ import type {
   GetCourseReqDTO,
   GetCourseResDTO,
   GetMyCoursesResDTO,
+  UpdateCourseContentReqDTO,
   UpdateCourseReqDTO,
   UpdateCourseResDTO,
 } from './courses.schema';
@@ -32,6 +33,10 @@ class CourseController {
 
   updateCourse = (data: UpdateCourseReqDTO): Promise<UpdateCourseResDTO> => {
     return this.request.patch('courses/:id', data);
+  };
+
+  updateCourseContent = (data: UpdateCourseContentReqDTO): Promise<void> => {
+    return this.request.patch('courses/:id/content', data);
   };
 }
 

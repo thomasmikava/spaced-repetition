@@ -21,17 +21,25 @@ export type LessonUpdateActionDTO =
   | {
       type: 'new-word';
       wordType: 'phrase';
+      displayType?: number | null;
       value: string;
       translation: { translation: string; translationVariants: any[] };
     }
   | {
       type: 'update-lesson';
       lessonId: number;
+      parentLessonId?: number | null;
+      title?: string;
+      description?: string | null;
+      items?: LessonUpdateActionDTO[];
+    }
+  | {
+      type: 'new-lesson';
       title: string;
       description: string | null;
-      items: LessonUpdateActionDTO[];
+      parentLessonId?: number | null;
+      items?: LessonUpdateActionDTO[];
     }
-  | { type: 'new-lesson'; title: string; description: string | null; items: LessonUpdateActionDTO[] }
   | { type: 'delete-word'; wordId: number }
   | { type: 'delete-lesson'; lessonId: number };
 
@@ -40,7 +48,7 @@ export interface CreateLessonReqDTO {
   parentLessonId?: number | null;
   title: string;
   description: string | null;
-  items: LessonUpdateActionDTO[];
+  items?: LessonUpdateActionDTO[];
 }
 
 export type CreateLessonResDTO = LessonDTO;
@@ -50,9 +58,10 @@ export type CreateLessonResDTO = LessonDTO;
 export interface UpdateLessonReqDTO {
   lessonId: number;
   courseId: number;
-  title: string;
-  description: string | null;
-  items: LessonUpdateActionDTO[];
+  parentLessonId?: number | null;
+  title?: string;
+  description?: string | null;
+  items?: LessonUpdateActionDTO[];
 }
 
 export type UpdateLessonResDTO = LessonDTO;

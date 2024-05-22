@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, type FC } from 'react';
 import Button from '../../../ui/Button';
-import type { Control, FieldError, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
+import type { Control, FieldError, UseFormSetValue } from 'react-hook-form';
 import {
   Controller,
   FormProvider,
@@ -21,7 +21,7 @@ import { useDebounce } from 'use-debounce';
 import Select from '../../../ui/Select';
 import { useValidation } from './Form.validation';
 
-interface KnownWordInfo {
+export interface KnownWordInfo {
   fieldUniqueId: string;
   type: 'word';
   subType: 'known-word';
@@ -42,21 +42,21 @@ interface CustomWordInfo {
   translation: string;
 }
 
-const DEFAULT_WORD_DISPLAY_TYPE = 1;
+export const DEFAULT_WORD_DISPLAY_TYPE = 1;
 
-type WordInfo = KnownWordInfo | SearchWordInfo | CustomWordInfo;
+export type WordInfo = KnownWordInfo | SearchWordInfo | CustomWordInfo;
 
-export interface LessonInfo {
+export interface LessonInfo<W = WordInfo> {
   fieldUniqueId: string;
   type: 'lesson';
   id?: number;
   title: string;
   description: string;
-  children: (LessonInfo | WordInfo)[];
+  children: (LessonInfo | W)[];
 }
 
-interface FormData {
-  children: LessonInfo[];
+export interface FormData<W = WordInfo> {
+  children: LessonInfo<W>[];
 }
 
 interface Props {
@@ -64,6 +64,7 @@ interface Props {
   isCourseLevel: boolean;
   langToLearn: string;
   defaultData?: FormData;
+  onSubmit: (data: FormData) => void;
 }
 
 const emptyWord: WordInfo = { type: 'word', subType: 'search-word', searchValue: '', fieldUniqueId: '2' };
@@ -81,18 +82,19 @@ const emptyValues: FormData = {
   ],
 };
 
-const ContentForm: FC<Props> = memo(({ defaultData = emptyValues, isSubmitting, isCourseLevel, langToLearn }) => {
-  const { resolver } = useValidation();
-  const form = useForm({
-    shouldFocusError: true,
-    defaultValues: defaultData,
-    resolver,
-  });
-  const {
-    formState: { isSubmitted },
-  } = form;
+const ContentForm: FC<Props> = memo(
+  ({ defaultData = emptyValues, isSubmitting, isCourseLevel, langToLearn, onSubmit }) => {
+    const { resolver } = useValidation();
+    const form = useForm({
+      shouldFocusError: true,
+      defaultValues: defaultData,
+      resolver,
+    });
+    const {
+      formState: { isSubmitted },
+    } = form;
 
-  /* const watch = form.watch;
+    /* const watch = form.watch;
 
   useEffect(
     () =>
@@ -102,26 +104,28 @@ const ContentForm: FC<Props> = memo(({ defaultData = emptyValues, isSubmitting, 
     [watch],
   ); */
 
-  const handleSuccess = (data: FormData) => {
-    console.log('success', data);
-  };
+    const handleSuccess = (data: FormData) => {
+      console.log('success', data);
+      onSubmit(data);
+    };
 
-  const helper = useMemo(() => ({ langToLearn, isValidationStarted: isSubmitted }), [langToLearn, isSubmitted]);
+    const helper = useMemo(() => ({ langToLearn, isValidationStarted: isSubmitted }), [langToLearn, isSubmitted]);
 
-  console.log('top level re-render');
+    console.log('top level re-render');
 
-  return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(handleSuccess, console.error)}>
-        <FieldArray fieldKey='children' isCourseLevel={isCourseLevel} helper={helper} />
-        <div style={{ gap: 10, display: 'flex', marginTop: 10 }}>
-          <Button label='Cancel' variant='default' />
-          <Button label='Save' type='submit' variant='primary' loading={isSubmitting} />
-        </div>
-      </form>
-    </FormProvider>
-  );
-});
+    return (
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(handleSuccess, console.error)}>
+          <FieldArray fieldKey='children' isCourseLevel={isCourseLevel} helper={helper} />
+          <div style={{ gap: 10, display: 'flex', marginTop: 10 }}>
+            <Button label='Cancel' variant='default' />
+            <Button label='Save' type='submit' variant='primary' loading={isSubmitting} />
+          </div>
+        </form>
+      </FormProvider>
+    );
+  },
+);
 ContentForm.displayName = 'ContentForm';
 
 interface Helper {
@@ -323,6 +327,16 @@ const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, helper, index
 
   console.log('Rerendered WordField', fieldKey);
 
+  const handleSetValue: UseFormSetValue<LessonInfo> = useCallback(
+    (...args) => {
+      (setValue as CallableFunction)(...args);
+      if (helper.isValidationStarted) {
+        trigger(parentKey);
+      }
+    },
+    [helper.isValidationStarted, trigger, setValue, parentKey],
+  );
+
   const subType = useWatch({ control, name: `${fieldKey}.subType` });
   if (!subType) return null;
 
@@ -333,17 +347,15 @@ const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, helper, index
       {subType === 'known-word' && <ExistingWord control={control} fieldKey={fieldKey} onRemove={handleRemove} />}
       {subType === 'search-word' && (
         <SearchWord
-          triggerValidation={trigger}
           onRemove={handleRemove}
           helper={helper}
           control={control}
           fieldKey={fieldKey}
-          parentKey={parentKey}
-          setValue={setValue}
+          setValue={handleSetValue}
         />
       )}
       {subType === 'custom-word' && (
-        <CustomWord onRemove={handleRemove} helper={helper} control={control} fieldKey={fieldKey} setValue={setValue} />
+        <CustomWord onRemove={handleRemove} helper={helper} control={control} fieldKey={fieldKey} />
       )}
     </>
   );
@@ -373,14 +385,12 @@ const ExistingWord: FC<{ control: Control<LessonInfo, any>; fieldKey: `children.
 };
 
 const SearchWord: FC<{
-  triggerValidation: UseFormTrigger<LessonInfo>;
   onRemove: () => void;
   fieldKey: `children.${number}`;
-  parentKey: `children`;
   control: Control<LessonInfo, any>;
   helper: Helper;
   setValue: UseFormSetValue<LessonInfo>;
-}> = ({ helper, fieldKey, parentKey, control, setValue, onRemove, triggerValidation }) => {
+}> = ({ helper, fieldKey, control, setValue, onRemove }) => {
   const value = useWatch({ control, name: fieldKey });
   //   const { sub } = useFormContext<FormData>({ control });
   //   console.log('fieldKey', fieldKey, errors, dirtyFields);
@@ -414,10 +424,7 @@ const SearchWord: FC<{
       translation: '',
       fieldUniqueId: Math.random().toString(),
     });
-    if (helper.isValidationStarted) {
-      triggerValidation(parentKey);
-    }
-  }, [debouncedSearchValue, fieldKey, parentKey, setValue, helper.isValidationStarted, triggerValidation]);
+  }, [debouncedSearchValue, fieldKey, setValue]);
 
   if (value.type !== 'word' || value.subType !== 'search-word') return null;
 
@@ -466,7 +473,6 @@ const CustomWord: FC<{
   fieldKey: `children.${number}`;
   control: Control<LessonInfo, any>;
   helper: Helper;
-  setValue: UseFormSetValue<LessonInfo>;
 }> = ({ control, onRemove, fieldKey }) => {
   return (
     <div>

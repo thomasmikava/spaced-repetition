@@ -47,6 +47,10 @@ export type WordWithTranslationDTO = WordDTO & {
   advancedTranslation?: TranslationDTO['advancedTranslation'] | null;
 };
 
+export type WordWithTranslationAndLessons = WordWithTranslationDTO & {
+  relations: { courseId: number; lessonId: number }[];
+};
+
 ///
 
 export interface GetWordsReqDTO {
@@ -54,7 +58,7 @@ export interface GetWordsReqDTO {
   lessonId?: number;
 }
 
-export type GetWordsResDTO = WordWithTranslationDTO[];
+export type GetWordsResDTO = WordWithTranslationAndLessons[];
 
 ///
 
