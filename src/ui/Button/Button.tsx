@@ -1,10 +1,11 @@
 import type { ButtonProps as AntButtonProps } from 'antd/es/button';
 import AntButton from 'antd/es/button';
+import type { ReactNode } from 'react';
 import { forwardRef } from 'react';
 import type { ExtractRef } from '../types';
 
 type ButtonProps = Omit<AntButtonProps, 'type' | 'htmlType' | 'block'> & {
-  label: string;
+  label: ReactNode;
   type?: AntButtonProps['htmlType'];
   variant?: AntButtonProps['type'];
   fullWidth?: boolean;

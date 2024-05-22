@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { generateAllVariants } from '../functions/generateIndexedDatabase';
-import type { IdType } from '../database/types';
+import { CardType, type IdType } from '../database/types';
 import Select from '../ui/Select';
 import { courses } from '../courses/lessons';
 import { uniquelize } from '../utils/array';

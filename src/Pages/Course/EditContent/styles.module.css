@@ -1,0 +1,38 @@
+.lessonFieldContainer {
+  background-color: rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.lessonChildren {
+  padding: 10px;
+  border: 1px solid black;
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.lessonTitle {
+  display: flex;
+  border: 1px solid black;
+  border-bottom: none;
+  padding: 1px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.wordSearchContainer {
+  margin: 10px 0;
+}
+
+.wordSearchContainer .topPart {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.clickableIcon {
+  cursor: pointer;
+  height: 31.6px;
+}

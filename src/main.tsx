@@ -20,6 +20,7 @@ import AddCoursePage from './Pages/Course/AddCoursePage.tsx';
 import ConfigProvider from 'antd/es/config-provider/index';
 import theme from 'antd/es/theme/index';
 import EditCoursePage from './Pages/Course/EditCoursePage.tsx';
+import { EditContentPage } from './Pages/Course/EditContent/EditContentPage.tsx';
 
 const router = createBrowserRouter(
   [
@@ -56,6 +57,14 @@ const router = createBrowserRouter(
       element: (
         <PageGuard onlyAuth>
           <CoursePage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: paths.app.course.editContent.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <EditContentPage />
         </PageGuard>
       ),
     },

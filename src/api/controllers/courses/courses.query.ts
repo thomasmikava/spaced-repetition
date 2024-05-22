@@ -8,7 +8,7 @@ const prefixes = {
   getOne: 'course:getOneX',
 };
 
-const CourseQueryKeys = {
+export const CourseQueryKeys = {
   getOne: (id: number) => [prefixes.getOne, `course:getOne-${id}`],
   getMyMainCourses: () => ['course:getMyMainCourses'],
 };
@@ -23,8 +23,8 @@ export const useMyMainCourses = () => {
 export const useCreateNewCourse = () => {
   return useMutation({
     mutationFn: courseController.createCourse,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() });
+    onSuccess: (): Promise<unknown> => {
+      return queryClient.ensureQueryData({ queryKey: CourseQueryKeys.getMyMainCourses() });
     },
   });
 };
@@ -32,8 +32,11 @@ export const useCreateNewCourse = () => {
 export const useUpdateCourse = () => {
   return useMutation({
     mutationFn: courseController.updateCourse,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() });
+    onSuccess: (_, args): Promise<unknown> => {
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() }),
+        queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getOne(args.id) }),
+      ]);
     },
   });
 };
@@ -41,8 +44,8 @@ export const useUpdateCourse = () => {
 export const useDeleteCourse = () => {
   return useMutation({
     mutationFn: courseController.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() });
+    onSuccess: (): Promise<unknown> => {
+      return queryClient.ensureQueryData({ queryKey: CourseQueryKeys.getMyMainCourses() });
     },
   });
 };

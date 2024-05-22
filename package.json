@@ -28,6 +28,7 @@
     "react-hook-form": "^7.51.4",
     "react-router-dom": "^6.22.3",
     "simple-subscriptions": "^0.0.3",
+    "use-debounce": "^10.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

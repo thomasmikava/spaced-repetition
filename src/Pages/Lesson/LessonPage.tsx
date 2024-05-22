@@ -16,6 +16,7 @@ import Button from 'antd/es/button';
 import { DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
 import { paths } from '../../routes/paths';
 import Modal from 'antd/es/modal';
+import { isNonNullable } from '../../utils/array';
 
 const LessonPage = () => {
   const params = useParams();
@@ -41,7 +42,7 @@ const LessonPage = () => {
   };
 
   const goToEdit = () => {
-    navigate(paths.app.lesson.edit(lessonId, courseId));
+    navigate(paths.app.course.editContent(courseId, lessonId));
   };
 
   const { mutate: deleteLesson, isPending: isDeleting } = useDeleteCourse(); // TODO: replace by deleting lesson
@@ -76,6 +77,8 @@ const LessonPage = () => {
   const studiedCards = lessonsInfo.filter((item) => item.closestDueDate !== Infinity).length;
   const allCardsCount = lessonsInfo.length;
 
+  const canManageCourse = true; // TODO: check if I have the permission to delete it
+
   return (
     <div className='body'>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -93,8 +96,10 @@ const LessonPage = () => {
           menu={{
             items: [
               { label: 'Edit', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
-              { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal }, // TODO: check if I have the permission to delete it
-            ],
+              canManageCourse
+                ? { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal }
+                : undefined,
+            ].filter(isNonNullable),
           }}
           placement='bottom'
         >

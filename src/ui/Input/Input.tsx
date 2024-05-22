@@ -50,17 +50,20 @@ export const Input = forwardRef<ExtractRef<typeof AntInput>, InputProps>((props,
     onFocus,
     onChange,
     onEnterClick,
+    fullWidth,
     inputProps,
     ...rest
   } = props;
   const uniqueId = useId();
   const inputId = inputProps?.id || uniqueId;
   return (
-    <div>
+    <div style={{ width: fullWidth ? '100%' : undefined }}>
       {label && (
-        <Typography.Title className={styles.label} aria-htmlFor={inputId} level={5}>
-          {label}
-        </Typography.Title>
+        <label htmlFor={inputId}>
+          <Typography.Title className={styles.label} level={5}>
+            {label}
+          </Typography.Title>
+        </label>
       )}
       <AntInput
         ref={ref}

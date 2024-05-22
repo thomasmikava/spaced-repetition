@@ -9,15 +9,15 @@ export const paths = addPrefix('/')({
       add: '/new',
       edit: withParams((id: number) => `/${id}/edit`, '/:courseId/edit'),
       page: withParams((id: number) => `/${id}`, '/:courseId'),
+      editContent: withParams(
+        (id: number, lessonId?: number) => `/${id}/edit-content${lessonId ? `?lessonId=${lessonId}` : ''}`,
+        '/:courseId/edit-content',
+      ),
     }),
     lesson: {
       page: withParams(
         (lessonId: number, courseId: number) => `/course/${courseId}/lesson/${lessonId}`,
         '/course/:courseId/lesson/:lessonId',
-      ),
-      edit: withParams(
-        (lessonId: number, courseId: number) => `/course/${courseId}/lesson/${lessonId}/edit`,
-        '/course/:courseId/lesson/:lessonId/edit',
       ),
     },
   }),
