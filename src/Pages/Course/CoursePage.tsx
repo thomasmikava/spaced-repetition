@@ -4,13 +4,12 @@ import Dropdown from 'antd/es/dropdown';
 import Modal from 'antd/es/modal';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import cssModule from '../../App.module.css';
 import ReviewButtons from '../../ReviewButtons';
 import { useCourseById, useDeleteCourse } from '../../api/controllers/courses/courses.query';
 import { useCourseLessons } from '../../api/controllers/lessons/lessons.query';
 import { paths } from '../../routes/paths';
 import { isNonNullable } from '../../utils/array';
-import { LessonBox } from '../Lesson/LessonBox';
+import { LessonBody } from '../Lesson/Body';
 import { useFilteredLessons } from '../Lesson/useFilteredLessons';
 
 const CoursePage = () => {
@@ -95,11 +94,7 @@ const CoursePage = () => {
         </Dropdown>
       </div>
       <ReviewButtons courseId={courseId} />
-      <div className={cssModule.lessonsContainer}>
-        {lessons.map((lesson) => (
-          <LessonBox key={lesson.id} lesson={lesson} courseId={courseId} />
-        ))}
-      </div>
+      <LessonBody courseId={courseId} lessonId={null} lessons={lessons} />
       <Modal
         title='Modal'
         open={isDeleteModalVisible !== 'closed'}

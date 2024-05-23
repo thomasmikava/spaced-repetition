@@ -44,7 +44,8 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
   const testable: StandardTestableCard[] = [];
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
   const groups = divideVariantsInGroups(card);
-  if (card.groupPriorities) {
+  // TODO: sort
+  /*   if (card.groupPriorities) {
     groups.sort((a, b) => {
       const aIndex = card.groupPriorities!.indexOf(a.matcherId ?? '');
       const bIndex = card.groupPriorities!.indexOf(b.matcherId ?? '');
@@ -53,7 +54,7 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
       if (bIndex === -1) return -1;
       return aIndex - bIndex;
     });
-  }
+  } */
 
   const grandVariants = groups.map((group) =>
     group.variants.map(

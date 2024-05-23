@@ -39,6 +39,20 @@ export const generateIndexedDatabase = () => {
   } satisfies Record<CardType, unknown>;
 };
 
+export const generateCardTypeThings = () => {
+  return {
+    [CardType.VERB]: verbs,
+    [CardType.ARTICLE]: articles,
+    [CardType.NOUN]: nouns,
+    [CardType.ADJECTIVE]: adjectives,
+    [CardType.PRONOUN]: pronouns,
+    [CardType.PREPOSITION]: prepositions,
+    [CardType.CONJUNCTION]: conjunctions,
+    [CardType.NUMBER]: [],
+    [CardType.PHRASE]: phrases,
+  } satisfies Record<CardType, unknown>;
+};
+
 export const generateIndexedDatabase2 = () => {
   const database = generateIndexedDatabase();
   const cache: { [key in CardType]?: Map<string, StandardCard> } = {};

@@ -21,6 +21,7 @@ import ConfigProvider from 'antd/es/config-provider/index';
 import theme from 'antd/es/theme/index';
 import EditCoursePage from './Pages/Course/EditCoursePage.tsx';
 import { EditContentPage } from './Pages/Course/EditContent/EditContentPage.tsx';
+import TestingThingsPage from './Pages/TestingThings.tsx';
 
 const router = createBrowserRouter(
   [
@@ -89,6 +90,14 @@ const router = createBrowserRouter(
       element: (
         <PageGuard onlyAuth>
           <AlgorithmReviewPage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: '/testing-things',
+      element: (
+        <PageGuard onlyAuth>
+          <TestingThingsPage />
         </PageGuard>
       ),
     },

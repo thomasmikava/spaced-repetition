@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, type FC } from 'react';
 import Button from '../../../ui/Button';
-import type { Control, FieldError, UseFormSetValue } from 'react-hook-form';
+import type { Control, FieldError, UseFormSetFocus, UseFormSetValue } from 'react-hook-form';
 import {
   Controller,
   FormProvider,
@@ -20,6 +20,7 @@ import { useSearchWords } from '../../../api/controllers/words/words.query';
 import { useDebounce } from 'use-debounce';
 import Select from '../../../ui/Select';
 import { useValidation } from './Form.validation';
+import React from 'react';
 
 export interface KnownWordInfo {
   fieldUniqueId: string;
@@ -32,6 +33,7 @@ interface SearchWordInfo {
   type: 'word';
   subType: 'search-word';
   searchValue: string;
+  wordDisplayType?: number;
 }
 interface CustomWordInfo {
   fieldUniqueId: string;
@@ -63,6 +65,7 @@ interface Props {
   isSubmitting?: boolean;
   isCourseLevel: boolean;
   langToLearn: string;
+  translationLang: string;
   defaultData?: FormData;
   onSubmit: (data: FormData) => void;
 }
@@ -83,7 +86,7 @@ const emptyValues: FormData = {
 };
 
 const ContentForm: FC<Props> = memo(
-  ({ defaultData = emptyValues, isSubmitting, isCourseLevel, langToLearn, onSubmit }) => {
+  ({ defaultData = emptyValues, isSubmitting, isCourseLevel, langToLearn, onSubmit, translationLang }) => {
     const { resolver } = useValidation();
     const form = useForm({
       shouldFocusError: true,
@@ -105,11 +108,13 @@ const ContentForm: FC<Props> = memo(
   ); */
 
     const handleSuccess = (data: FormData) => {
-      console.log('success', data);
       onSubmit(data);
     };
 
-    const helper = useMemo(() => ({ langToLearn, isValidationStarted: isSubmitted }), [langToLearn, isSubmitted]);
+    const helper = useMemo(
+      (): Helper => ({ langToLearn, isValidationStarted: isSubmitted, translationLang }),
+      [langToLearn, isSubmitted, translationLang],
+    );
 
     console.log('top level re-render');
 
@@ -130,6 +135,7 @@ ContentForm.displayName = 'ContentForm';
 
 interface Helper {
   langToLearn: string;
+  translationLang: string;
   isValidationStarted: boolean;
 }
 
@@ -147,8 +153,6 @@ interface FieldArrayRef {
 const FieldArray = memo(
   forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, helper }, ref) => {
     const { control } = useFormContext<FormData>();
-
-    console.log('FieldArray rerender', fieldKey);
 
     const { fields, append, remove } = useFieldArray<FormData>({
       control,
@@ -233,21 +237,10 @@ interface LessonFieldProps {
 const LessonField: FC<LessonFieldProps> = memo(({ helper, onRemove, index, fieldKey }) => {
   const fieldArrayRef = useRef<FieldArrayRef>(null);
   const { control } = useFormContext<FormData>();
-  //   //   const { errors } = useFormState({ control, name: `${fieldKey}.children` });
-  //   console.log(errors, fieldKey + '.children');
-  //   const { errors } = useFormState({ control, name: `${fieldKey}.children` });
-  //   const rootError = getValue(errors, fieldKey + '.children.root');
-  //   (window as any).logLatestErrors = () => control._formState.errors;
-  //   console.log('heyyy', useWatchErrors(control, fieldKey + '.children'));
   const {
     fieldState: { error },
   } = useController({ control, name: `${fieldKey}.children` });
-  //   const rootError: any = null;
   const childrenError = (error as { root?: FieldError } | undefined)?.root ?? error;
-  console.log('rootError', fieldKey, childrenError);
-  //   console.log('oooo', getValue(errors, fieldKey + '.children.root'));
-
-  console.log('LessonField rerender', fieldKey);
 
   const handleAddNewLesson = () => {
     if (!fieldArrayRef.current) return;
@@ -323,9 +316,7 @@ interface WordFieldProps {
 }
 
 const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, helper, index, onRemove }) => {
-  const { control, setValue, trigger } = useFormContext<LessonInfo>();
-
-  console.log('Rerendered WordField', fieldKey);
+  const { control, setValue, trigger, setFocus } = useFormContext<LessonInfo>();
 
   const handleSetValue: UseFormSetValue<LessonInfo> = useCallback(
     (...args) => {
@@ -352,6 +343,7 @@ const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, helper, index
           control={control}
           fieldKey={fieldKey}
           setValue={handleSetValue}
+          setFocus={setFocus}
         />
       )}
       {subType === 'custom-word' && (
@@ -390,17 +382,20 @@ const SearchWord: FC<{
   control: Control<LessonInfo, any>;
   helper: Helper;
   setValue: UseFormSetValue<LessonInfo>;
-}> = ({ helper, fieldKey, control, setValue, onRemove }) => {
-  const value = useWatch({ control, name: fieldKey });
-  //   const { sub } = useFormContext<FormData>({ control });
-  //   console.log('fieldKey', fieldKey, errors, dirtyFields);
+  setFocus: UseFormSetFocus<LessonInfo<WordInfo>>;
+}> = ({ helper, fieldKey, control, setValue, onRemove, setFocus }) => {
+  const value = useWatch({ control, name: fieldKey }) as SearchWordInfo;
 
   const searchValue = (value as SearchWordInfo).searchValue ?? '';
+  const wordDisplayType = value.wordDisplayType;
   const [debouncedSearchValue] = useDebounce(searchValue, 300);
 
-  const { data, status } = useSearchWords({
+  const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } = useSearchWords({
     lang: helper.langToLearn,
     searchValue: debouncedSearchValue,
+    translationLang: helper.translationLang,
+    wordType: wordDisplayType ?? undefined,
+    limit: 5,
   });
 
   const handleChoose = useCallback(
@@ -420,28 +415,48 @@ const SearchWord: FC<{
       type: 'word',
       subType: 'custom-word',
       value: debouncedSearchValue,
-      wordDisplayType: DEFAULT_WORD_DISPLAY_TYPE,
+      wordDisplayType: wordDisplayType ?? DEFAULT_WORD_DISPLAY_TYPE,
       translation: '',
       fieldUniqueId: Math.random().toString(),
     });
-  }, [debouncedSearchValue, fieldKey, setValue]);
+    setTimeout(() => setFocus(`${fieldKey}.translation`), 10);
+  }, [debouncedSearchValue, fieldKey, wordDisplayType, setValue, setFocus]);
 
   if (value.type !== 'word' || value.subType !== 'search-word') return null;
+
+  const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
 
   return (
     <div className={styles.wordSearchContainer}>
       <div className={styles.topPart}>
-        <div style={{ width: '100%' }}>
-          <Controller
-            name={`${fieldKey}.searchValue`}
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <>
-                <Input placeholder='Search word' fullWidth {...field} />
-                {error && <p style={{ color: 'red' }}>Choose one of the options or clear the search field</p>}
-              </>
-            )}
-          />
+        <div style={{ width: '100%', display: 'flex', gap: 10 }}>
+          <div style={{ flex: 5 }}>
+            <Controller
+              name={`${fieldKey}.searchValue`}
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input placeholder='Search word' fullWidth {...field} />
+                  {error && <p style={{ color: 'red' }}>Choose one of the options or clear the search field</p>}
+                </>
+              )}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <Controller
+              name={`${fieldKey}.wordDisplayType`}
+              control={control}
+              render={({ field }) => (
+                <Select<number>
+                  options={wordTypeChoices}
+                  {...field}
+                  allowClear
+                  style={{ width: '100%' }}
+                  placeholder='Choose type'
+                />
+              )}
+            />
+          </div>
         </div>
         <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
       </div>
@@ -449,16 +464,21 @@ const SearchWord: FC<{
         <div>
           {status === 'pending' && <LoadingOutlined />}
           {status === 'error' && <span>Error</span>}
-          {status === 'success' && data && data.words.length > 0 && (
+          {status === 'success' && data && areResultsFound && (
             <div>
-              <>
-                {data.words.map((word) => (
-                  <div key={word.id} onClick={() => handleChoose(word)}>
-                    <span>{word.type}</span> <span>{word.value}</span>
-                    <span>{word.translation}</span>
-                  </div>
-                ))}
-              </>
+              {data.pages.map((page, index) => (
+                <React.Fragment key={index}>
+                  {page.words.map((word) => (
+                    <div key={word.id} onClick={() => handleChoose(word)}>
+                      <span>{word.type}</span> <span>{word.value}</span>
+                      <span>{word.translation}</span>
+                    </div>
+                  ))}
+                </React.Fragment>
+              ))}
+              {hasNextPage && (
+                <Button onClick={() => fetchNextPage()} label='Load more words' loading={isFetchingNextPage} />
+              )}
               <Button onClick={handleAddAsCustomWord} label='Add as custom word' />
             </div>
           )}
@@ -467,6 +487,18 @@ const SearchWord: FC<{
     </div>
   );
 };
+
+const wordTypeChoices: { value: number; label: string }[] = [
+  { value: 1, label: 'PHRASE' }, // TODO: don't hardcode
+  { value: 2, label: 'NOUN' },
+  { value: 3, label: 'VERB' },
+  { value: 4, label: 'PRONOUN' },
+  { value: 5, label: 'ADJECTIVE' },
+  { value: 6, label: 'PREPOSITION' },
+  { value: 7, label: 'CONJUNCTION' },
+  { value: 8, label: 'NUMBER' },
+  { value: 9, label: 'ARTICLE' },
+];
 
 const CustomWord: FC<{
   onRemove: () => void;
@@ -480,22 +512,7 @@ const CustomWord: FC<{
         <Controller
           name={`${fieldKey}.wordDisplayType`}
           control={control}
-          render={({ field }) => (
-            <Select<number>
-              options={[
-                { value: 1, label: 'PHRASE' }, // TODO: don't hardcode
-                { value: 2, label: 'NOUN' },
-                { value: 3, label: 'VERB' },
-                { value: 4, label: 'PRONOUN' },
-                { value: 5, label: 'ADJECTIVE' },
-                { value: 6, label: 'PREPOSITION' },
-                { value: 7, label: 'CONJUNCTION' },
-                { value: 8, label: 'NUMBER' },
-                { value: 9, label: 'ARTICLE' },
-              ]}
-              {...field}
-            />
-          )}
+          render={({ field }) => <Select<number> options={wordTypeChoices} {...field} />}
         />
         <Controller
           name={`${fieldKey}.value`}

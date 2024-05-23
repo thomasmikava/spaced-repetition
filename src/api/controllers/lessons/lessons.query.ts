@@ -21,8 +21,17 @@ export const useCreateNewLesson = () => {
   return useMutation({
     mutationFn: lessonController.createLesson,
     mutationKey: ['document:create'],
-    onSuccess: (_, args) => {
-      queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] });
+    onSuccess: (_, args): Promise<unknown> => {
+      return queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] });
+    },
+  });
+};
+
+export const useDeleteLesson = () => {
+  return useMutation({
+    mutationFn: lessonController.deleteLesson,
+    onSuccess: (_, args): Promise<unknown> => {
+      return queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] });
     },
   });
 };

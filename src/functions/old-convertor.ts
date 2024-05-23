@@ -36,7 +36,9 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         lang: defaultLang,
         id: rawCard.uniqueValue ?? rawCard.value,
         translation: rawCard.translation,
-        groupPriorities: priorities,
+        attributes: priorities
+          ? { [AttributeMapper.SPECIALITY.id]: AttributeMapper.SPECIALITY.records.modalVerb }
+          : undefined,
         variants: [getInitialVariant(rawCard.value)].concat(variants),
         advancedTranslation:
           rawCard.translations.length > 0
@@ -199,7 +201,7 @@ const getVerbConjugations = (variants: VerbVariant[]) => {
       }
     }
   }
-  const pr: StandardCard['groupPriorities'] = priorities.sort((a, b) => a.n - b.n).map((v) => `m${v.mood}-t${v.tense}`);
+  const pr = priorities.sort((a, b) => a.n - b.n).map((v) => `m${v.mood}-t${v.tense}`);
   return { variants: newVariants, priorities: pr && pr.length > 0 ? ['init', ...pr] : undefined };
 };
 

@@ -1,22 +1,23 @@
+import { DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
+import Button from 'antd/es/button';
+import Dropdown from 'antd/es/dropdown';
+import Modal from 'antd/es/modal';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import cssModule from '../../App.module.css';
 import ReviewButtons from '../../ReviewButtons';
+import { useCourseById } from '../../api/controllers/courses/courses.query';
+import { useCourseLessons, useDeleteLesson } from '../../api/controllers/lessons/lessons.query';
+import { useCourseWords } from '../../api/controllers/words/words.query';
 import { CardTypeMapper } from '../../database/attributes';
 import type { IdType } from '../../database/types';
 import { Reviewer } from '../../functions/reviewer';
+import { paths } from '../../routes/paths';
+import { isNonNullable } from '../../utils/array';
 import { roundNumber } from '../../utils/number';
 import { formatTime } from '../../utils/time';
-import { useCourseById, useDeleteCourse } from '../../api/controllers/courses/courses.query';
-import { useCourseLessons } from '../../api/controllers/lessons/lessons.query';
+import { LessonBody } from './Body';
 import { useFilteredLessons } from './useFilteredLessons';
-import { useCourseWords } from '../../api/controllers/words/words.query';
-import Dropdown from 'antd/es/dropdown';
-import Button from 'antd/es/button';
-import { DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
-import { paths } from '../../routes/paths';
-import Modal from 'antd/es/modal';
-import { isNonNullable } from '../../utils/array';
 
 const LessonPage = () => {
   const params = useParams();
@@ -32,7 +33,10 @@ const LessonPage = () => {
   });
   const { data: words, isLoading: isWordLoading } = useCourseWords({ courseId, lessonId });
   const lessons = useFilteredLessons(allCourseLessons, courseId, lessonId);
-  const myLesson = useMemo(() => lessons?.find((e) => e.id === lessonId), [lessons, lessonId]);
+  const myLesson = useMemo(
+    () => allCourseLessons?.find((e) => e.courseId === courseId && e.id === lessonId),
+    [allCourseLessons, courseId, lessonId],
+  );
   const lessonWords = words;
 
   const [reviewer] = useState(() => new Reviewer(courseId, lessonId));
@@ -45,7 +49,7 @@ const LessonPage = () => {
     navigate(paths.app.course.editContent(courseId, lessonId));
   };
 
-  const { mutate: deleteLesson, isPending: isDeleting } = useDeleteCourse(); // TODO: replace by deleting lesson
+  const { mutate: deleteLesson, isPending: isDeleting } = useDeleteLesson();
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const showDeleteModal = () => {
     setIsDeleteModalVisible(true);
@@ -55,7 +59,7 @@ const LessonPage = () => {
   };
   const handleDelete = () => {
     deleteLesson(
-      { id: courseId, ...{ lessonId } },
+      { courseId, lessonId },
       {
         onSuccess: goToCourse,
       },
@@ -109,6 +113,7 @@ const LessonPage = () => {
         </Dropdown>
       </div>
       <ReviewButtons courseId={courseId} lessonId={lessonId} />
+      {lessons && lessons.length > 0 && <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} />}
       <table className={cssModule.lessonTable}>
         <tbody>
           {lessonsInfo.map((item) => {

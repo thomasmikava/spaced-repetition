@@ -54,6 +54,10 @@ export const attrbiutes: Attribute[] = [
     id: 10,
     name: 'Definiteness',
   },
+  {
+    id: 11,
+    name: 'Speciality',
+  },
 ];
 
 export const attributeRecords: AttributeRecord[] = [
@@ -298,6 +302,11 @@ export const attributeRecords: AttributeRecord[] = [
     name: 'Indefinite',
     color: '_green',
   },
+  {
+    id: 45,
+    attributeId: 11,
+    name: 'Modal verb',
+  },
 ];
 
 export const AttributeMapper = {
@@ -392,6 +401,12 @@ export const AttributeMapper = {
     records: {
       ['true']: 43,
       ['false']: 44,
+    },
+  },
+  SPECIALITY: {
+    id: 11,
+    records: {
+      modalVerb: 45,
     },
   },
 };

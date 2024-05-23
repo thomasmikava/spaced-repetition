@@ -5,7 +5,7 @@ import { useCourseById, useUpdateCourseContent } from '../../../api/controllers/
 import { useCourseLessons } from '../../../api/controllers/lessons/lessons.query';
 import type { LessonDTO, LessonUpdateActionDTO } from '../../../api/controllers/lessons/lessons.schema';
 import { useCourseWords } from '../../../api/controllers/words/words.query';
-import type { WordWithTranslationAndLessons } from '../../../api/controllers/words/words.schema';
+import type { WordWithTranslationAndLessonsDTO } from '../../../api/controllers/words/words.schema';
 import { removeKeys } from '../../../utils/object';
 import { useFilteredLessons } from '../../Lesson/useFilteredLessons';
 import type { FormData, KnownWordInfo, LessonInfo, WordInfo } from './Form';
@@ -27,7 +27,7 @@ const EditContentPage = () => {
   });
   const { data: courseWords, isLoading: areCourseWordsLoading } = useCourseWords({ courseId, lessonId });
 
-  const lessons = useFilteredLessons(allCourseLessons, courseId, !lessonId ? null : lessonId, true);
+  const lessons = useFilteredLessons(allCourseLessons, courseId, !lessonId ? null : lessonId, true, true);
   const parentLessonId: number | null = lessonId
     ? allCourseLessons?.find((lesson) => lesson.courseId === courseId && lesson.id === lessonId)?.parentLessonId ?? null
     : null;
@@ -35,7 +35,6 @@ const EditContentPage = () => {
   const { mutate: updateCourseContent, isPending: isSubmitting } = useUpdateCourseContent();
 
   const initialData = useMemo(() => {
-    // debugger;
     if (!lessons || !courseWords) return null;
 
     return calculateInitialData({ courseId, lessonId, lessons, courseWords });
@@ -46,9 +45,6 @@ const EditContentPage = () => {
 
   const handleSubmit = (newData: FormData) => {
     const convertedData = convertLessonUpdates(parentLessonId, newData.children, initialData.children);
-    if (1 === 1) {
-      return console.log(convertedData);
-    }
     updateCourseContent(
       { courseId, actions: convertedData },
       {
@@ -63,10 +59,6 @@ const EditContentPage = () => {
     );
   };
 
-  console.log('Page rerender');
-
-  console.log(lessons);
-
   return (
     <div className='body'>
       Edit Content Page
@@ -76,6 +68,7 @@ const EditContentPage = () => {
           langToLearn={course.langToLearn}
           defaultData={initialData.children.length > 0 ? initialData : undefined}
           isSubmitting={isSubmitting}
+          translationLang={course.translationLang}
           onSubmit={handleSubmit}
         />
       </div>
@@ -92,7 +85,7 @@ const calculateInitialData = ({
   courseId: number;
   lessonId: number | undefined;
   lessons: LessonDTO[];
-  courseWords: WordWithTranslationAndLessons[];
+  courseWords: WordWithTranslationAndLessonsDTO[];
 }): FormData<KnownWordInfo> => {
   const initialLessons = lessonId
     ? lessons.filter((lesson) => lesson.id === lessonId)
@@ -177,6 +170,8 @@ const convertLessonUpdates = (
       (child): child is KnownWordInfo => child.type === 'word' && child.subType === 'known-word',
     );
     const initialWordIds = new Set(initialWords.map((word) => word.word.id));
+    const newWords = info.children.filter(isKnownWordInfo).map((word) => word.word.id);
+    const deletedWordIds = [...initialWordIds].filter((id) => !newWords.includes(id));
 
     const updateItem: LessonUpdateActionDTO = {
       type: 'update-lesson',
@@ -195,6 +190,7 @@ const convertLessonUpdates = (
             return true;
           })
           .map((word) => mapWord(word, true)),
+        ...deletedWordIds.map((wordId): LessonUpdateActionDTO => ({ type: 'delete-word', wordId })),
       ]),
     };
 
@@ -252,7 +248,9 @@ const convertLessonUpdates = (
 
     lessonAction.items = lessonAction.items || [];
     const mentionedWordIds = new Set(
-      lessonAction.items.map((item) => (item.type === 'existing-word' ? item.wordId : null)),
+      lessonAction.items
+        .map((item) => (item.type === 'existing-word' ? item.wordId : null))
+        .concat(lessonAction.items.map((item) => (item.type === 'delete-word' ? item.wordId : null))),
     );
     for (const removedWordId of removedWordIds) {
       if (!mentionedWordIds.has(removedWordId)) {

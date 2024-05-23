@@ -45,7 +45,7 @@ export const useDeleteCourse = () => {
   return useMutation({
     mutationFn: courseController.delete,
     onSuccess: (): Promise<unknown> => {
-      return queryClient.ensureQueryData({ queryKey: CourseQueryKeys.getMyMainCourses() });
+      return queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() });
     },
   });
 };

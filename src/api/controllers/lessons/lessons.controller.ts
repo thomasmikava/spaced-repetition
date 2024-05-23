@@ -3,6 +3,7 @@ import type { IRequest } from '../../request';
 import type {
   CreateLessonReqDTO,
   CreateLessonResDTO,
+  DeleteLessonReqDTO,
   GetLessonsReqDTO,
   GetLessonsResDTO,
   UpdateLessonReqDTO,
@@ -19,7 +20,10 @@ class LessonController {
     return this.request.post('/courses/:courseId/lessons', data);
   };
   updateLesson = (data: UpdateLessonReqDTO): Promise<UpdateLessonResDTO> => {
-    return this.request.post('/courses/:courseId/lessons/:lessonId', data);
+    return this.request.put('/courses/:courseId/lessons/:lessonId', data);
+  };
+  deleteLesson = (data: DeleteLessonReqDTO): Promise<void> => {
+    return this.request.delete('/courses/:courseId/lessons/:lessonId', data);
   };
 }
 

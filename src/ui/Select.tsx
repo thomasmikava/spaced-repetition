@@ -9,6 +9,8 @@ type SelectProps<ValueType> = Pick<AntSelectProps, 'style' | 'className'> & {
   defaultValue?: ValueType | null;
   onChange?: (value: ValueType) => void;
   options: { value: ValueType; label: string }[];
+  allowClear?: boolean;
+  placeholder?: string;
 };
 
 type SelectFn = <ValueType>(props: SelectProps<ValueType>) => ReactElement;

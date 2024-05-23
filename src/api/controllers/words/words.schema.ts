@@ -11,7 +11,6 @@ const WordSchema = z.object({
   mainType: z.number().nullable(),
   value: z.string(),
   attributes: StandardCardAttributesSchema.nullable(),
-  groupPriorities: z.array(z.string()).nullable(),
   userId: z.number().nullable(),
   isOfficial: z.boolean(),
 });
@@ -23,7 +22,6 @@ export interface WordDTO {
   mainType: number | null;
   value: string;
   attributes: StandardCardAttributes | null;
-  groupPriorities: string[] | null;
   userId: number | null;
   isOfficial: boolean;
 }
@@ -47,7 +45,7 @@ export type WordWithTranslationDTO = WordDTO & {
   advancedTranslation?: TranslationDTO['advancedTranslation'] | null;
 };
 
-export type WordWithTranslationAndLessons = WordWithTranslationDTO & {
+export type WordWithTranslationAndLessonsDTO = WordWithTranslationDTO & {
   relations: { courseId: number; lessonId: number }[];
 };
 
@@ -58,15 +56,45 @@ export interface GetWordsReqDTO {
   lessonId?: number;
 }
 
-export type GetWordsResDTO = WordWithTranslationAndLessons[];
+export type GetWordsResDTO = WordWithTranslationAndLessonsDTO[];
 
 ///
 
 export interface SearchWordReqDTO {
   searchValue: string;
+  wordType?: number;
   lang: string;
+  translationLang: string;
+  limit: number;
+  skip: number;
 }
 
 export interface SearchWordResDTO {
   words: WordWithTranslationDTO[];
+  isLastPage: boolean;
 }
+
+///
+type CreateStandardCardVariantDTO = {
+  attrs?: StandardCardAttributes | null;
+  category?: number | null;
+  value: string;
+};
+
+interface CreateWordDTO {
+  lang: string;
+  type: number;
+  mainType?: number | null;
+  value: string;
+  attributes?: StandardCardAttributes | null;
+  isOfficial: boolean;
+  variants: CreateStandardCardVariantDTO[];
+  variantsIncludeTopCard: boolean;
+  translation: {
+    lang: string;
+    translation: string;
+    advancedTranslation?: any[] | null;
+  };
+}
+
+export type CreateManyWordsDTO = CreateWordDTO[];

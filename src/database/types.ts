@@ -207,7 +207,7 @@ export type AnyCard = Verb | Noun | Article | Adjective | Phrase | Conjunction |
 
 /// New standard types
 
-export type IdType = number | string;
+export type IdType = number;
 
 export type StandardCardType = IdType;
 export type StandardCardAttributes = Record<string, IdType>; // key: attribute id, value: attribute record id
@@ -233,7 +233,6 @@ export type StandardCard = {
   /** @deprecated needs to be removed */
   uniqueValue: string | undefined;
   attributes?: StandardCardAttributes;
-  groupPriorities?: string[];
   variants: StandardCardVariant[];
   /** Should be moved into separate table */
   translation: string;

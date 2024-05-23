@@ -75,3 +75,10 @@ export interface GetLessonsReqDTO {
 }
 
 export type GetLessonsResDTO = LessonDTO[];
+
+///
+
+export interface DeleteLessonReqDTO {
+  courseId: number;
+  lessonId: number;
+}
