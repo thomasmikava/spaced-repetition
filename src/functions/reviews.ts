@@ -191,7 +191,6 @@ export interface StandardTestableCard extends GeneralTestableCard {
   card: StandardCard & { allStandardizedVariants: StandardCardVariant[] };
   displayType: IdType;
   variant: StandardCardVariant;
-  translation: string;
   caseSensitive: boolean;
   initial: boolean;
   groupMeta: StandardTestableCardGroupMeta;

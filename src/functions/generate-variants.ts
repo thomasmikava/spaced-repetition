@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { Matcher, VariantGroup } from '../database/card-types';
-import { CardTypeConfigurationMapper, SELF_REF } from '../database/card-types';
+import type { VariantGroup } from '../database/card-types';
+import { CardTypeConfigurationMapper } from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
 import { groupArray, sortArrayByOriginalArray } from '../utils/array';
+import { isMatch } from '../utils/matcher';
 import type { GeneralTestableCard, StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
+import { isStandardForm } from './standard-forms';
 
 function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
-  const testable: StandardTestableCard[] = [];
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
   const groups = divideVariantsInGroups(card);
   // TODO: sort
@@ -37,6 +38,9 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
 
   const newCard = { ...card, allStandardizedVariants };
 
+  const testable: StandardTestableCard[] = [];
+  let lastGroupLevel = -1;
+  let lastGroupKey: string | undefined | null = undefined;
   groups.forEach((group, groupIndex) => {
     const hasGroupViewMode = group.variants.length > 1 || !!group.gr?.forcefullyGroup;
     const hasIndividualViewMode = !hasGroupViewMode;
@@ -50,13 +54,14 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
       variants,
       gr: group.gr,
     };
+    const standardness = group.variants.map((variant) => isStandardForm(variant, card, allStandardizedVariants));
+    const isGroupStandard = standardness.every((x) => x); // TODO: count it and make it undefined in case of verbs if it's less than 1
     group.variants.forEach((variant, i) => {
       testable.push({
         card: newCard,
         type: card.type,
         displayType: card.mainType === null || card.mainType === undefined ? card.type : card.mainType,
         variant: variants[i],
-        translation: card.translation,
         caseSensitive: CardTypeConfigurationMapper[displayType]?.caseSensitive ?? false,
         initial: variant.category === 1,
         groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '') : null,
@@ -65,8 +70,14 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
         skipTest: shouldSkipTest(card, group.gr),
         testKey: 'ind-' + variant.id,
         groupMeta,
+        groupLevel: lastGroupLevel + 1,
+        previousGroupViewKey: lastGroupKey,
+        isStandardForm: standardness[i],
+        isGroupStandardForm: isGroupStandard,
       });
     });
+    lastGroupLevel++;
+    lastGroupKey = hasGroupViewMode ? 'gr-' + (group.matcherId || '') : null;
   });
   return addGroupStandardFormFlag(testable);
 }
@@ -120,44 +131,6 @@ const divideVariantsInGroups = (card: StandardCard) => {
   return groups;
 };
 
-export const isMatch = <T extends {}>(comparisonValue: T, matcher: Matcher<T>, selfValue?: T): boolean => {
-  let rule = matcher as unknown;
-  if (rule === SELF_REF) {
-    rule = selfValue as never;
-  }
-  if (rule === comparisonValue) return true;
-  if (rule === null) {
-    return comparisonValue === null || comparisonValue === undefined;
-  }
-  if (Array.isArray(rule)) {
-    return rule.includes(comparisonValue);
-  }
-  if (typeof rule === 'object' && isMatcherObject(rule)) {
-    const op = Object.keys(rule)[0] as '$not' | '$and' | '$or';
-    if (op === '$not') return !isMatch(comparisonValue, rule[op] as never, selfValue);
-    if (op === '$and') return (rule[op] as Matcher<T>[]).every((m) => isMatch(comparisonValue, m, selfValue));
-    if (op === '$or') return (rule[op] as Matcher<T>[]).some((m) => isMatch(comparisonValue, m, selfValue));
-    return false;
-  }
-  if (typeof rule === 'object') {
-    if (typeof comparisonValue !== 'object' || comparisonValue === null) return false;
-    for (const key in rule) {
-      if (!isMatch(comparisonValue[key as never], rule[key as never] as never, selfValue?.[key as never])) return false;
-    }
-    return true;
-  }
-  if (Array.isArray(comparisonValue)) {
-    return comparisonValue.includes(rule);
-  }
-  return false;
-};
-
-const isMatcherObject = (obj: unknown): obj is Matcher<any> => {
-  if (typeof obj !== 'object' || obj === null) return false;
-  const keys = Object.keys(obj);
-  return keys.length === 1 && keys[0].startsWith('$');
-};
-
 const addGroupStandardFormFlag = <T extends GeneralTestableCard>(variants: T[]): T[] => {
   return groupArray(
     variants,
@@ -169,34 +142,6 @@ const addGroupStandardFormFlag = <T extends GeneralTestableCard>(variants: T[]):
     },
   ).flat(1);
 };
-
-function addPreviousGroups<T extends GeneralTestableCard>(allVariants: T[]): T[] {
-  let lastGroupKey: string | null = null;
-  let currentGroupKey: string | null = null;
-  let groupLevel = 0;
-  const levels = new Map<string, { prevKey: string | null; level: number }>();
-  return allVariants
-    .map((variant): T => {
-      const cachedVariant = levels.get(variant.groupViewKey ?? '');
-      if (typeof variant.groupViewKey === 'string' && !!cachedVariant) {
-        return { ...variant, previousGroupViewKey: cachedVariant.prevKey, groupLevel: cachedVariant.level };
-      }
-      if (variant.groupViewKey !== lastGroupKey) {
-        if (variant.groupViewKey !== currentGroupKey) {
-          lastGroupKey = currentGroupKey;
-          groupLevel++;
-        }
-        currentGroupKey = variant.groupViewKey;
-        levels.set(variant.groupViewKey ?? '', { level: groupLevel, prevKey: lastGroupKey });
-        return { ...variant, previousGroupViewKey: lastGroupKey, groupLevel };
-      }
-      currentGroupKey = variant.groupViewKey;
-      return variant;
-    })
-    .sort((a, b) => {
-      return (a.groupLevel ?? -1) - (b.groupLevel ?? -1);
-    });
-}
 
 function removeUnnecessaryGroups<T extends GeneralTestableCard>(allVariants: T[]): T[] {
   const nullGroup = '#J@*@!';
@@ -217,7 +162,7 @@ function removeUnnecessaryGroups<T extends GeneralTestableCard>(allVariants: T[]
 }
 
 export function generateTestableCards(card: StandardCard): StandardTestableCard[] {
-  return removeUnnecessaryGroups(addPreviousGroups(lowercaseKeys(_generateTestableCards(card))));
+  return removeUnnecessaryGroups(lowercaseKeys(_generateTestableCards(card)));
 }
 
 const lowercaseKeys = <T extends GeneralTestableCard>(variants: T[]): T[] => {

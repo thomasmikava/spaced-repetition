@@ -302,6 +302,8 @@ const getPronounVariants = (variants: PronounVariant[]): StandardCardVariant[] =
                 [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[variant.function],
                 [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[v[0]],
                 [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[getGenderByInd(ind)],
+                [AttributeMapper.NUMBER.id]:
+                  AttributeMapper.NUMBER.records[ind === 4 ? NounNumber.plural : NounNumber.singular],
               },
             });
           }

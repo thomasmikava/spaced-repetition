@@ -79,8 +79,8 @@ const TestingThingsPage = () => {
           if (count === 0) isOver = true;
         }
       }
+      console.log('created all words');
     })();
-    console.log('created all words');
   };
 
   async function importFullCourse(course: Course) {

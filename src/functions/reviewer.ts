@@ -215,6 +215,10 @@ export class Reviewer {
           lastNormalizedViewDate,
           lastGroupViewDate,
         }): CardWithProbability => {
+          const qOrder = this.prevReviews.getLastNHistory(Infinity).length + 1;
+          if (qOrder === 24 && record.card.value === 'groß') {
+            // debugger;
+          }
           // if (i === 0) console.log(groupLastViewDates);
           const isTested = !!historyRecord;
           const prevKey = record.previousGroupViewKey
@@ -296,7 +300,11 @@ export class Reviewer {
   };
 
   getNextCard = (currentDate = Date.now()) => {
-    console.log('#q', this.prevReviews.getLastNHistory(Infinity).length + 1);
+    const qOrder = this.prevReviews.getLastNHistory(Infinity).length + 1;
+    console.log('#q', qOrder);
+    if (qOrder === 24) {
+      // debugger;
+    }
 
     const sorted = this.calculateProbabilities(currentDate);
     console.log(sorted);

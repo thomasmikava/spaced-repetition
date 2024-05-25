@@ -9,8 +9,8 @@ import {
   VerbMood,
   VerbPronoun,
   VerbTense,
-} from '../database/types';
-import { areSplittedEqual, mergeSplitted, slashSplit } from '../utils/split';
+} from '../../../database/types';
+import { mergeSplitted, slashSplit } from '../../../utils/split';
 
 export const getAdjectiveTrioStandardForm = (
   adjective: string,
@@ -376,9 +376,3 @@ export const getPronounStandardForm = (
   }
   return null;
 };
-
-export function isStandard(value: string, standardForm: string | null | string[]) {
-  if (!standardForm) return false;
-  if (typeof standardForm === 'string') return areSplittedEqual(value, standardForm);
-  return standardForm.some((form) => areSplittedEqual(value, form));
-}

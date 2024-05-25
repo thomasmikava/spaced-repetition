@@ -14,7 +14,7 @@ import {
   PronounFunction,
 } from '../database/types';
 import { removeKeys } from '../utils/object';
-import { isMatch } from './generate-variants';
+import { isMatch } from '../utils/matcher';
 
 export function getPronounDisplayName(pronoun: VerbPronoun) {
   return {
@@ -409,7 +409,7 @@ const articleObjects: { value: string; attrs: StandardCardAttributes }[] = [
     },
   },
 ];
-export function getArticle2(_locale: string, searchAttrs: Record<PropertyKey, string | number>, onlyFirst = false) {
+export function getArticle2(_locale: string, searchAttrs: Record<PropertyKey, number>, onlyFirst = false) {
   const normalizedSearchAttrs =
     searchAttrs[AttributeMapper.NUMBER.id] === AttributeMapper.NUMBER.records[NounNumber.plural]
       ? removeKeys(searchAttrs, AttributeMapper.GENDER.id)

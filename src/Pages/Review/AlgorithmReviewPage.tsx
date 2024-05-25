@@ -25,7 +25,7 @@ interface ReviewPageProps {
 
 const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
   const [mainKey, setMainKey] = useState(0);
-  const [maxCards, setMaxCards] = useState(400);
+  const [maxCards, setMaxCards] = useState(40);
 
   const [correctness, setCorrectness] = useState<boolean[]>([]);
 
@@ -77,7 +77,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
           .replace(/"autoFocus":true/g, '"autoFocus":false'),
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tagLength = (question as any).content?.[0]?.content?.[0]?.content?.length || 1;
+      const tagLength = (question as any).content?.[0]?.content?.[0]?.content?.length || 1; // TODO: it's very fragile strategy
       lastDate += 5000 + (tagLength - 1) * 3000;
       if (question.type === CardViewMode.groupView) {
         lastDate += currentCard.record.card.type === CardTypeMapper[CardType.VERB] ? 10000 : 5000;

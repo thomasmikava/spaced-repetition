@@ -1,4 +1,5 @@
 import { CardViewMode } from '../functions/reviews';
+import { Matcher, SELF_REF } from '../utils/matcher';
 import { AttributeMapper, CardTypeMapper } from './attributes';
 import {
   AdjectiveDegree,
@@ -171,14 +172,6 @@ export interface CardTypeConfiguration {
   }[];
   maxNumOfGroups?: number;
 }
-
-export type Matcher<T extends {}> = {
-  [k in keyof T]?: T[k] extends Record<PropertyKey, unknown> ? Matcher<T[k]> : Values<T[k]>;
-};
-
-type Values<T> = T | null | T[] | { $not: T | (T | null)[] | null } | { $and: (T | null)[] } | { $or: (T | null)[] };
-
-export const SELF_REF = '#self';
 
 export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
