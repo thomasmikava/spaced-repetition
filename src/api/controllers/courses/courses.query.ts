@@ -51,19 +51,20 @@ export const useDeleteCourse = () => {
 };
 
 export const useCourseById = (id: number) => {
-  const previousDataset = useMemo(
-    () =>
-      queryClient
-        .getQueriesData<GetMyCoursesResDTO>({ queryKey: CourseQueryKeys.getMyMainCourses() })
-        ?.find(([, data]) => data?.some((course) => course.id === id)),
-    [id],
-  );
+  const previousDataset = useMemo(() => {
+    const oldData = queryClient.getQueryState<GetMyCoursesResDTO>(CourseQueryKeys.getMyMainCourses());
+    if (oldData) {
+      const course = oldData.data?.find((course) => course.id === id);
+      if (course) return { data: course, dataUpdatedAt: oldData.dataUpdatedAt };
+    }
+    return undefined;
+  }, [id]);
 
   return useQuery({
     queryFn: () => courseController.getById({ id }),
     queryKey: CourseQueryKeys.getOne(id),
-    initialData: () => previousDataset && previousDataset[1]?.find((course) => course.id === id),
-    initialDataUpdatedAt: () => previousDataset && queryClient.getQueryState(previousDataset[0])?.dataUpdatedAt,
+    initialData: () => previousDataset?.data,
+    initialDataUpdatedAt: () => previousDataset?.dataUpdatedAt,
   });
 };
 

@@ -1,5 +1,4 @@
 import type { MinimalReviewRecordDTO, ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
-import { as } from '../utils/common';
 import { formatTime } from '../utils/time';
 import { globalHistory } from './history';
 import type {
@@ -24,6 +23,8 @@ import {
 
 type SessionHistory = { card: CardKeys; mode: CardViewMode; success: boolean; date: number; key: string };
 
+type WordIndexHistory = Record<number, AnyReviewHistory[] | undefined>;
+
 export class PreviousReviews {
   constructor(private avoidStorage = false) {
     if (!this.avoidStorage) {
@@ -44,6 +45,42 @@ export class PreviousReviews {
     }
   };
 
+  private historyWordsIndexObj = new WeakMap<AllCardsReviewHistory, WordIndexHistory>();
+  private getWordsIndexObject = (history: AllCardsReviewHistory) => {
+    const record = this.historyWordsIndexObj.get(history);
+    if (record === undefined) {
+      const newRecord = Object.entries(history).reduce<WordIndexHistory>((acc, [, value]) => {
+        if (value) {
+          const wordId = value.wordId;
+          if (wordId) {
+            if (!acc[wordId]) acc[wordId] = [];
+            acc[wordId]!.push(value);
+          }
+        }
+        return acc;
+      }, {});
+      this.historyWordsIndexObj.set(history, newRecord);
+      return newRecord;
+    }
+    return record;
+  };
+
+  getClosestDueDate = (wordId: number) => {
+    const wordsIndex = this.getWordsIndexObject(this.history);
+    const wordHistory = wordsIndex[wordId];
+    if (!wordHistory) return Infinity;
+    const dueDates = wordHistory.map((e) => e.dueDate ?? Infinity);
+    if (dueDates.length === 0) return Infinity;
+    return Math.min(...dueDates);
+  };
+  getDueCardsCount = (wordId: number, accordingToDate = new Date()) => {
+    const wordsIndex = this.getWordsIndexObject(this.history);
+    const wordHistory = wordsIndex[wordId];
+    if (!wordHistory) return 0;
+    const dueDateSec = Math.floor(accordingToDate.getTime() / 1000);
+    return wordHistory.filter((e) => e.dueDate && e.dueDate < dueDateSec).length;
+  };
+
   markAsSavedInDb = (keys: string[]) => {
     if (!keys.length) return;
     const history = { ...this.history };
@@ -59,7 +96,7 @@ export class PreviousReviews {
   loadInDb = (data: MinimalReviewRecordDTO[], notSavedData: ReviewWithOptionalDTO[], overwrite: boolean) => {
     const history = overwrite ? {} : { ...this.history };
     for (const record of data) {
-      const key = this.getFinalKey(record);
+      const key = this.getRecordUniqueKey(record);
       history[key] = {
         ...record,
         uniqueKey: key,
@@ -67,7 +104,7 @@ export class PreviousReviews {
       } as AnyReviewHistory;
     }
     for (const record of notSavedData) {
-      const key = this.getFinalKey(record);
+      const key = this.getRecordUniqueKey(record);
       history[key] = {
         ...record,
         uniqueKey: key,
@@ -95,22 +132,29 @@ export class PreviousReviews {
   getCardHistory(card: StandardTestableCard, mode: CardViewMode.groupView): GroupReviewHistory | undefined;
   getCardHistory(card: StandardTestableCard, mode: CardViewMode): AnyReviewHistory | undefined {
     const key = this.getFinalKey(card, mode);
+    if (!key) return undefined;
     return this.history[key];
   }
-  private getFinalKey(record: ReviewWithOptionalDTO): string;
-  private getFinalKey(card: StandardTestableCard, mode: CardViewMode): string;
-  private getFinalKey(card: StandardTestableCard | ReviewWithOptionalDTO, mode?: CardViewMode): string {
-    const separator = '@';
-    if (mode === undefined) {
-      as<ReviewWithOptionalDTO>(card);
-      return `${card.wordId}${separator}${card.sKey}`;
-    }
-    as<StandardTestableCard>(card);
-    return card.card.id + separator + this.getSKey(card, mode);
+
+  private getRecordUniqueKey(record: Pick<ReviewWithOptionalDTO, 'wordId' | 'sKey'>): string {
+    return `${record.wordId}$${record.sKey}`;
+  }
+
+  private getFinalKey(card: StandardTestableCard, mode: CardViewMode): string | null {
+    const sKey = this.getSKey(card, mode);
+    if (!sKey) return null;
+    return this.getRecordUniqueKey({ wordId: card.card.id, sKey });
   }
 
   private getSKey = (card: StandardTestableCard, mode: CardViewMode) => {
-    return mode === CardViewMode.groupView ? card.groupViewKey : card.testKey;
+    if (mode === CardViewMode.test || mode === CardViewMode.individualView) {
+      if (!card.testKey) return null;
+      return `${mode}@${card.testKey}`;
+    } else if (mode === CardViewMode.groupView) {
+      if (!card.groupViewKey) return null;
+      return `${mode}@${card.groupViewKey}`;
+    }
+    throw new Error('Unknown card view mode: ' + mode);
   };
 
   private currentSessionCards: SessionHistory[] = [];
@@ -130,7 +174,9 @@ export class PreviousReviews {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   saveCardResult = (card: StandardTestableCard, mode: CardViewMode, success: boolean, date = Date.now()) => {
     const dateInSec = Math.floor(date / 1000);
-    const key = this.getFinalKey(card, mode);
+    const sKey = this.getSKey(card, mode);
+    if (!sKey) throw new Error('sKey is not defined');
+    const key = this.getRecordUniqueKey({ wordId: card.card.id, sKey });
     this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
 
@@ -146,9 +192,6 @@ export class PreviousReviews {
           savedInDb: false,
         };
       } else {
-        debugger;
-        const sKey = this.getSKey(card, mode);
-        if (!sKey) throw new Error('sKey is not defined');
         newValue = history[key] = {
           uniqueKey: key,
           sKey,
@@ -179,8 +222,6 @@ export class PreviousReviews {
       } else {
         const newS = updateS(success, isGroup, undefined, undefined);
         const dueDate = dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS);
-        const sKey = this.getSKey(card, mode);
-        if (!sKey) throw new Error('sKey is not defined');
         newValue = history[key] = {
           uniqueKey: key,
           sKey,

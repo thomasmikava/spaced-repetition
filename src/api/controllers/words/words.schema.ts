@@ -26,6 +26,21 @@ export interface WordDTO {
   isOfficial: boolean;
 }
 
+export interface BaseWordVariantDTO {
+  id: number;
+  attrs: StandardCardAttributes | null;
+  categoryId: number | null;
+  value: string;
+}
+export interface WordVariantDTO extends BaseWordVariantDTO {
+  lang: string;
+  wordId: number;
+  // word type
+  wt: number;
+  userId: number | null;
+  isOfficial: boolean;
+}
+
 interface TranslationDTO {
   id: number;
   lang: string;
@@ -49,14 +64,37 @@ export type WordWithTranslationAndLessonsDTO = WordWithTranslationDTO & {
   relations: { courseId: number; lessonId: number }[];
 };
 
+export type WordWithTranslationAndLessonsAndVariantsDTO = WordWithTranslationAndLessonsDTO & {
+  variants?: BaseWordVariantDTO[];
+};
+
 ///
 
 export interface GetWordsReqDTO {
   courseId: number;
   lessonId?: number;
+  includeVariants?: boolean;
 }
 
-export type GetWordsResDTO = WordWithTranslationAndLessonsDTO[];
+export type GetWordsResDTO = WordWithTranslationAndLessonsAndVariantsDTO[];
+
+///
+
+export type GetMyCoursesWordsResDTO = WordWithTranslationAndLessonsAndVariantsDTO[];
+
+///
+
+export interface GetWordIdsReqDTO {
+  courseId?: number;
+  lessonId?: number;
+}
+
+type LessonWorIdsDTO = { id: number; words: { id: number; /** hidden */ h?: boolean }[] };
+export type CourseWordIdsDTO = {
+  courseId: number;
+  lessons: LessonWorIdsDTO[];
+};
+export type GetWordIdsResDTO = CourseWordIdsDTO[];
 
 ///
 

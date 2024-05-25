@@ -1,27 +1,27 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import CoursePage from './Pages/Course/CoursePage.tsx';
-import LessonPage from './Pages/Lesson/LessonPage.tsx';
-import ReviewPage from './Pages/ReviewPage.tsx';
-import AlgorithmReviewPage from './Pages/AlgorithmReviewPage.tsx';
-import NewWordsPage from './Pages/NewWords.tsx';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './utils/queries.ts';
-import { AuthProvider } from './contexts/Auth.tsx';
-import { paths } from './routes/paths.ts';
-import { PageGuard } from './routes/PageGuard.tsx';
-import LoginPage from './Pages/Login/index.tsx';
-import RegistrationPage from './Pages/Registration/index.tsx';
-import { ReviewContextProvider } from './contexts/ReviewContext.tsx';
-import HomePage from './Pages/Home/HomePage.tsx';
-import AddCoursePage from './Pages/Course/AddCoursePage.tsx';
 import ConfigProvider from 'antd/es/config-provider/index';
 import theme from 'antd/es/theme/index';
-import EditCoursePage from './Pages/Course/EditCoursePage.tsx';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { AuthProvider } from './contexts/Auth.tsx';
+import { ReviewContextProvider } from './contexts/ReviewContext.tsx';
+import './index.css';
+import { AlgorithmReviewPageLoader } from './Pages/Review/AlgorithmReviewPage.tsx';
+import AddCoursePage from './Pages/Course/AddCoursePage.tsx';
+import CoursePage from './Pages/Course/CoursePage.tsx';
 import { EditContentPage } from './Pages/Course/EditContent/EditContentPage.tsx';
+import EditCoursePage from './Pages/Course/EditCoursePage.tsx';
+import HomePage from './Pages/Home/HomePage.tsx';
+import LessonPage from './Pages/Lesson/LessonPage.tsx';
+import LoginPage from './Pages/Login/index.tsx';
+import NewWordsPage from './Pages/NewWords.tsx';
+import RegistrationPage from './Pages/Registration/index.tsx';
+import { ReviewPageLoader } from './Pages/Review/ReviewPage.tsx';
 import TestingThingsPage from './Pages/TestingThings.tsx';
+import { PageGuard } from './routes/PageGuard.tsx';
+import { paths } from './routes/paths.ts';
+import { queryClient } from './utils/queries.ts';
 
 const router = createBrowserRouter(
   [
@@ -81,7 +81,7 @@ const router = createBrowserRouter(
       path: '/review',
       element: (
         <PageGuard onlyAuth>
-          <ReviewPage />
+          <ReviewPageLoader />
         </PageGuard>
       ),
     },
@@ -89,7 +89,7 @@ const router = createBrowserRouter(
       path: '/review-algo',
       element: (
         <PageGuard onlyAuth>
-          <AlgorithmReviewPage />
+          <AlgorithmReviewPageLoader />
         </PageGuard>
       ),
     },

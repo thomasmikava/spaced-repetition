@@ -1,25 +1,31 @@
+import type { FC } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import cssModule from '../App.module.css';
-import Content from '../Content';
-import { TestContextProvider } from '../contexts/testContext';
-import { CardType } from '../database/types';
-import { getCardViewContent2 } from '../functions/generate-card-content';
-import type { CardWithProbability } from '../functions/reviewer';
-import { Reviewer } from '../functions/reviewer';
-import { CardViewMode, secondsUntilProbabilityIsHalf } from '../functions/reviews';
-import { formatTime } from '../utils/time';
-import { useHelper } from './hooks/text-helpers';
-import { withNoEventAction } from '../utils/event';
-import { useLatestCallback } from '../utils/hooks';
+import cssModule from '../../App.module.css';
+import Content from '../../Content';
+import { TestContextProvider } from '../../contexts/testContext';
+import type { StandardCard } from '../../database/types';
+import { CardType } from '../../database/types';
+import { getCardViewContent2 } from '../../functions/generate-card-content';
+import type { CardWithProbability } from '../../functions/reviewer';
+import { Reviewer } from '../../functions/reviewer';
+import { CardViewMode, secondsUntilProbabilityIsHalf } from '../../functions/reviews';
+import { formatTime } from '../../utils/time';
+import { useHelper } from '../hooks/text-helpers';
+import { withNoEventAction } from '../../utils/event';
+import { useLatestCallback } from '../../utils/hooks';
+import { useWords } from './useWords';
+import { CardTypeMapper } from '../../database/attributes';
 
-const AlgorithmReviewPage = () => {
-  const searchParams = new URL(window.location.href).searchParams;
-  const mode = !!searchParams.get('mode');
-  const courseId = !searchParams.get('courseId') ? undefined : +(searchParams.get('courseId') as string);
-  const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
+interface ReviewPageProps {
+  mode: 'normal' | 'endless';
+  words: StandardCard[];
+  isInsideLesson: boolean;
+  helper: ReturnType<typeof useHelper>;
+}
+
+const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
   const [mainKey, setMainKey] = useState(0);
   const [maxCards, setMaxCards] = useState(400);
-  const helper = useHelper();
 
   const [correctness, setCorrectness] = useState<boolean[]>([]);
 
@@ -51,10 +57,10 @@ const AlgorithmReviewPage = () => {
 
   const [submitted, setSubmitted] = useState<boolean[]>([]);
 
-  useLogs({ courseId, lessonId, mode, getQuestion, correctness, maxCards });
+  useLogs({ mode, getQuestion, correctness, maxCards });
 
   const entries = useMemo(() => {
-    const reviewer = new Reviewer(courseId, lessonId, mode ? 'endless' : 'normal', true);
+    const reviewer = new Reviewer(words, isInsideLesson, mode, true);
     const cards: CardWithProbability[] = [];
     const questions: NonNullable<ReturnType<typeof getQuestion>>[] = [];
     let lastDate = 0;
@@ -74,14 +80,14 @@ const AlgorithmReviewPage = () => {
       const tagLength = (question as any).content?.[0]?.content?.[0]?.content?.length || 1;
       lastDate += 5000 + (tagLength - 1) * 3000;
       if (question.type === CardViewMode.groupView) {
-        lastDate += currentCard.record.card.type === CardType.VERB ? 10000 : 5000;
+        lastDate += currentCard.record.card.type === CardTypeMapper[CardType.VERB] ? 10000 : 5000;
       }
       questions.push(question);
       reviewer.markViewed(currentCard, question.type, correctness[index] !== false, lastDate);
       index++;
     } while (cards.length < maxCards);
     return { cards, questions };
-  }, [courseId, lessonId, mode, getQuestion, correctness, maxCards]);
+  }, [words, isInsideLesson, mode, getQuestion, correctness, maxCards]);
 
   const showMore = (count: number) => {
     setMaxCards(maxCards + count);
@@ -208,4 +214,28 @@ const useLogs = (rec: Record<string, unknown>) => {
   }, []);
 };
 
-export default AlgorithmReviewPage;
+export const AlgorithmReviewPageLoader = () => {
+  const searchParams = new URL(window.location.href).searchParams;
+  const mode = !!searchParams.get('mode');
+  const courseId = !searchParams.get('courseId') ? undefined : +(searchParams.get('courseId') as string);
+  const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
+  const helper = useHelper();
+
+  const { data: words, isLoading: areWordsLoading } = useWords({ courseId, lessonId });
+
+  const isLoading = !helper || areWordsLoading;
+  if (isLoading) {
+    return <div className='body'>Loading...</div>;
+  }
+
+  if (!words || !helper) return <div className='body'>Error...</div>;
+
+  return (
+    <AlgorithmReviewPage
+      mode={mode ? 'endless' : 'normal'}
+      words={words}
+      helper={helper}
+      isInsideLesson={!!courseId && !!lessonId}
+    />
+  );
+};

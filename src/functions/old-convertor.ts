@@ -19,6 +19,7 @@ const defaultLang = 'de';
 
 const getInitialVariant = (value: string): StandardCardVariant => {
   return {
+    id: -1,
     value,
     attrs: null,
     category: 1,
@@ -34,7 +35,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: rawCard.value,
         uniqueValue: rawCard.uniqueValue,
         lang: defaultLang,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         translation: rawCard.translation,
         attributes: priorities
           ? { [AttributeMapper.SPECIALITY.id]: AttributeMapper.SPECIALITY.records.modalVerb }
@@ -55,7 +56,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: getWithArticle(rawCard.value, rawCard.gender),
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         translation: rawCard.translation,
         attributes: {
           [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[rawCard.gender],
@@ -71,6 +72,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         },
         rawCard.komparativ
           ? {
+              id: 0,
               attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Komparativ] },
               value: rawCard.komparativ,
               category: CATEGORY_MAPPER.comparative,
@@ -78,6 +80,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
           : null,
         rawCard.superlativ
           ? {
+              id: 0,
               attrs: { [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Superlativ] },
               value: rawCard.superlativ,
               category: CATEGORY_MAPPER.superlative,
@@ -89,7 +92,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: rawCard.value,
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         translation: rawCard.translation,
         variants: topVariants.filter(isNonNullable).concat(getAdjectiveVariants(rawCard.variants)),
       };
@@ -100,7 +103,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: rawCard.value,
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         translation: rawCard.translation,
         attributes: {
           [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[rawCard.gender],
@@ -111,6 +114,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         variants: [getInitialVariant(rawCard.value)].concat(
           rawCard.variants.map(
             (variant): StandardCardVariant => ({
+              id: 0,
               value: variant.value,
               attrs: {
                 [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[variant.case],
@@ -126,7 +130,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: rawCard.value,
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         translation: rawCard.translation,
         mainType: rawCard.mainType ? CardTypeMapper[rawCard.mainType] : undefined,
         variants: [getInitialVariant(rawCard.value)],
@@ -138,7 +142,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: rawCard.value,
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         translation: rawCard.translation,
         variants: [getInitialVariant(rawCard.value)],
       };
@@ -149,7 +153,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: rawCard.value,
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         variants: [getInitialVariant(rawCard.value)],
         translation: rawCard.translation,
         advancedTranslation: rawCard.variations.map((v) => ({
@@ -164,7 +168,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         value: rawCard.value,
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
-        id: rawCard.uniqueValue ?? rawCard.value,
+        id: 0,
         translation: rawCard.translation,
         variants: [getInitialVariant(rawCard.value)].concat(getPronounVariants(rawCard.variants)),
       };
@@ -191,6 +195,7 @@ const getVerbConjugations = (variants: VerbVariant[]) => {
       for (const conjugationV of tenseV.conjugations) {
         const pronoun = conjugationV.pronoun;
         newVariants.push({
+          id: 0,
           value: conjugationV.value,
           attrs: {
             [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
@@ -208,6 +213,7 @@ const getVerbConjugations = (variants: VerbVariant[]) => {
 const getNounVariants = (variants: NounVariant[]) => {
   return variants.map(
     (variant): StandardCardVariant => ({
+      id: 0,
       value: variant.value,
       attrs: {
         [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[variant.number],
@@ -243,6 +249,7 @@ const getAdjectiveVariants = (variants: AdjectiveVariant[]) => {
         const ind = i as 1 | 2 | 3 | 4;
         if (isNonEmpty(v[ind])) {
           newVariants.push({
+            id: 0,
             value: v[ind],
             attrs: { ...attrs, [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[getGenderByInd(ind)] },
           });
@@ -261,6 +268,7 @@ const getPronounVariants = (variants: PronounVariant[]): StandardCardVariant[] =
       for (const v of variant.values) {
         if (isNonEmpty(v[1])) {
           newVariants.push({
+            id: 0,
             value: v[1],
             attrs: {
               [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[variant.function],
@@ -271,6 +279,7 @@ const getPronounVariants = (variants: PronounVariant[]): StandardCardVariant[] =
         }
         if (isNonEmpty(v[2])) {
           newVariants.push({
+            id: 0,
             value: v[2],
             attrs: {
               [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[variant.function],
@@ -287,6 +296,7 @@ const getPronounVariants = (variants: PronounVariant[]): StandardCardVariant[] =
           const ind = i as 1 | 2 | 3 | 4;
           if (isNonEmpty(v[ind])) {
             newVariants.push({
+              id: 0,
               value: v[ind] as string,
               attrs: {
                 [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[variant.function],

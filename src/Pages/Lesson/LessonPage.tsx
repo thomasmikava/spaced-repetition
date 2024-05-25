@@ -11,7 +11,7 @@ import { useCourseLessons, useDeleteLesson } from '../../api/controllers/lessons
 import { useCourseWords } from '../../api/controllers/words/words.query';
 import { CardTypeMapper } from '../../database/attributes';
 import type { IdType } from '../../database/types';
-import { Reviewer } from '../../functions/reviewer';
+import { PreviousReviews } from '../../functions/previous-reviews';
 import { paths } from '../../routes/paths';
 import { isNonNullable } from '../../utils/array';
 import { roundNumber } from '../../utils/number';
@@ -39,7 +39,7 @@ const LessonPage = () => {
   );
   const lessonWords = words;
 
-  const [reviewer] = useState(() => new Reviewer(courseId, lessonId));
+  const [prevReviews] = useState(() => new PreviousReviews());
 
   const goToCourse = () => {
     navigate(paths.app.course.page(courseId));
@@ -75,10 +75,11 @@ const LessonPage = () => {
   if (!myLesson || !allCourseLessons) return <div>Lesson not found</div>;
 
   const lessonsInfo = lessonWords.map((word) => {
-    const closestDueDate = reviewer.getClosestDueDate(word.id);
-    return { closestDueDate, word };
+    const closestDueDate = prevReviews.getClosestDueDate(word.id);
+    const closestDueIn = closestDueDate === Infinity ? Infinity : closestDueDate - Math.floor(Date.now() / 1000);
+    return { closestDueIn, word };
   });
-  const studiedCards = lessonsInfo.filter((item) => item.closestDueDate !== Infinity).length;
+  const studiedCards = lessonsInfo.filter((item) => item.closestDueIn !== Infinity).length;
   const allCardsCount = lessonsInfo.length;
 
   const canManageCourse = true; // TODO: check if I have the permission to delete it
@@ -117,7 +118,7 @@ const LessonPage = () => {
       <table className={cssModule.lessonTable}>
         <tbody>
           {lessonsInfo.map((item) => {
-            const { closestDueDate, word } = item;
+            const { closestDueIn: closestDueDate, word } = item;
             const key = word.id;
             return (
               <tr key={key} className={cssModule.row}>
@@ -127,7 +128,7 @@ const LessonPage = () => {
                 <td className={cssModule.lessonCardTranslation}>
                   {closestDueDate === Infinity || closestDueDate === null
                     ? null
-                    : closestDueDate < 0
+                    : closestDueDate <= 0
                       ? 'Ready'
                       : 'In ' + formatTime(closestDueDate)}
                 </td>

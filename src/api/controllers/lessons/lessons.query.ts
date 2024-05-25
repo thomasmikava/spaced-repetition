@@ -1,8 +1,9 @@
+import { filterLessons } from '../../../Pages/Lesson/useFilteredLessons';
 import { queryClient, useMutation, useQuery } from '../../../utils/queries';
 import { lessonController } from './lessons.controller';
-import type { GetLessonsReqDTO } from './lessons.schema';
+import type { GetLessonsReqDTO, GetLessonsResDTO } from './lessons.schema';
 
-const LessonQueryKeys = {
+export const LessonQueryKeys = {
   getCourseLessons: (query: GetLessonsReqDTO) => [
     `lesson:getCourseLessons${query.courseId}`,
     { courseId: query.courseId },
@@ -15,6 +16,18 @@ export const useCourseLessons = (query: GetLessonsReqDTO) => {
     queryFn: () => lessonController.getCourseLessons(query),
     queryKey: LessonQueryKeys.getCourseLessons(query),
   });
+};
+
+export const getCourseLessonsOffline = (courseId: number, lessonId: number) => {
+  const results =
+    queryClient.getQueryState<GetLessonsResDTO>(
+      LessonQueryKeys.getCourseLessons({ courseId, lessonId, returnAllChildrenLessons: true }),
+    ) ||
+    queryClient.getQueryState<GetLessonsResDTO>(
+      LessonQueryKeys.getCourseLessons({ courseId, returnAllChildrenLessons: true }),
+    );
+  if (!results || !results.data) return undefined;
+  return filterLessons(results.data, courseId, lessonId, true, true);
 };
 
 export const useCreateNewLesson = () => {

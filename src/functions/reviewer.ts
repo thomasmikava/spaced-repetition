@@ -52,26 +52,15 @@ export class Reviewer {
       const testableCards = generateTestableCards(card);
       this.allTestableCards.push(...testableCards);
     }
-    // console.log('this.allTestableCards', this.allTestableCards);
+    console.log('this.allTestableCards', this.allTestableCards);
   }
 
   getAllTestableCards() {
     return [...this.allTestableCards];
   }
 
-  getClosestDueDate = (wordId: number) => {
-    // TODO: implement
-    return Infinity;
-  };
-
-  getDueDate = (record: StandardTestableCard, accordingToDate = Date.now()): number => {
-    const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
-    if (!historyRecord) return Infinity;
-    return dueDateUntilProbabilityIsHalf(
-      historyRecord.lastDate,
-      Math.floor(accordingToDate / 1000),
-      historyRecord.lastS,
-    );
+  getClosestDueIn = (wordId: number) => {
+    return this.prevReviews.getClosestDueDate(wordId);
   };
 
   getDueCardsCount = (accordingToDate = Date.now()) => {

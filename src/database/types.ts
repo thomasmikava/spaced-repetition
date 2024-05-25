@@ -228,16 +228,16 @@ export type StandardCard = {
   id: IdType;
   lang: string;
   type: StandardCardType;
-  mainType?: StandardCardType;
+  mainType?: StandardCardType | null;
   value: string;
   /** @deprecated needs to be removed */
-  uniqueValue: string | undefined;
-  attributes?: StandardCardAttributes;
+  uniqueValue?: string | undefined;
+  attributes?: StandardCardAttributes | null;
   variants: StandardCardVariant[];
   /** Should be moved into separate table */
   translation: string;
   /** Should be moved into separate table */
-  advancedTranslation?: TranslationVariant[];
+  advancedTranslation?: TranslationVariant[] | null;
 };
 
 export interface Attribute {

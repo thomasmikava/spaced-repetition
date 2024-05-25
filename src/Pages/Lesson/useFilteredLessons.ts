@@ -14,7 +14,7 @@ export const useFilteredLessons = (
   }, [lessons, courseId, parentLessonId, includeParent, includeAllDescendants]);
 };
 
-const filterLessons = (
+export const filterLessons = (
   lessons: LessonDTO[],
   courseId: number,
   parentLessonId: number | null,

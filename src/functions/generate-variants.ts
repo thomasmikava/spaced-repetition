@@ -1,44 +1,11 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { Matcher, VariantGroup } from '../database/card-types';
 import { CardTypeConfigurationMapper, SELF_REF } from '../database/card-types';
-import type {
-  AnyCard,
-  StandardCard,
-  NounGender,
-  NounNumber,
-  StandardCardVariant,
-  IdType,
-  StandardCardAttributes,
-} from '../database/types';
-import { AdjectiveDegree, CardType, Case, PronounFunction, VerbPronoun } from '../database/types';
-import { groupArray, isNonNullable, sortArrayByOriginalArray } from '../utils/array';
-import type {
-  AdjectiveTestableCard,
-  AnyTestableCard,
-  ArticleTestableCard,
-  GeneralTestableCard,
-  NounTestableCard,
-  PronounTestableCard,
-  StandardTestableCard,
-  StandardTestableCardGroupMeta,
-  VerbTestableCard,
-} from './reviews';
-import {
-  generateNounStandardVariant,
-  getAdjectiveStandardForm,
-  getAdjectiveTrioStandardForm,
-  getPronounStandardForm,
-  getVerbStandardForm,
-  isStandard,
-} from './standard-forms';
-import { getPartOfSentenceNames } from './texts';
-
-const VERB_MAX_TENSES = 2;
-
-function isArticleVariantDisabled(number: NounNumber, gender: NounGender, case_: Case): boolean {
-  return number !== undefined && gender !== undefined && case_ === Case.Nominativ;
-}
+import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
+import { groupArray, sortArrayByOriginalArray } from '../utils/array';
+import type { GeneralTestableCard, StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
 
 function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
   const testable: StandardTestableCard[] = [];
@@ -70,7 +37,6 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
 
   const newCard = { ...card, allStandardizedVariants };
 
-  const cardIdentifier = card.type + '-' + (card.uniqueValue ?? card.value) + '-' + card.id;
   groups.forEach((group, groupIndex) => {
     const hasGroupViewMode = group.variants.length > 1 || !!group.gr?.forcefullyGroup;
     const hasIndividualViewMode = !hasGroupViewMode;
@@ -93,20 +59,11 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
         translation: card.translation,
         caseSensitive: CardTypeConfigurationMapper[displayType]?.caseSensitive ?? false,
         initial: variant.category === 1,
-        groupViewKey: hasGroupViewMode ? cardIdentifier + '-gr-' + group.matcherId : null,
+        groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '') : null,
         hasGroupViewMode,
         hasIndividualViewMode,
         skipTest: shouldSkipTest(card, group.gr),
-        testKey:
-          cardIdentifier +
-          '-' +
-          (group.matcherId || '') +
-          '#' +
-          JSON.stringify(variants[i].attrs) +
-          '#' +
-          JSON.stringify(variants[i].category || null) +
-          '#' +
-          variant.value, // TODO: replace with variant.id,
+        testKey: 'ind-' + variant.id,
         groupMeta,
       });
     });
@@ -122,6 +79,7 @@ const shouldSkipTest = (card: StandardCard, variantGroup: VariantGroup | null | 
 };
 
 const divideVariantsInGroups = (card: StandardCard) => {
+  // debugger;
   const config = CardTypeConfigurationMapper[card.type];
   const freeVariants = [...card.variants];
   const groups: (StandardTestableCardGroupMeta & { variants: StandardCardVariant[] })[] = [];
@@ -159,8 +117,6 @@ const divideVariantsInGroups = (card: StandardCard) => {
       gr: null,
     });
   });
-  // console.log('groups', groups);
-  // TODO: sort groups
   return groups;
 };
 
