@@ -2133,7 +2133,7 @@ export const courses: Course[] = [
           { type: CardType.VERB, value: 'losfahren' },
           { type: CardType.VERB, value: 'abschließen' },
           { type: CardType.ADJECTIVE, value: 'dorthin' },
-          { type: CardType.ADJECTIVE, value: 'zu' },
+          { type: CardType.PREPOSITION, value: 'zu' },
           { type: CardType.PHRASE, value: 'die Hofreinigung' },
           { type: CardType.PHRASE, value: 'der Essbereich' },
           { type: CardType.NOUN, value: 'Katze' },

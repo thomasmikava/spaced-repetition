@@ -115,7 +115,7 @@ const TestingThingsPage = () => {
       return a.value === card.value;
     };
 
-    const actions: LessonUpdateActionDTO[] = [];
+    let actions: LessonUpdateActionDTO[] = [];
 
     for (const lesson of lessons) {
       const promises = lesson.cards.map(async (word): Promise<LessonUpdateActionDTO | null> => {
@@ -133,7 +133,7 @@ const TestingThingsPage = () => {
           translationLang: 'en',
           wordType: typeId,
           searchValue,
-          limit: 10,
+          limit: 100,
           skip: 0,
         });
         const foundWord = foundWords.find((v) => isSameWord(v, card));
@@ -163,6 +163,17 @@ const TestingThingsPage = () => {
         description: null,
         items,
       });
+    }
+
+    if (course.id === 6) {
+      actions = [
+        {
+          type: 'new-lesson',
+          title: 'Episode 1',
+          description: null,
+          items: actions,
+        },
+      ];
     }
 
     await courseController.updateCourseContent({
