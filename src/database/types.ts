@@ -212,7 +212,7 @@ export type IdType = number;
 export type StandardCardType = IdType;
 export type StandardCardAttributes = Record<string, IdType>; // key: attribute id, value: attribute record id
 export type StandardCardVariant = {
-  id?: IdType;
+  id: IdType;
   attrs?: StandardCardAttributes | null;
   category?: IdType | null;
   value: string;
@@ -225,7 +225,7 @@ export type TranslationVariant = {
 };
 
 export type StandardCard = {
-  id?: IdType;
+  id: IdType;
   lang: string;
   type: StandardCardType;
   mainType?: StandardCardType;

@@ -2,8 +2,7 @@ import type { FC, ReactElement } from 'react';
 import { createContext, useEffect, useRef, useState } from 'react';
 import { useInterval } from '../utils/hooks';
 import { PreviousReviews } from '../functions/previous-reviews';
-import type { PostHistoryRecordsReqDTO } from '../api/controllers/history/history.schema';
-import type { TestReviewHistory } from '../functions/reviews';
+import type { GetManyRecordsResDTO, PostHistoryRecordsReqDTO } from '../api/controllers/history/history.schema';
 import { useHistoryPushChange, useHistoryRecords } from '../api/controllers/history/history.queries';
 import { useAuth } from './Auth';
 import {
@@ -11,6 +10,7 @@ import {
   getUpdatableItemsFromStorage,
   removeSuccessfullySavedItemsFromStorage,
 } from '../functions/storage';
+import type { AnyReviewHistory } from '../functions/reviews';
 
 interface ReviewContextProps {}
 const ReviewContext = createContext<ReviewContextProps | undefined>(undefined);
@@ -43,7 +43,7 @@ export const ReviewContextProvider: FC<{ children: ReactElement }> = ({ children
         });
     }
     if (updatedItems.length > 0 && !updatingCountRef.current) {
-      update(updatedItems);
+      update(updatedItems.map(getDbRecord));
       console.log('updatedItems', updatedItems);
     }
   }, 5 * 1000);
@@ -64,26 +64,25 @@ const isNetworkError = (e: unknown): boolean => {
 
 function getUpdatedItems() {
   const reviews = new PreviousReviews().getLastReviewHistory();
-  const updatedRecord: PostHistoryRecordsReqDTO = [];
+  const updatedRecord: AnyReviewHistory[] = [];
   for (const key in reviews) {
     const value = reviews[key];
     if (!value || value.savedInDb) continue;
-    updatedRecord.push(getDbRecord(key, value as TestReviewHistory));
+    updatedRecord.push(value);
   }
   return updatedRecord;
 }
 
-function updateStorage(updatedItems: PostHistoryRecordsReqDTO) {
+function updateStorage(updatedItems: AnyReviewHistory[]) {
   const cls = new PreviousReviews();
   const reviews = cls.getLastReviewHistory();
   const successfullySavedKeys: string[] = [];
   for (const oldRecord of updatedItems) {
-    const key = oldRecord.key;
+    const key = oldRecord.uniqueKey;
     const value = reviews[key];
     if (!value || value.savedInDb) continue;
-    const currentRecord = getDbRecord(key, value as TestReviewHistory);
-    const areSame = JSON.stringify(currentRecord) === JSON.stringify(oldRecord);
-    if (areSame) {
+    if (areSame(value, oldRecord)) {
+      // make sure that user hasn't practiced that word again
       successfullySavedKeys.push(key);
     }
   }
@@ -91,7 +90,16 @@ function updateStorage(updatedItems: PostHistoryRecordsReqDTO) {
   removeSuccessfullySavedItemsFromStorage(successfullySavedKeys);
 }
 
-function loadInDb(data: PostHistoryRecordsReqDTO, notSavedData: PostHistoryRecordsReqDTO) {
+function loadInDb(data: GetManyRecordsResDTO, notSavedData: PostHistoryRecordsReqDTO) {
   const cls = new PreviousReviews();
   cls.loadInDb(data, notSavedData, true);
+}
+
+function areSame(oldRecord: AnyReviewHistory, newRecord: AnyReviewHistory) {
+  function normalize(record: AnyReviewHistory) {
+    return Object.entries(record)
+      .filter(([, value]) => value !== null && value !== undefined)
+      .sort(([a, b]) => a[0].localeCompare(b[0]));
+  }
+  return JSON.stringify(normalize(oldRecord)) === JSON.stringify(normalize(newRecord));
 }

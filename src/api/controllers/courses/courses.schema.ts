@@ -21,6 +21,7 @@ export interface CreateCourseReqDTO {
   langToLearn: string;
   translationLang: string;
   isPublic: boolean;
+  isOfficial: boolean;
 }
 export type CreateCourseResDTO = CourseDTO;
 

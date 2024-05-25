@@ -49,21 +49,31 @@ export const MAX_NUM_OF_GROUP_VIEW_CARDS = 1;
 export const LAST_CARDS_COUNT_TO_CONSIDER = 3;
 export const LAST_PERIOD_TO_CONSIDER = 20; // seconds
 
-export interface TestReviewHistory {
-  firstDate: number; // in seconds
+interface BaseReviewHistory {
+  id?: number;
+  uniqueKey: string;
+  wordId: number;
+  sKey: string;
   lastDate: number; // in seconds
   repetition: number;
+  savedInDb: boolean;
+}
+
+export interface TestReviewHistory extends BaseReviewHistory {
+  viewMode: CardViewMode.test;
   lastS: number;
-  lastHasFailed?: boolean;
-  savedInDb: boolean;
+  dueDate: number;
 }
-export interface IndividualReviewHistory {
-  firstDate: number; // in seconds
-  lastDate: number; // in seconds
-  repetition: number;
-  savedInDb: boolean;
+export interface IndividualReviewHistory extends BaseReviewHistory {
+  viewMode: CardViewMode.individualView;
+  lastS?: null;
+  dueDate?: null;
 }
-export type GroupReviewHistory = IndividualReviewHistory;
+export interface GroupReviewHistory extends BaseReviewHistory {
+  viewMode: CardViewMode.groupView;
+  lastS?: null;
+  dueDate?: null;
+}
 
 export type AnyReviewHistory = TestReviewHistory | IndividualReviewHistory | GroupReviewHistory;
 

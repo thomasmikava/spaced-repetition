@@ -1,5 +1,6 @@
+import type { MinimalReviewRecordDTO, ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
+import { as } from '../utils/common';
 import { formatTime } from '../utils/time';
-import type { StrictOmit } from '../utils/types';
 import { globalHistory } from './history';
 import type {
   AllCardsReviewHistory,
@@ -7,12 +8,14 @@ import type {
   CardKeys,
   GroupReviewHistory,
   IndividualReviewHistory,
+  StandardTestableCard,
   TestReviewHistory,
 } from './reviews';
 import {
   CardViewMode,
   calculateHalfLifeCoefficient,
   calculateProbability,
+  dueDateUntilProbabilityIsHalf,
   initialTestS,
   maxS,
   minS,
@@ -53,25 +56,23 @@ export class PreviousReviews {
     this.history = history;
   };
 
-  loadInDb = (
-    data: (StrictOmit<AnyReviewHistory, 'savedInDb'> & { key: string })[],
-    notSavedData: (StrictOmit<AnyReviewHistory, 'savedInDb'> & { key: string })[],
-    overwrite: boolean,
-  ) => {
+  loadInDb = (data: MinimalReviewRecordDTO[], notSavedData: ReviewWithOptionalDTO[], overwrite: boolean) => {
     const history = overwrite ? {} : { ...this.history };
     for (const record of data) {
-      history[record.key.toLowerCase()] = {
+      const key = this.getFinalKey(record);
+      history[key] = {
         ...record,
-        ...{ key: record.key.toLowerCase() },
+        uniqueKey: key,
         savedInDb: true,
-      };
+      } as AnyReviewHistory;
     }
     for (const record of notSavedData) {
-      history[record.key.toLowerCase()] = {
+      const key = this.getFinalKey(record);
+      history[key] = {
         ...record,
-        ...{ key: record.key.toLowerCase() },
+        uniqueKey: key,
         savedInDb: false,
-      };
+      } as AnyReviewHistory;
     }
     this.history = history;
   };
@@ -89,15 +90,28 @@ export class PreviousReviews {
     }
   }
 
-  getCardHistory(card: CardKeys, mode: CardViewMode.test): TestReviewHistory | undefined;
-  getCardHistory(card: CardKeys, mode: CardViewMode.individualView): IndividualReviewHistory | undefined;
-  getCardHistory(card: CardKeys, mode: CardViewMode.groupView): GroupReviewHistory | undefined;
-  getCardHistory(card: CardKeys, mode: CardViewMode): AnyReviewHistory | undefined {
+  getCardHistory(card: StandardTestableCard, mode: CardViewMode.test): TestReviewHistory | undefined;
+  getCardHistory(card: StandardTestableCard, mode: CardViewMode.individualView): IndividualReviewHistory | undefined;
+  getCardHistory(card: StandardTestableCard, mode: CardViewMode.groupView): GroupReviewHistory | undefined;
+  getCardHistory(card: StandardTestableCard, mode: CardViewMode): AnyReviewHistory | undefined {
     const key = this.getFinalKey(card, mode);
     return this.history[key];
   }
-  private getFinalKey = (card: CardKeys, mode: CardViewMode) =>
-    mode + '@' + (mode === CardViewMode.groupView ? card.groupViewKey : card.testKey)?.toLowerCase();
+  private getFinalKey(record: ReviewWithOptionalDTO): string;
+  private getFinalKey(card: StandardTestableCard, mode: CardViewMode): string;
+  private getFinalKey(card: StandardTestableCard | ReviewWithOptionalDTO, mode?: CardViewMode): string {
+    const separator = '@';
+    if (mode === undefined) {
+      as<ReviewWithOptionalDTO>(card);
+      return `${card.wordId}${separator}${card.sKey}`;
+    }
+    as<StandardTestableCard>(card);
+    return card.card.id + separator + this.getSKey(card, mode);
+  }
+
+  private getSKey = (card: StandardTestableCard, mode: CardViewMode) => {
+    return mode === CardViewMode.groupView ? card.groupViewKey : card.testKey;
+  };
 
   private currentSessionCards: SessionHistory[] = [];
 
@@ -114,7 +128,7 @@ export class PreviousReviews {
   }
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
-  saveCardResult = (card: CardKeys, mode: CardViewMode, success: boolean, date = Date.now()) => {
+  saveCardResult = (card: StandardTestableCard, mode: CardViewMode, success: boolean, date = Date.now()) => {
     const dateInSec = Math.floor(date / 1000);
     const key = this.getFinalKey(card, mode);
     this.currentSessionCards.push({ card, mode, success, date, key });
@@ -132,10 +146,18 @@ export class PreviousReviews {
           savedInDb: false,
         };
       } else {
+        debugger;
+        const sKey = this.getSKey(card, mode);
+        if (!sKey) throw new Error('sKey is not defined');
         newValue = history[key] = {
-          firstDate: dateInSec,
+          uniqueKey: key,
+          sKey,
+          viewMode: mode,
           lastDate: dateInSec,
           repetition: 1,
+          wordId: card.card.id,
+          lastS: null,
+          dueDate: null,
           savedInDb: false,
         };
       }
@@ -144,21 +166,30 @@ export class PreviousReviews {
       const currentValue = history[key] as TestReviewHistory;
       if (currentValue) {
         const passedTime = dateInSec - currentValue.lastDate;
+        const newS = updateS(success, isGroup, currentValue.lastS, passedTime);
+        const dueDate = dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS);
         newValue = history[key] = {
           ...currentValue,
           lastDate: dateInSec,
           repetition: currentValue.repetition + 1,
-          lastS: updateS(success, isGroup, currentValue.lastS, passedTime),
-          lastHasFailed: !success,
+          lastS: newS,
+          dueDate,
           savedInDb: false,
         };
       } else {
+        const newS = updateS(success, isGroup, undefined, undefined);
+        const dueDate = dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS);
+        const sKey = this.getSKey(card, mode);
+        if (!sKey) throw new Error('sKey is not defined');
         newValue = history[key] = {
-          firstDate: dateInSec,
+          uniqueKey: key,
+          sKey,
+          viewMode: mode,
           lastDate: dateInSec,
           repetition: 1,
-          lastS: updateS(success, isGroup, undefined, undefined),
-          lastHasFailed: !success,
+          wordId: card.card.id,
+          lastS: newS,
+          dueDate,
           savedInDb: false,
         };
       }
@@ -184,9 +215,9 @@ const updateS = (
   const coeffS = s;
   let successMultiplier;
   if (coeffS < calculateHalfLifeCoefficient(60 * 3)) {
-    successMultiplier = isGroup ? calcMultipler(coeffS, 60 * 3) : calcMultipler(coeffS, 60 * 2);
+    successMultiplier = isGroup ? calcMultiplier(coeffS, 60 * 3) : calcMultiplier(coeffS, 60 * 2);
   } else if (coeffS < calculateHalfLifeCoefficient(60 * 6)) {
-    successMultiplier = isGroup ? calcMultipler(coeffS, 60 * 4) : calcMultipler(coeffS, 60 * 3);
+    successMultiplier = isGroup ? calcMultiplier(coeffS, 60 * 4) : calcMultiplier(coeffS, 60 * 3);
   } else if (coeffS < calculateHalfLifeCoefficient(60 * 20)) successMultiplier = isGroup ? 3 : 2.5;
   else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 9 : 6;
   else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 24)) successMultiplier = isGroup ? 5 : 3;
@@ -198,7 +229,7 @@ const updateS = (
   return Math.min(maxS, Math.max(minS, success ? coeffS * successMultiplier : coeffS * 0.5));
 };
 
-const calcMultipler = (s: number, addedHalfTimeSeconds: number) => {
+const calcMultiplier = (s: number, addedHalfTimeSeconds: number) => {
   const currentHalfLife = secondsUntilProbabilityIsHalf(s);
   const newHalfLife = currentHalfLife + addedHalfTimeSeconds;
   const newS = calculateHalfLifeCoefficient(newHalfLife);

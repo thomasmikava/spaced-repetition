@@ -13,8 +13,5 @@ export const useHistoryPushChange = () => {
   return useMutation({
     mutationFn: historyController.postRecords,
     mutationKey: ['document:postRecords'],
-    // onSuccess: (data, args) => {
-    //   //
-    // },
   });
 };

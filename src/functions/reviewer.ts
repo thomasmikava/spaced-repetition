@@ -1,22 +1,19 @@
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { LessonCard } from '../courses/lessons';
-import { courses } from '../courses/lessons';
 import type { StandardCard } from '../database/types';
 import { generateTestableCards } from './generate-variants';
-import { generateIndexedDatabase2 } from './generateIndexedDatabase';
 import { PreviousReviews } from './previous-reviews';
 import type { GroupReviewHistory, IndividualReviewHistory, StandardTestableCard, TestReviewHistory } from './reviews';
 import {
   CardViewMode,
   DEFAULT_REVIEW_DUE,
-  calculateProbability,
-  initialViewS,
-  dueDateUntilProbabilityIsHalf,
-  MAX_NUM_OF_VIEW_CARDS,
-  MAX_NUM_OF_GROUP_VIEW_CARDS,
   LAST_CARDS_COUNT_TO_CONSIDER,
   LAST_PERIOD_TO_CONSIDER,
+  MAX_NUM_OF_GROUP_VIEW_CARDS,
+  MAX_NUM_OF_VIEW_CARDS,
   REVIEW_MAX_DUE,
+  calculateProbability,
+  dueDateUntilProbabilityIsHalf,
+  initialViewS,
 } from './reviews';
 import { addUpdatedItemsInStorage, getDbRecord } from './storage';
 
@@ -40,33 +37,20 @@ export interface CardWithProbability {
 }
 
 export class Reviewer {
-  private lessonCards: LessonCard[];
   private allTestableCards: StandardTestableCard[];
   private prevReviews: PreviousReviews;
   // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
-    courseId: number | undefined = undefined,
-    private lessonId: number | undefined = undefined,
+    cards: StandardCard[],
+    private isInsideLesson: boolean,
     private mode: 'endless' | 'normal' = 'normal',
     private avoidStorage = false,
-    private cardsDatabase = generateIndexedDatabase2(),
   ) {
     this.prevReviews = new PreviousReviews(avoidStorage);
-    this.lessonCards = [];
     this.allTestableCards = [];
-    for (const course of courses) {
-      if (courseId && course.id !== courseId) continue;
-      for (const lesson of course.lessons) {
-        if (lessonId && lesson.id !== lessonId) continue;
-        for (const lessonCard of lesson.cards) {
-          if (lessonCard.hidden) continue;
-          const card = this.cardsDatabase.getCard(lessonCard.type, lessonCard.value);
-          if (!card) continue;
-          const testableCards = generateTestableCards(card);
-          this.allTestableCards.push(...testableCards);
-          this.lessonCards.push(lessonCard);
-        }
-      }
+    for (const card of cards) {
+      const testableCards = generateTestableCards(card);
+      this.allTestableCards.push(...testableCards);
     }
     // console.log('this.allTestableCards', this.allTestableCards);
   }
@@ -336,7 +320,7 @@ export class Reviewer {
     }
     const topCardViewType = getCardViewMode(topCard);
     if (
-      typeof this.lessonId === 'number' &&
+      this.isInsideLesson &&
       (topCardViewType === CardViewMode.groupView || topCardViewType === CardViewMode.individualView)
     ) {
       // only prioritize next cards of lower group-level in case user is inside the specific lesson
@@ -353,9 +337,9 @@ export class Reviewer {
   };
 
   markViewed = (card: CardWithProbability, mode: CardViewMode, success: boolean, currentDate = Date.now()) => {
-    const { newValue, key } = this.prevReviews.saveCardResult(card.record, mode, success, currentDate);
+    const { newValue } = this.prevReviews.saveCardResult(card.record, mode, success, currentDate);
     if (!this.avoidStorage) {
-      addUpdatedItemsInStorage([getDbRecord(key, newValue)]);
+      addUpdatedItemsInStorage([getDbRecord(newValue)]);
     }
   };
 }

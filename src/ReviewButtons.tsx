@@ -1,8 +1,7 @@
+import type { FC } from 'react';
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cssModule from './App.module.css';
-import type { FC } from 'react';
-import { memo, useState } from 'react';
-import { Reviewer } from './functions/reviewer';
 
 interface Props {
   courseId?: number;
@@ -12,9 +11,12 @@ interface Props {
 const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
   const navigate = useNavigate();
 
-  const [reviewer] = useState(() => new Reviewer(courseId, lessonId));
+  // const [reviewer] = useState(() => new Reviewer(courseId, lessonId));
 
-  const { dueReview, uniqueCards } = reviewer.getDueCardsCount();
+  // const { dueReview, uniqueCards } = reviewer.getDueCardsCount(); // TODO: get it
+
+  const dueReview = 0,
+    uniqueCards = 0;
 
   const handleReview = (endless: boolean) => {
     const params = [];

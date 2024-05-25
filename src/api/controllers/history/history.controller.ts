@@ -6,10 +6,10 @@ class HistoryController {
   constructor(private readonly request: IRequest) {}
 
   getMany = (): Promise<GetManyRecordsResDTO> => {
-    return this.request.get('history');
+    return this.request.get('review');
   };
   postRecords = (data: PostHistoryRecordsReqDTO) => {
-    return this.request.post('history', data);
+    return this.request.post('review', data);
   };
 }
 

@@ -7,13 +7,13 @@ export interface LessonCard {
   hidden?: boolean;
 }
 
-interface Lesson {
+export interface Lesson {
   id: number;
   title: string;
   cards: LessonCard[];
 }
 
-interface Course {
+export interface Course {
   id: number;
   title: string;
   lessons: Lesson[];
@@ -156,7 +156,6 @@ export const courses: Course[] = [
           { type: CardType.NOUN, value: 'Schule' },
           { type: CardType.ADJECTIVE, value: 'verschieden' },
           { type: CardType.ADJECTIVE, value: 'bestimmt' },
-          { type: CardType.ADJECTIVE, value: 'besser' },
         ],
       },
       {
@@ -259,7 +258,7 @@ export const courses: Course[] = [
           { type: CardType.NOUN, value: 'Möglichkeit' },
           { type: CardType.NOUN, value: 'Unternehmen' },
           { type: CardType.NOUN, value: 'Bild' },
-          { type: CardType.ADJECTIVE, value: 'nahe' },
+          { type: CardType.ADJECTIVE, value: 'nah' },
           { type: CardType.ADJECTIVE, value: 'voll' },
           { type: CardType.ADJECTIVE, value: 'direkt' },
         ],
@@ -291,7 +290,6 @@ export const courses: Course[] = [
           { type: CardType.NOUN, value: 'Monat' },
           { type: CardType.ADJECTIVE, value: 'rot' },
           { type: CardType.ADJECTIVE, value: 'offen' },
-          { type: CardType.ADJECTIVE, value: 'meiste' },
         ],
       },
       {
@@ -379,7 +377,6 @@ export const courses: Course[] = [
           { type: CardType.NOUN, value: 'Blick' },
           { type: CardType.NOUN, value: 'Platz' },
           { type: CardType.NOUN, value: 'Zahl' },
-          { type: CardType.ADJECTIVE, value: '–jährig' },
           { type: CardType.ADJECTIVE, value: 'modern' },
           { type: CardType.ADJECTIVE, value: 'tief' },
         ],
@@ -1130,7 +1127,7 @@ export const courses: Course[] = [
           { type: CardType.ADJECTIVE, value: 'letzte' },
           { type: CardType.NOUN, value: 'Woche' },
           { type: CardType.VERB, value: 'ausmachen' },
-          { type: CardType.ADJECTIVE, value: 'nah/nahe' },
+          { type: CardType.ADJECTIVE, value: 'nah' },
           { type: CardType.PREPOSITION, value: 'durch' },
           { type: CardType.ADJECTIVE, value: 'immer' },
           { type: CardType.VERB, value: 'lächeln' },
@@ -1195,7 +1192,7 @@ export const courses: Course[] = [
           { type: CardType.VERB, value: 'schreiben' },
           { type: CardType.VERB, value: 'wünschen' },
           { type: CardType.NOUN, value: 'Wohnung' },
-          { type: CardType.VERB, value: 'überquere' },
+          { type: CardType.VERB, value: 'überqueren' },
           { type: CardType.NOUN, value: 'Zebrastreifen' },
           { type: CardType.NOUN, value: 'Ranzen' },
           { type: CardType.ADJECTIVE, value: 'schwer' },
@@ -1739,7 +1736,7 @@ export const courses: Course[] = [
           { type: CardType.VERB, value: 'tun' },
           { type: CardType.VERB, value: 'wehen' },
           { type: CardType.ADJECTIVE, value: 'eigentlich' },
-          { type: CardType.ADJECTIVE, value: 'nah/nahe' },
+          { type: CardType.ADJECTIVE, value: 'nah' },
           { type: CardType.VERB, value: 'klappen' },
           { type: CardType.ADJECTIVE, value: 'endlich' },
           { type: CardType.ADJECTIVE, value: 'super' },
