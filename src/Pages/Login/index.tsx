@@ -28,12 +28,12 @@ const LoginPage: FC = () => {
   const fieldErrors = useMemo(() => {
     return mapErrorObjectCode(error, {
       email: {
-        'auth:invalid_email': 'auth:SIGN_IN.ERRORS.INCORRECT_EMAIL',
-        'validation:invalid_data.field.email': 'auth:SIGN_IN.ERRORS.EMAIL_FORMAT',
+        'auth:invalid_email': 'Incorrect email',
+        'validation:invalid_data.field.email': 'Check email format',
       },
       password: {
-        'auth:invalid_password': 'auth:SIGN_IN.ERRORS.INCORRECT_PASSWORD',
-        'validation:invalid_data.field.password': 'auth:SIGN_IN.ERRORS.PASSWORD_FORMAT',
+        'auth:invalid_password': 'Incorrect password',
+        'validation:invalid_data.field.password': 'Check password format',
       },
     });
   }, [error]);
@@ -41,6 +41,7 @@ const LoginPage: FC = () => {
   const message = useCommonErrorMessage(!fieldErrors && error, {
     [HttpStatus.UNAUTHORIZED]: 'auth:SIGN_IN.HTTP_ERRORS.401',
   });
+  console.log('fieldErrors', fieldErrors, 'message', message, '0', !fieldErrors && error);
 
   useEffect(() => {
     setGeneralErrorMessage(message);
@@ -109,6 +110,7 @@ const LoginUI: FC<UIProps> = ({
         value={email}
         onChange={onFieldChange('email')}
       />
+      {parentErrors && parentErrors.email && <div style={{ color: 'red' }}>{parentErrors.email}</div>}
       <br />
       <input
         className={cssModule.authInput}
@@ -118,6 +120,7 @@ const LoginUI: FC<UIProps> = ({
         value={password}
         onChange={onFieldChange('password')}
       />
+      {parentErrors && parentErrors.password && <div style={{ color: 'red' }}>{parentErrors.password}</div>}
       {isGeneralError && <div style={{ color: 'red' }}>{generalErrorMessage}</div>}
       <br />
       <button type='submit' disabled={isLoading} className={cssModule.authButton}>

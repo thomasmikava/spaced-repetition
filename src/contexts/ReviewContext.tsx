@@ -11,6 +11,7 @@ import {
   removeSuccessfullySavedItemsFromStorage,
 } from '../functions/storage';
 import type { AnyReviewHistory } from '../functions/reviews';
+import { removeKeys } from '../utils/object';
 
 interface ReviewContextProps {}
 const ReviewContext = createContext<ReviewContextProps | undefined>(undefined);
@@ -97,9 +98,7 @@ function loadInDb(data: GetManyRecordsResDTO, notSavedData: PostHistoryRecordsRe
 
 function areSame(oldRecord: AnyReviewHistory, newRecord: AnyReviewHistory) {
   function normalize(record: AnyReviewHistory) {
-    return Object.entries(record)
-      .filter(([, value]) => value !== null && value !== undefined)
-      .sort(([a, b]) => a[0].localeCompare(b[0]));
+    return removeKeys(getDbRecord(record), 'id');
   }
   return JSON.stringify(normalize(oldRecord)) === JSON.stringify(normalize(newRecord));
 }

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
 import type { VariantGroup } from '../database/card-types';
 import type {
   Adjective,
@@ -49,11 +50,16 @@ export const MAX_NUM_OF_GROUP_VIEW_CARDS = 1;
 export const LAST_CARDS_COUNT_TO_CONSIDER = 3;
 export const LAST_PERIOD_TO_CONSIDER = 20; // seconds
 
+export const getRecordUniqueKey = (record: Pick<ReviewWithOptionalDTO, 'wordId' | 'sKey'>): string => {
+  return `${record.wordId}$${record.sKey}`;
+};
+
 interface BaseReviewHistory {
   id?: number;
   uniqueKey: string;
   wordId: number;
   sKey: string;
+  lc: boolean; // last correct
   lastDate: number; // in seconds
   repetition: number;
   savedInDb: boolean;
@@ -62,7 +68,7 @@ interface BaseReviewHistory {
 export interface TestReviewHistory extends BaseReviewHistory {
   viewMode: CardViewMode.test;
   lastS: number;
-  dueDate: number;
+  dueDate: number | null;
 }
 export interface IndividualReviewHistory extends BaseReviewHistory {
   viewMode: CardViewMode.individualView;

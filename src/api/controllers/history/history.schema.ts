@@ -1,6 +1,7 @@
 interface BaseRecordDTO {
   wordId: number;
   sKey: string;
+  lc: boolean;
   lastDate: number;
   repetition: number;
   lastS: number | null;

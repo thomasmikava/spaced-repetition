@@ -1,12 +1,10 @@
 import type { StandardCard, StandardCardVariant } from '../../database/types';
-import { isGermanStandardForm } from './de';
+import { getGermanStandardFormFn } from './de';
 
-export const isStandardForm = (
-  variant: StandardCardVariant,
+export const getIsStandardFormFn = (
   card: StandardCard,
   allCardVariants: StandardCardVariant[],
-): boolean => {
-  if (variant.category === 1) return false; // initial card is never standard form so that we don't skip it
-  if (card.lang === 'de') return isGermanStandardForm(variant, card, allCardVariants);
-  return false;
+): ((variant: StandardCardVariant) => boolean) => {
+  if (card.lang === 'de') return getGermanStandardFormFn(card, allCardVariants);
+  return () => false;
 };

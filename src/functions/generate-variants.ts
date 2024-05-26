@@ -7,7 +7,7 @@ import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes 
 import { groupArray, sortArrayByOriginalArray } from '../utils/array';
 import { isMatch } from '../utils/matcher';
 import type { GeneralTestableCard, StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
-import { isStandardForm } from './standard-forms';
+import { getIsStandardFormFn } from './standard-forms';
 
 function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
@@ -36,11 +36,14 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
     groups.splice(config.maxNumOfGroups);
   }
 
+  const maxAllowedNonStandardForms = config.maxAllowedNonStandardForms ?? 0;
+
   const newCard = { ...card, allStandardizedVariants };
 
   const testable: StandardTestableCard[] = [];
   let lastGroupLevel = -1;
   let lastGroupKey: string | undefined | null = undefined;
+  const isStandardForm = getIsStandardFormFn(card, allStandardizedVariants);
   groups.forEach((group, groupIndex) => {
     const hasGroupViewMode = group.variants.length > 1 || !!group.gr?.forcefullyGroup;
     const hasIndividualViewMode = !hasGroupViewMode;
@@ -54,8 +57,10 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
       variants,
       gr: group.gr,
     };
-    const standardness = group.variants.map((variant) => isStandardForm(variant, card, allStandardizedVariants));
-    const isGroupStandard = standardness.every((x) => x); // TODO: count it and make it undefined in case of verbs if it's less than 1
+    const standardness = group.variants.map((variant) => isStandardForm(variant));
+    const nonStandardCount = standardness.filter((x) => !x).length;
+    const isGroupStandard =
+      nonStandardCount === 0 ? true : nonStandardCount <= maxAllowedNonStandardForms ? undefined : false;
     group.variants.forEach((variant, i) => {
       testable.push({
         card: newCard,

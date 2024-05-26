@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/cognitive-complexity */
 import type { MinimalReviewRecordDTO, ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
 import { formatTime } from '../utils/time';
 import { globalHistory } from './history';
@@ -15,6 +16,7 @@ import {
   calculateHalfLifeCoefficient,
   calculateProbability,
   dueDateUntilProbabilityIsHalf,
+  getRecordUniqueKey,
   initialTestS,
   maxS,
   minS,
@@ -96,7 +98,7 @@ export class PreviousReviews {
   loadInDb = (data: MinimalReviewRecordDTO[], notSavedData: ReviewWithOptionalDTO[], overwrite: boolean) => {
     const history = overwrite ? {} : { ...this.history };
     for (const record of data) {
-      const key = this.getRecordUniqueKey(record);
+      const key = getRecordUniqueKey(record);
       history[key] = {
         ...record,
         uniqueKey: key,
@@ -104,7 +106,7 @@ export class PreviousReviews {
       } as AnyReviewHistory;
     }
     for (const record of notSavedData) {
-      const key = this.getRecordUniqueKey(record);
+      const key = getRecordUniqueKey(record);
       history[key] = {
         ...record,
         uniqueKey: key,
@@ -136,14 +138,10 @@ export class PreviousReviews {
     return this.history[key];
   }
 
-  private getRecordUniqueKey(record: Pick<ReviewWithOptionalDTO, 'wordId' | 'sKey'>): string {
-    return `${record.wordId}$${record.sKey}`;
-  }
-
   private getFinalKey(card: StandardTestableCard, mode: CardViewMode): string | null {
     const sKey = this.getSKey(card, mode);
     if (!sKey) return null;
-    return this.getRecordUniqueKey({ wordId: card.card.id, sKey });
+    return getRecordUniqueKey({ wordId: card.card.id, sKey });
   }
 
   private getSKey = (card: StandardTestableCard, mode: CardViewMode) => {
@@ -171,12 +169,37 @@ export class PreviousReviews {
     return sessions.some((x) => x.card === card && x.mode === mode);
   }
 
-  // eslint-disable-next-line sonarjs/cognitive-complexity
-  saveCardResult = (card: StandardTestableCard, mode: CardViewMode, success: boolean, date = Date.now()) => {
+  removeDueDates = (recordKeys: string[]) => {
+    if (recordKeys.length === 0) return;
+    console.log('removing due dates from', recordKeys);
+
+    const history = { ...this.history };
+
+    for (const key of recordKeys) {
+      const value = history[key];
+      if (value && value.dueDate !== null && value.dueDate !== undefined) {
+        history[key] = {
+          ...value,
+          dueDate: null,
+          savedInDb: false,
+        };
+      }
+    }
+
+    this.history = history;
+  };
+
+  saveCardResult = (
+    card: StandardTestableCard,
+    mode: CardViewMode,
+    success: boolean,
+    willThereBeAnotherRepetition: boolean,
+    date = Date.now(),
+  ) => {
     const dateInSec = Math.floor(date / 1000);
     const sKey = this.getSKey(card, mode);
     if (!sKey) throw new Error('sKey is not defined');
-    const key = this.getRecordUniqueKey({ wordId: card.card.id, sKey });
+    const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
     this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
 
@@ -187,6 +210,7 @@ export class PreviousReviews {
       if (currentValue) {
         newValue = history[key] = {
           ...currentValue,
+          lc: success,
           lastDate: dateInSec,
           repetition: currentValue.repetition + 1,
           savedInDb: false,
@@ -196,6 +220,7 @@ export class PreviousReviews {
           uniqueKey: key,
           sKey,
           viewMode: mode,
+          lc: success,
           lastDate: dateInSec,
           repetition: 1,
           wordId: card.card.id,
@@ -210,9 +235,12 @@ export class PreviousReviews {
       if (currentValue) {
         const passedTime = dateInSec - currentValue.lastDate;
         const newS = updateS(success, isGroup, currentValue.lastS, passedTime);
-        const dueDate = dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS);
+        const dueDate = willThereBeAnotherRepetition
+          ? dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS)
+          : null;
         newValue = history[key] = {
           ...currentValue,
+          lc: success,
           lastDate: dateInSec,
           repetition: currentValue.repetition + 1,
           lastS: newS,
@@ -221,11 +249,14 @@ export class PreviousReviews {
         };
       } else {
         const newS = updateS(success, isGroup, undefined, undefined);
-        const dueDate = dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS);
+        const dueDate = willThereBeAnotherRepetition
+          ? dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS)
+          : null;
         newValue = history[key] = {
           uniqueKey: key,
           sKey,
           viewMode: mode,
+          lc: success,
           lastDate: dateInSec,
           repetition: 1,
           wordId: card.card.id,

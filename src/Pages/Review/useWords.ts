@@ -14,8 +14,6 @@ export const useWords = ({ courseId, lessonId }: { courseId: number | undefined;
     return result.data.map(transformToStandardCard); // TODO: sort by course id then by lesson id
   }, [result.data]);
 
-  console.log('data', data);
-
   return { ...result, data };
 };
 

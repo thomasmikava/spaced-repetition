@@ -2244,7 +2244,6 @@ export const courses: Course[] = [
           { type: CardType.NOUN, value: 'Kopfhörer' },
           { type: CardType.NOUN, value: 'Spieleabend' },
           { type: CardType.NOUN, value: 'Zoo' },
-          { type: CardType.NOUN, value: 'Nichtraucher' },
           { type: CardType.ADJECTIVE, value: 'gegenseitig' },
         ],
       },

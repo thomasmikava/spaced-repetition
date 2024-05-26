@@ -13,6 +13,7 @@ import {
   REVIEW_MAX_DUE,
   calculateProbability,
   dueDateUntilProbabilityIsHalf,
+  getRecordUniqueKey,
   initialViewS,
 } from './reviews';
 import { addUpdatedItemsInStorage, getDbRecord } from './storage';
@@ -27,6 +28,8 @@ export interface CardWithProbability {
   isReadyForReview?: boolean;
   reviewCoefficient: number;
   isTested: boolean;
+  willBeTested: boolean;
+  wasLastTestCorrect: boolean | undefined;
   isIndividuallyViewed: boolean;
   isViewedInGroup: boolean;
   hasGroupViewMode: boolean;
@@ -64,7 +67,7 @@ export class Reviewer {
   };
 
   getDueCardsCount = (accordingToDate = Date.now()) => {
-    const probabilities = this.calculateProbabilities(accordingToDate);
+    const probabilities = this.calculateProbabilities(accordingToDate).probabilities;
     const dueReview = probabilities.filter(
       (record) =>
         record.isCriticalForReview || (record.reviewDue <= REVIEW_MAX_DUE && record.viewMode === CardViewMode.test),
@@ -100,7 +103,7 @@ export class Reviewer {
     const groupsMetaData: {
       [key in string]?: GroupMeta;
     } = {};
-    const getSingleKey = (card: StandardTestableCard['card']) => card.type + '*' + (card.uniqueValue ?? card.value);
+    const getSingleKey = (card: StandardTestableCard['card']) => card.type + '*sngl*' + card.id;
     const blockCache: Record<string, boolean | undefined> = {};
     const updateIsAnyPrevGroupBlocked = (groupKey: string): boolean => {
       if (typeof blockCache[groupKey] === 'boolean') return blockCache[groupKey] ?? false;
@@ -113,7 +116,8 @@ export class Reviewer {
       blockCache[groupKey] = isBlocked;
       return isBlocked;
     };
-    return this.allTestableCards
+    const removableDueDatesCardKeys = new Set<string>();
+    const probabilities = this.allTestableCards
       .map((record) => {
         const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
         const individualViewRecord = this.prevReviews.getCardHistory(record, CardViewMode.individualView);
@@ -125,9 +129,8 @@ export class Reviewer {
             ? undefined
             : getSingleKey(record.card);
 
+        const willBeTested = this.hasAnotherRepetition(record, CardViewMode.test, historyRecord?.lc);
         if (record.groupViewKey) {
-          const isTestable =
-            !record.skipTest && (!record.isStandardForm || record.isGroupStandardForm === false) ? 1 : 0;
           const groupRecord: GroupMeta = groupsMetaData[record.groupViewKey] || {
             lastViewDate: 0,
             numOfCards: 0,
@@ -137,8 +140,12 @@ export class Reviewer {
             prevGroupMetaKey: prevKey,
           };
           groupRecord.numOfCards++;
-          if (historyRecord) groupRecord.numOfTestedCards++;
-          if (isTestable) groupRecord.numOfTestableCards++;
+          if (willBeTested) groupRecord.numOfTestableCards++;
+          if (willBeTested && historyRecord) groupRecord.numOfTestedCards++;
+          if (!willBeTested && historyRecord && typeof historyRecord.dueDate === 'number') {
+            // the history has due date while it shouldn't have
+            removableDueDatesCardKeys.add(getRecordUniqueKey(historyRecord));
+          }
           const lastViewDate = historyRecord
             ? historyRecord.lastDate
             : (groupVewRecord ?? individualViewRecord)?.lastDate;
@@ -147,13 +154,11 @@ export class Reviewer {
           }
           groupsMetaData[record.groupViewKey] = groupRecord;
         } else if (record.initial) {
-          const isTestable =
-            !record.skipTest && (!record.isStandardForm || record.isGroupStandardForm === false) ? 1 : 0;
           groupsMetaData[getSingleKey(record.card)] = {
             lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
             numOfCards: 1,
-            numOfTestableCards: isTestable ? 1 : 0,
-            numOfTestedCards: historyRecord ? 1 : 0,
+            numOfTestableCards: willBeTested ? 1 : 0,
+            numOfTestedCards: willBeTested && historyRecord ? 1 : 0,
             minReviewDue: Infinity,
             prevGroupMetaKey: prevKey,
           };
@@ -163,9 +168,10 @@ export class Reviewer {
           historyRecord,
           individualViewRecord,
           groupVewRecord,
+          willBeTested,
         };
       })
-      .map(({ record, historyRecord, individualViewRecord, groupVewRecord }) => {
+      .map(({ record, historyRecord, individualViewRecord, groupVewRecord, willBeTested }) => {
         const lastGroupViewDate =
           record.groupViewKey && record.hasGroupViewMode
             ? groupsMetaData[record.groupViewKey]?.lastViewDate
@@ -202,6 +208,7 @@ export class Reviewer {
           reviewDue,
           lastNormalizedViewDate,
           lastGroupViewDate,
+          willBeTested,
         };
       })
       .map(
@@ -214,6 +221,7 @@ export class Reviewer {
           reviewDue,
           lastNormalizedViewDate,
           lastGroupViewDate,
+          willBeTested,
         }): CardWithProbability => {
           const qOrder = this.prevReviews.getLastNHistory(Infinity).length + 1;
           if (qOrder === 24 && record.card.value === 'groß') {
@@ -248,6 +256,8 @@ export class Reviewer {
               : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode, currentDate),
             reviewDue: finalReviewDue,
             isTested,
+            wasLastTestCorrect: historyRecord?.lc,
+            willBeTested,
             isIndividuallyViewed: !!individualViewRecord,
             isViewedInGroup: !!groupVewRecord,
             hasGroupViewMode: record.hasGroupViewMode,
@@ -286,9 +296,7 @@ export class Reviewer {
       })
       .filter((a) => {
         if (a.viewMode !== CardViewMode.test) return true;
-        if (a.record.skipTest) return false;
-        if (!a.record.isStandardForm) return true;
-        return a.record.isGroupStandardForm === false && !a.isTested;
+        return a.willBeTested;
       })
       .sort((a, b) => {
         if (!a.isTestNotRecommended && b.isTestNotRecommended) return -1;
@@ -297,16 +305,20 @@ export class Reviewer {
         if (a.isViewNotRecommended && !b.isViewNotRecommended) return 1;
         return 0;
       });
+    return {
+      probabilities,
+      removableDueDatesCardKeys: removableDueDatesCardKeys.size > 0 ? [...removableDueDatesCardKeys] : undefined,
+    };
   };
 
   getNextCard = (currentDate = Date.now()) => {
     const qOrder = this.prevReviews.getLastNHistory(Infinity).length + 1;
     console.log('#q', qOrder);
-    if (qOrder === 24) {
-      // debugger;
-    }
 
-    const sorted = this.calculateProbabilities(currentDate);
+    const { probabilities: sorted, removableDueDatesCardKeys } = this.calculateProbabilities(currentDate);
+    if (removableDueDatesCardKeys) {
+      this.prevReviews.removeDueDates(removableDueDatesCardKeys);
+    }
     console.log(sorted);
     const topCard = sorted[0];
     const shouldFinish =
@@ -334,10 +346,29 @@ export class Reviewer {
   };
 
   markViewed = (card: CardWithProbability, mode: CardViewMode, success: boolean, currentDate = Date.now()) => {
-    const { newValue } = this.prevReviews.saveCardResult(card.record, mode, success, currentDate);
+    const { newValue } = this.prevReviews.saveCardResult(
+      card.record,
+      mode,
+      success,
+      this.hasAnotherRepetition(card.record, mode, success),
+      currentDate,
+    );
     if (!this.avoidStorage) {
       addUpdatedItemsInStorage([getDbRecord(newValue)]);
     }
+  };
+  hasAnotherRepetition = (
+    card: StandardTestableCard,
+    mode: CardViewMode,
+    wasLastCorrect: boolean | undefined | null,
+  ): boolean => {
+    if (mode === CardViewMode.individualView || mode === CardViewMode.groupView) return false;
+    if (card.skipTest) return false;
+    if (!card.isStandardForm) return true;
+    if (card.isGroupStandardForm !== false) return false;
+    const wasTested = wasLastCorrect !== undefined && wasLastCorrect !== null;
+    if (!wasTested) return true;
+    return !wasLastCorrect;
   };
 }
 

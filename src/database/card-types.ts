@@ -171,12 +171,14 @@ export interface CardTypeConfiguration {
     lines: ViewLine[];
   }[];
   maxNumOfGroups?: number;
+  /** It determines how many non-standard form group might have to still be regarded as standard group; default = 0 */
+  maxAllowedNonStandardForms?: number;
 }
 
 export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
     variantGroups: [
-      { id: 'init', matcher: { category: 1 } },
+      { id: 'init', matcher: { category: 1 }, skip: true },
       ...cartesianProduct(
         [VerbMood.Indikativ, VerbMood.Konjunktiv, VerbMood.Imperativ],
         [
@@ -248,7 +250,8 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
       { attrId: AttributeMapper.MOOD.id, type: 'secondary', matcher: { category: null } },
       { attrId: AttributeMapper.TENSE.id, type: 'primary', matcher: { category: null } },
     ],
-    maxNumOfGroups: 3,
+    maxNumOfGroups: 1,
+    maxAllowedNonStandardForms: 1,
   },
   [CardTypeMapper.NOUN]: {
     caseSensitive: true,
