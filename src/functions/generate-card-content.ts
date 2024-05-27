@@ -11,7 +11,7 @@ import { slashSplit } from '../utils/split';
 import { isMatch } from '../utils/matcher';
 import type { StandardTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
-import { getArticle2, getWithSymbolArticle2 } from './texts';
+import { getArticle, getWithSymbolArticle } from './texts';
 
 const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
   return {
@@ -272,9 +272,9 @@ export const getCardViewContent2 = (
     if ((!options.includeArticleSymbol && !options.useArticleAsPrefix && !options.includeLegend) || !attributes) {
       return word;
     }
-    let newWord = options.useArticleAsPrefix ? getArticle2(record.card.lang, attributes, true) + ' ' + word : word;
+    let newWord = options.useArticleAsPrefix ? getArticle(record.card.lang, attributes, true) + ' ' + word : word;
     if (!forAudio && options.includeArticleSymbol && AttributeMapper.GENDER.id in attributes) {
-      newWord = getWithSymbolArticle2(record.card.lang, newWord, attributes[AttributeMapper.GENDER.id]);
+      newWord = getWithSymbolArticle(record.card.lang, newWord, attributes[AttributeMapper.GENDER.id]);
     }
     if (!forAudio && options.includeLegend) {
       newWord = 'Translation: ' + newWord; // TODO: translate according to locale
@@ -417,7 +417,7 @@ export const getCardViewContent2 = (
                 if (!variant) row.push('');
                 else
                   row.push(
-                    getArticle2(
+                    getArticle(
                       record.card.lang,
                       pickKeys(
                         (variant.attrs || {}) as Record<number, number>,

@@ -15,7 +15,7 @@ import { courses } from '../courses/lessons';
 import { courseController } from '../api/controllers/courses/courses.controller';
 import type { LessonUpdateActionDTO } from '../api/controllers/lessons/lessons.schema';
 import { AttributeMapper, CardTypeMapper } from '../database/attributes';
-import { getWithArticle } from '../functions/texts';
+import { getWithArticleOld } from '../functions/texts';
 
 const TestingThingsPage = () => {
   const oldDb = generateCardTypeThings();
@@ -97,7 +97,7 @@ const TestingThingsPage = () => {
 
     const isSameWord = (a: WordWithTranslationDTO, card: NonNullable<(typeof dbIndexed)[CardType][string]>) => {
       if (card.type === CardType.NOUN) {
-        const withArticle = getWithArticle(card.value, card.gender);
+        const withArticle = getWithArticleOld(card.value, card.gender);
         return a.value === withArticle;
       }
       if (card.type === CardType.ARTICLE) {

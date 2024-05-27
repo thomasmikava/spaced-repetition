@@ -13,7 +13,7 @@ import type {
 import { AdjectiveDegree, CardType, NounGender, NounNumber, PronounFunction } from '../database/types';
 import { isNonNullable } from '../utils/array';
 import type { RawCard } from './generateIndexedDatabase';
-import { getWithArticle } from './texts';
+import { getWithArticleOld } from './texts';
 
 const defaultLang = 'de';
 
@@ -53,7 +53,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
     case CardType.NOUN: {
       return {
         type: CardTypeMapper[CardType.NOUN],
-        value: getWithArticle(rawCard.value, rawCard.gender),
+        value: getWithArticleOld(rawCard.value, rawCard.gender),
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,
         id: 0,
