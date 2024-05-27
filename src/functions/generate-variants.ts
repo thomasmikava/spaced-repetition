@@ -10,19 +10,26 @@ import type { GeneralTestableCard, StandardTestableCard, StandardTestableCardGro
 import { getIsStandardFormFn } from './standard-forms';
 
 function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
+  const config = CardTypeConfigurationMapper[card.type];
+
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
   const groups = divideVariantsInGroups(card);
-  // TODO: sort
-  /*   if (card.groupPriorities) {
-    groups.sort((a, b) => {
-      const aIndex = card.groupPriorities!.indexOf(a.matcherId ?? '');
-      const bIndex = card.groupPriorities!.indexOf(b.matcherId ?? '');
-      if (aIndex === -1 && bIndex === -1) return 0;
-      if (aIndex === -1) return 1;
-      if (bIndex === -1) return -1;
-      return aIndex - bIndex;
-    });
-  } */
+
+  if (config.groupPriorities) {
+    const groupPriorities = config.groupPriorities.find(
+      (e) => !e.cardMatcher || isMatch({ attrs: card.attributes || {} }, e.cardMatcher),
+    );
+    if (groupPriorities) {
+      groups.sort((a, b) => {
+        const aIndex = groupPriorities.groupIds.indexOf(a.matcherId ?? '');
+        const bIndex = groupPriorities.groupIds.indexOf(b.matcherId ?? '');
+        if (aIndex === -1 && bIndex === -1) return 0;
+        if (aIndex === -1) return 1;
+        if (bIndex === -1) return -1;
+        return aIndex - bIndex;
+      });
+    }
+  }
 
   const grandVariants = groups.map((group) =>
     group.variants.map(
@@ -31,7 +38,6 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
   );
   const allStandardizedVariants = grandVariants.flat(1);
 
-  const config = CardTypeConfigurationMapper[card.type];
   if (config && typeof config.maxNumOfGroups === 'number') {
     groups.splice(config.maxNumOfGroups);
   }

@@ -171,6 +171,12 @@ export interface CardTypeConfiguration {
     lines: ViewLine[];
   }[];
   maxNumOfGroups?: number;
+  groupPriorities?: {
+    cardMatcher: Matcher<{
+      attrs: StandardCardAttributes;
+    }> | null;
+    groupIds: string[];
+  }[];
   /** It determines how many non-standard form group might have to still be regarded as standard group; default = 0 */
   maxAllowedNonStandardForms?: number;
 }
@@ -178,7 +184,7 @@ export interface CardTypeConfiguration {
 export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
     variantGroups: [
-      { id: 'init', matcher: { category: 1 }, skip: true },
+      { id: 'init', matcher: { category: 1 } },
       ...cartesianProduct(
         [VerbMood.Indikativ, VerbMood.Konjunktiv, VerbMood.Imperativ],
         [
@@ -250,7 +256,17 @@ export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
       { attrId: AttributeMapper.MOOD.id, type: 'secondary', matcher: { category: null } },
       { attrId: AttributeMapper.TENSE.id, type: 'primary', matcher: { category: null } },
     ],
-    maxNumOfGroups: 1,
+    groupPriorities: [
+      {
+        cardMatcher: { attrs: { [AttributeMapper.SPECIALITY.id]: AttributeMapper.SPECIALITY.records.modalVerb } },
+        groupIds: [
+          'init',
+          `m${AttributeMapper.MOOD.records[VerbMood.Indikativ]}-t${AttributeMapper.TENSE.records[VerbTense.Präsens]}`,
+          `m${AttributeMapper.MOOD.records[VerbMood.Indikativ]}-t${AttributeMapper.TENSE.records[VerbTense.Präteritum]}`,
+        ],
+      },
+    ],
+    maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,
   },
   [CardTypeMapper.NOUN]: {

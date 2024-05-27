@@ -1,9 +1,13 @@
 interface BaseRecordDTO {
   wordId: number;
   sKey: string;
+  /** how many tries were correct */
+  corr: number;
+  /** repetition. total tries */
+  rep: number;
+  /** is the last try correct */
   lc: boolean;
   lastDate: number;
-  repetition: number;
   lastS: number | null;
   dueDate: number | null;
 }

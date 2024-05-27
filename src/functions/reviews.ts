@@ -59,9 +59,14 @@ interface BaseReviewHistory {
   uniqueKey: string;
   wordId: number;
   sKey: string;
-  lc: boolean; // last correct
-  lastDate: number; // in seconds
-  repetition: number;
+  /** how many tries were correct */
+  corr: number;
+  /** repetition. total tries */
+  rep: number;
+  /** is the last try correct */
+  lc: boolean;
+  /** in seconds */
+  lastDate: number;
   savedInDb: boolean;
 }
 

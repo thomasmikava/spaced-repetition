@@ -16,13 +16,13 @@ export const conjunctions: Conjunction[] = [
     type: CardType.CONJUNCTION,
     value: 'weil',
     translation:
-      'because; as; since; due to the fact that; in that - insofar as; \'cause - short for "because" [ugs.]; whereas [JURA]; by reason that selten',
+      'because; as; since; due to the fact that; in that - insofar as; \'cause - short for "because" [coll.]; whereas [JURA]; by reason that selten',
   },
   {
     type: CardType.CONJUNCTION,
     value: 'obwohl',
     translation:
-      'although; though; while; notwithstanding that; even though; altho - informal spelling of "although" (Amer.) [ugs.]; tho\' [ugs.]',
+      'although; though; while; notwithstanding that; even though; altho - informal spelling of "although" (Amer.) [coll.]; tho\' [coll.]',
   },
   { type: CardType.CONJUNCTION, value: 'bevor', translation: 'before' },
   { type: CardType.CONJUNCTION, value: 'nachdem', translation: 'after; whereas [JURA]' },

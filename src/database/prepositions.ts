@@ -5,11 +5,11 @@ export const prepositions: Preposition[] = [
     type: CardType.PREPOSITION,
     value: 'durch',
     translation:
-      'by; through; per; via; by means of; by dint of; by the use of; thru - informal, simplified spelling of "through" (Amer.) [ugs.]',
+      'by; through; per; via; by means of; by dint of; by the use of; thru - informal, simplified spelling of "through" (Amer.) [coll.]',
     variations: [
       {
         translation:
-          'by; through; per; via; by means of; by dint of; by the use of; thru - informal, simplified spelling of "through" (Amer.) [ugs.]',
+          'by; through; per; via; by means of; by dint of; by the use of; thru - informal, simplified spelling of "through" (Amer.) [coll.]',
         cases: [Case.Akkusativ],
       },
     ],
@@ -31,11 +31,11 @@ export const prepositions: Preposition[] = [
     value: 'gegen',
     uniqueValue: 'pre-gegen',
     translation:
-      'against; towardesp, towardsesp,; versus [Abk.: v., vs.] [JURA][SPORT]; contrary to; compared with; contra; in comparison with; anti; to; in countercurrent with [TECH.]',
+      'against; towardesp, towardsesp,; versus [abbr.: v., vs.] [JURA][SPORT]; contrary to; compared with; contra; in comparison with; anti; to; in countercurrent with [TECH.]',
     variations: [
       {
         translation:
-          'against; towardesp, towardsesp,; versus [Abk.: v., vs.] [JURA][SPORT]; contrary to; compared with; contra; in comparison with; anti; to; in countercurrent with [TECH.]',
+          'against; towardesp, towardsesp,; versus [abbr.: v., vs.] [JURA][SPORT]; contrary to; compared with; contra; in comparison with; anti; to; in countercurrent with [TECH.]',
         cases: [Case.Akkusativ],
       },
     ],
@@ -43,8 +43,8 @@ export const prepositions: Preposition[] = [
   {
     type: CardType.PREPOSITION,
     value: 'ohne',
-    translation: 'without [Abk.: w/o]; but for; excluding; ex; exclusive of',
-    variations: [{ translation: 'without [Abk.: w/o]; but for; excluding; ex; exclusive of', cases: [Case.Akkusativ] }],
+    translation: 'without [abbr.: w/o]; but for; excluding; ex; exclusive of',
+    variations: [{ translation: 'without [abbr.: w/o]; but for; excluding; ex; exclusive of', cases: [Case.Akkusativ] }],
   },
   {
     type: CardType.PREPOSITION,
@@ -248,11 +248,11 @@ export const prepositions: Preposition[] = [
     type: CardType.PREPOSITION,
     value: 'bis',
     translation:
-      'to; by; through (Amer.); up to; until; by the time; as far as; till; thru - informal spelling of "through" (Amer.) [ugs.]',
+      'to; by; through (Amer.); up to; until; by the time; as far as; till; thru - informal spelling of "through" (Amer.) [coll.]',
     variations: [
       {
         translation:
-          'to; by; through (Amer.); up to; until; by the time; as far as; till; thru - informal spelling of "through" (Amer.) [ugs.]',
+          'to; by; through (Amer.); up to; until; by the time; as far as; till; thru - informal spelling of "through" (Amer.) [coll.]',
         cases: [Case.Akkusativ],
       },
     ],
@@ -344,11 +344,11 @@ export const prepositions: Preposition[] = [
     type: CardType.PREPOSITION,
     value: 'hinsichtlich',
     translation:
-      'as to sth.; with regard to; concerning; in terms of sth.; in view of; regarding; in respect of; in consideration of; in reference to; in regard to; with respect to [Abk.: w. r. t.]',
+      'as to sth.; with regard to; concerning; in terms of sth.; in view of; regarding; in respect of; in consideration of; in reference to; in regard to; with respect to [abbr.: w. r. t.]',
     variations: [
       {
         translation:
-          'as to sth.; with regard to; concerning; in terms of sth.; in view of; regarding; in respect of; in consideration of; in reference to; in regard to; with respect to [Abk.: w. r. t.]',
+          'as to sth.; with regard to; concerning; in terms of sth.; in view of; regarding; in respect of; in consideration of; in reference to; in regard to; with respect to [abbr.: w. r. t.]',
         cases: [Case.Genitiv],
       },
     ],
