@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { VariantGroup } from '../database/card-types';
-import { CardTypeConfigurationMapper } from '../database/card-types';
+import type { CardTypeConfiguration, VariantGroup } from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
 import { groupArray, sortArrayByOriginalArray } from '../utils/array';
 import { isMatch } from '../utils/matcher';
+import type { Helper } from './generate-card-content';
 import type { GeneralTestableCard, StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
 import { getIsStandardFormFn } from './standard-forms';
 
-function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
-  const config = CardTypeConfigurationMapper[card.type];
+function _generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
+  const config = helper.getCardType(card.type, card.lang)?.configuration ?? {};
 
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
-  const groups = divideVariantsInGroups(card);
+  const groups = divideVariantsInGroups(card, config);
 
   if (config.groupPriorities) {
     const groupPriorities = config.groupPriorities.find(
@@ -71,11 +71,11 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
       testable.push({
         card: newCard,
         type: card.type,
-        displayType: card.mainType === null || card.mainType === undefined ? card.type : card.mainType,
+        displayType,
         variant: variants[i],
-        caseSensitive: CardTypeConfigurationMapper[displayType]?.caseSensitive ?? false,
+        caseSensitive: helper.getCardType(displayType, card.lang)?.configuration?.caseSensitive ?? false,
         initial: variant.category === 1,
-        groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '') : null,
+        groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '').toLocaleLowerCase() : null,
         hasGroupViewMode,
         hasIndividualViewMode,
         skipTest: shouldSkipTest(card, group.gr),
@@ -88,7 +88,7 @@ function _generateTestableCards(card: StandardCard): StandardTestableCard[] {
       });
     });
     lastGroupLevel++;
-    lastGroupKey = hasGroupViewMode ? 'gr-' + (group.matcherId || '') : null;
+    lastGroupKey = hasGroupViewMode ? ('gr-' + (group.matcherId || '')).toLocaleLowerCase() : null;
   });
   return addGroupStandardFormFlag(testable);
 }
@@ -100,9 +100,8 @@ const shouldSkipTest = (card: StandardCard, variantGroup: VariantGroup | null | 
   return variantGroup.skipTest.only1variant === is1Variant;
 };
 
-const divideVariantsInGroups = (card: StandardCard) => {
+const divideVariantsInGroups = (card: StandardCard, config: CardTypeConfiguration) => {
   // debugger;
-  const config = CardTypeConfigurationMapper[card.type];
   const freeVariants = [...card.variants];
   const groups: (StandardTestableCardGroupMeta & { variants: StandardCardVariant[] })[] = [];
   if (config && config.variantGroups) {
@@ -172,17 +171,6 @@ function removeUnnecessaryGroups<T extends GeneralTestableCard>(allVariants: T[]
   return sortArrayByOriginalArray(newVariants, allVariants);
 }
 
-export function generateTestableCards(card: StandardCard): StandardTestableCard[] {
-  return removeUnnecessaryGroups(lowercaseKeys(_generateTestableCards(card)));
+export function generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
+  return removeUnnecessaryGroups(_generateTestableCards(card, helper));
 }
-
-const lowercaseKeys = <T extends GeneralTestableCard>(variants: T[]): T[] => {
-  return variants.map((variant) => {
-    return {
-      ...variant,
-      groupViewKey: variant.groupViewKey?.toLowerCase() ?? null,
-      testKey: variant.testKey.toLowerCase(),
-      previousGroupViewKey: variant.previousGroupViewKey?.toLowerCase() ?? null,
-    };
-  });
-};

@@ -13,7 +13,7 @@ import {
   VerbTense,
 } from './types';
 
-export const attrbiutes: Attribute[] = [
+export const attributes: Attribute[] = [
   {
     id: 1,
     name: 'Number',
@@ -59,6 +59,34 @@ export const attrbiutes: Attribute[] = [
     name: 'Speciality',
   },
 ];
+
+export interface AttributeLocalization {
+  lang: string;
+  attributeId: number;
+  name: string;
+}
+
+export const attributeLocalizations: AttributeLocalization[] = [
+  { lang: 'de', attributeId: 1, name: 'Numerus' },
+  { lang: 'de', attributeId: 2, name: 'Genus' },
+  { lang: 'de', attributeId: 3, name: 'Fall' },
+  { lang: 'de', attributeId: 4, name: 'Pronomen' },
+  { lang: 'de', attributeId: 5, name: 'Tempus' },
+  { lang: 'de', attributeId: 6, name: 'Modus' },
+  { lang: 'de', attributeId: 7, name: 'Grad' },
+  { lang: 'de', attributeId: 8, name: 'Flexion' },
+  { lang: 'de', attributeId: 9, name: 'Funktion' },
+  { lang: 'de', attributeId: 10, name: 'Definitheit' },
+  { lang: 'de', attributeId: 11, name: 'Spezialität' },
+];
+
+export interface AttributeRecordLocalization {
+  lang: string;
+  attributeId: number;
+  attributeRecordId: number;
+  name: string;
+  color?: string;
+}
 
 export const attributeRecords: AttributeRecord[] = [
   {
@@ -307,6 +335,51 @@ export const attributeRecords: AttributeRecord[] = [
     attributeId: 11,
     name: 'Modal verb',
   },
+];
+
+export const attributeRecordLocalizations: AttributeRecordLocalization[] = [
+  { lang: 'de', attributeId: 1, attributeRecordId: 1, name: 'Singular' },
+  { lang: 'de', attributeId: 1, attributeRecordId: 2, name: 'Plural' },
+  { lang: 'de', attributeId: 2, attributeRecordId: 3, name: 'Maskulinum' },
+  { lang: 'de', attributeId: 2, attributeRecordId: 4, name: 'Femininum' },
+  { lang: 'de', attributeId: 2, attributeRecordId: 5, name: 'Neutrum' },
+  { lang: 'de', attributeId: 2, attributeRecordId: 6, name: 'Plural' },
+  { lang: 'de', attributeId: 3, attributeRecordId: 7, name: 'Nominativ' },
+  { lang: 'de', attributeId: 3, attributeRecordId: 8, name: 'Akkusativ' },
+  { lang: 'de', attributeId: 3, attributeRecordId: 9, name: 'Dativ' },
+  { lang: 'de', attributeId: 3, attributeRecordId: 10, name: 'Genitiv' },
+  { lang: 'de', attributeId: 4, attributeRecordId: 11, name: 'ich' },
+  { lang: 'de', attributeId: 4, attributeRecordId: 12, name: 'du' },
+  { lang: 'de', attributeId: 4, attributeRecordId: 15, name: 'es' },
+  { lang: 'de', attributeId: 4, attributeRecordId: 16, name: 'er/sie/es' },
+  { lang: 'de', attributeId: 4, attributeRecordId: 17, name: 'wir' },
+  { lang: 'de', attributeId: 4, attributeRecordId: 18, name: 'ihr' },
+  { lang: 'de', attributeId: 4, attributeRecordId: 20, name: 'sie/Sie' },
+  { lang: 'de', attributeId: 5, attributeRecordId: 21, name: 'Präsens' },
+  { lang: 'de', attributeId: 5, attributeRecordId: 22, name: 'Perfekt' },
+  { lang: 'de', attributeId: 5, attributeRecordId: 23, name: 'Präteritum' },
+  { lang: 'de', attributeId: 5, attributeRecordId: 24, name: 'Plusquamperfekt' },
+  { lang: 'de', attributeId: 5, attributeRecordId: 25, name: 'Futur I' },
+  { lang: 'de', attributeId: 5, attributeRecordId: 26, name: 'Futur II' },
+  { lang: 'de', attributeId: 6, attributeRecordId: 27, name: 'Indikativ' },
+  { lang: 'de', attributeId: 6, attributeRecordId: 28, name: 'Konjunktiv' },
+  { lang: 'de', attributeId: 6, attributeRecordId: 29, name: 'Imperativ' },
+  { lang: 'de', attributeId: 7, attributeRecordId: 30, name: 'Positiv' },
+  { lang: 'de', attributeId: 7, attributeRecordId: 31, name: 'Komparativ' },
+  { lang: 'de', attributeId: 7, attributeRecordId: 32, name: 'Superlativ' },
+  { lang: 'de', attributeId: 8, attributeRecordId: 33, name: 'Schwach' },
+  { lang: 'de', attributeId: 8, attributeRecordId: 34, name: 'Stark' },
+  { lang: 'de', attributeId: 8, attributeRecordId: 35, name: 'Gemischt' },
+  { lang: 'de', attributeId: 9, attributeRecordId: 36, name: 'Attributiv (vor Nomen)' },
+  { lang: 'de', attributeId: 9, attributeRecordId: 37, name: 'Nicht-attributiv, ohne Artikel' },
+  { lang: 'de', attributeId: 9, attributeRecordId: 38, name: 'Nicht-attributiv, mit Artikel' },
+  { lang: 'de', attributeId: 9, attributeRecordId: 39, name: 'Stellvertretend' },
+  { lang: 'de', attributeId: 9, attributeRecordId: 40, name: 'Deklination' },
+  { lang: 'de', attributeId: 9, attributeRecordId: 41, name: 'Relativ' },
+  { lang: 'de', attributeId: 9, attributeRecordId: 42, name: 'Interrogativ' },
+  { lang: 'de', attributeId: 10, attributeRecordId: 43, name: 'Bestimmter' },
+  { lang: 'de', attributeId: 10, attributeRecordId: 44, name: 'Unbestimmter' },
+  { lang: 'de', attributeId: 11, attributeRecordId: 45, name: 'Modalverb' },
 ];
 
 export const AttributeMapper = {

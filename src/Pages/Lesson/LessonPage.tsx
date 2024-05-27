@@ -9,19 +9,20 @@ import ReviewButtons from '../../ReviewButtons';
 import { useCourseById } from '../../api/controllers/courses/courses.query';
 import { useCourseLessons, useDeleteLesson } from '../../api/controllers/lessons/lessons.query';
 import { useCourseWords } from '../../api/controllers/words/words.query';
-import { CardTypeMapper } from '../../database/attributes';
-import type { IdType } from '../../database/types';
 import { PreviousReviews } from '../../functions/previous-reviews';
 import { paths } from '../../routes/paths';
 import { isNonNullable } from '../../utils/array';
 import { roundNumber } from '../../utils/number';
 import { formatTime } from '../../utils/time';
+import { useHelper } from '../hooks/text-helpers';
 import { LessonBody } from './Body';
 import { useFilteredLessons } from './useFilteredLessons';
 
 const LessonPage = () => {
   const params = useParams();
   const navigate = useNavigate();
+
+  const helper = useHelper();
 
   const courseId = +(params.courseId as string);
   const lessonId = +(params.lessonId as string);
@@ -66,7 +67,7 @@ const LessonPage = () => {
     );
   };
 
-  if (isLessonLoading || isCourseLoading || isWordLoading) return <div>Loading lesson...</div>;
+  if (isLessonLoading || isCourseLoading || isWordLoading || !helper) return <div>Loading lesson...</div>;
 
   if (!course) return <div>Course not found</div>;
 
@@ -122,7 +123,9 @@ const LessonPage = () => {
             const key = word.id;
             return (
               <tr key={key} className={cssModule.row}>
-                <td className={cssModule.lessonCardType}>{toReadableType(word.mainType ?? word.type)}</td>
+                <td className={cssModule.lessonCardType}>
+                  {helper.getCardType(word.mainType ?? word.type, word.lang)?.abbr}
+                </td>
                 <td className={cssModule.lessonCardValue}>{word.value}</td>
                 <td className={cssModule.lessonCardTranslation}>{word.translation}</td>
                 <td className={cssModule.lessonCardTranslation}>
@@ -150,31 +153,6 @@ const LessonPage = () => {
       </Modal>
     </div>
   );
-};
-
-const toReadableType = (type: IdType) => {
-  switch (type) {
-    case CardTypeMapper.NOUN:
-      return 'n.';
-    case CardTypeMapper.VERB:
-      return 'v.';
-    case CardTypeMapper.ARTICLE:
-      return 'art.';
-    case CardTypeMapper.ADJECTIVE:
-      return 'adj.adv.';
-    case CardTypeMapper.CONJUNCTION:
-      return 'konj.';
-    case CardTypeMapper.PREPOSITION:
-      return 'präp.';
-    case CardTypeMapper.PHRASE:
-      return 'phrase';
-    case CardTypeMapper.NUMBER:
-      return 'nummer';
-    case CardTypeMapper.PRONOUN:
-      return 'pron.';
-    default:
-      return 'Unknown';
-  }
 };
 
 export default LessonPage;

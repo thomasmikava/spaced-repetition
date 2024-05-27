@@ -17,7 +17,18 @@ import {
 export interface CardTypeRecord {
   id: IdType;
   name: string;
+  cardDisplayName: string;
+  abbr: string;
   // TODO: should be locale specific
+  configuration?: CardTypeConfiguration;
+}
+
+export interface CardTypeRecordLocalization {
+  lang: string;
+  cardTypeRecordId: IdType;
+  name: string;
+  abbr: string;
+  cardDisplayName: string;
   configuration?: CardTypeConfiguration;
 }
 
@@ -181,7 +192,7 @@ export interface CardTypeConfiguration {
   maxAllowedNonStandardForms?: number;
 }
 
-export const CardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
+const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
     variantGroups: [
       { id: 'init', matcher: { category: 1 } },
@@ -681,25 +692,88 @@ function cartesianProduct<T extends number[][]>(...arrays: T): FirstElements<T>[
 }
 
 export const cardTypeRecords: CardTypeRecord[] = [
-  { id: CardTypeMapper.ARTICLE, name: 'Article', configuration: CardTypeConfigurationMapper[CardTypeMapper.ARTICLE] },
+  { id: CardTypeMapper.PHRASE, name: 'Phrase', cardDisplayName: 'Phrase', abbr: '' },
   {
     id: CardTypeMapper.NOUN,
     name: 'Noun',
-    configuration: CardTypeConfigurationMapper[CardTypeMapper.NOUN],
+    cardDisplayName: 'Noun',
+    abbr: '',
   },
-  { id: CardTypeMapper.VERB, name: 'Verb', configuration: CardTypeConfigurationMapper[CardTypeMapper.VERB] },
-  { id: CardTypeMapper.PRONOUN, name: 'Pronoun', configuration: CardTypeConfigurationMapper[CardTypeMapper.PRONOUN] },
+  { id: CardTypeMapper.VERB, name: 'Verb', cardDisplayName: 'Verb', abbr: '' },
+  { id: CardTypeMapper.PRONOUN, name: 'Pronoun', cardDisplayName: 'Pronoun', abbr: '' },
   {
     id: CardTypeMapper.ADJECTIVE,
     name: 'Adjective',
-    configuration: CardTypeConfigurationMapper[CardTypeMapper.ADJECTIVE],
+    cardDisplayName: 'Adjective',
+    abbr: '',
   },
   {
     id: CardTypeMapper.PREPOSITION,
     name: 'Preposition',
-    configuration: CardTypeConfigurationMapper[CardTypeMapper.PREPOSITION],
+    cardDisplayName: 'Preposition',
+    abbr: '',
   },
-  { id: CardTypeMapper.CONJUNCTION, name: 'Conjunction' },
-  { id: CardTypeMapper.NUMBER, name: 'Number' },
-  { id: CardTypeMapper.PHRASE, name: 'Phrase' },
+  { id: CardTypeMapper.CONJUNCTION, name: 'Conjunction', cardDisplayName: 'Conjunction', abbr: '' },
+  { id: CardTypeMapper.NUMBER, name: 'Number', cardDisplayName: 'Number', abbr: '' },
+  { id: CardTypeMapper.ARTICLE, name: 'Article', cardDisplayName: 'Article', abbr: '' },
+];
+
+export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
+  { lang: 'de', cardTypeRecordId: CardTypeMapper.PHRASE, abbr: '', cardDisplayName: '', name: 'Phrase' },
+  {
+    lang: 'de',
+    cardTypeRecordId: CardTypeMapper.NOUN,
+    abbr: 'N.',
+    name: 'Nomen',
+    cardDisplayName: 'Nomen',
+    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.NOUN],
+  },
+  {
+    lang: 'de',
+    cardTypeRecordId: CardTypeMapper.VERB,
+    abbr: 'V.',
+    name: 'Verb',
+    cardDisplayName: 'Verb',
+    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.VERB],
+  },
+  {
+    lang: 'de',
+    cardTypeRecordId: CardTypeMapper.PRONOUN,
+    abbr: 'Pron.',
+    name: 'Pronomen',
+    cardDisplayName: 'Pronomen',
+    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.PRONOUN],
+  },
+  {
+    lang: 'de',
+    cardTypeRecordId: CardTypeMapper.ADJECTIVE,
+    abbr: 'Adj./Adv.',
+    name: 'Adjektiv / Adverb',
+    cardDisplayName: 'Adj. Adv.',
+    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.ADJECTIVE],
+  },
+  {
+    lang: 'de',
+    cardTypeRecordId: CardTypeMapper.PREPOSITION,
+    abbr: 'Präp.',
+    name: 'Präposition',
+    cardDisplayName: 'Präp.',
+    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.PREPOSITION],
+  },
+  {
+    lang: 'de',
+    cardTypeRecordId: CardTypeMapper.CONJUNCTION,
+    abbr: 'Konj.',
+    cardDisplayName: 'Konj.',
+    name: 'Konjunktion',
+  },
+  { lang: 'de', cardTypeRecordId: CardTypeMapper.NUMBER, abbr: 'Nu.', cardDisplayName: 'Nummer', name: 'Nummer' },
+  {
+    lang: 'de',
+    cardTypeRecordId: CardTypeMapper.ARTICLE,
+    abbr: 'Art.',
+    name: 'Artikel',
+    cardDisplayName: 'Artikel',
+    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.ARTICLE],
+  },
 ];

@@ -1,5 +1,6 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { StandardCard } from '../database/types';
+import type { Helper } from './generate-card-content';
 import { generateTestableCards } from './generate-variants';
 import { PreviousReviews } from './previous-reviews';
 import type { GroupReviewHistory, IndividualReviewHistory, StandardTestableCard, TestReviewHistory } from './reviews';
@@ -45,6 +46,7 @@ export class Reviewer {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
     cards: StandardCard[],
+    helper: Helper,
     private isInsideLesson: boolean,
     private mode: 'endless' | 'normal' = 'normal',
     private avoidStorage = false,
@@ -52,7 +54,7 @@ export class Reviewer {
     this.prevReviews = new PreviousReviews(avoidStorage);
     this.allTestableCards = [];
     for (const card of cards) {
-      const testableCards = generateTestableCards(card);
+      const testableCards = generateTestableCards(card, helper);
       this.allTestableCards.push(...testableCards);
     }
     console.log('this.allTestableCards', this.allTestableCards);

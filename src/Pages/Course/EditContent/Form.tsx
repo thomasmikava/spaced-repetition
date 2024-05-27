@@ -21,6 +21,7 @@ import { useDebounce } from 'use-debounce';
 import Select from '../../../ui/Select';
 import { useValidation } from './Form.validation';
 import React from 'react';
+import type { Helper } from '../../../functions/generate-card-content';
 
 export interface KnownWordInfo {
   fieldUniqueId: string;
@@ -68,6 +69,7 @@ interface Props {
   translationLang: string;
   defaultData?: FormData;
   onSubmit: (data: FormData) => void;
+  helper: Helper;
 }
 
 const emptyWord: WordInfo = { type: 'word', subType: 'search-word', searchValue: '', fieldUniqueId: '2' };
@@ -86,7 +88,7 @@ const emptyValues: FormData = {
 };
 
 const ContentForm: FC<Props> = memo(
-  ({ defaultData = emptyValues, isSubmitting, isCourseLevel, langToLearn, onSubmit, translationLang }) => {
+  ({ defaultData = emptyValues, isSubmitting, isCourseLevel, langToLearn, onSubmit, translationLang, helper }) => {
     const { resolver } = useValidation();
     const form = useForm({
       shouldFocusError: true,
@@ -111,8 +113,8 @@ const ContentForm: FC<Props> = memo(
       onSubmit(data);
     };
 
-    const helper = useMemo(
-      (): Helper => ({ langToLearn, isValidationStarted: isSubmitted, translationLang }),
+    const formBaseInfo = useMemo(
+      (): FormBaseInfo => ({ langToLearn, isValidationStarted: isSubmitted, translationLang }),
       [langToLearn, isSubmitted, translationLang],
     );
 
@@ -121,7 +123,7 @@ const ContentForm: FC<Props> = memo(
     return (
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(handleSuccess, console.error)}>
-          <FieldArray fieldKey='children' isCourseLevel={isCourseLevel} helper={helper} />
+          <FieldArray fieldKey='children' isCourseLevel={isCourseLevel} formBaseInfo={formBaseInfo} helper={helper} />
           <div style={{ gap: 10, display: 'flex', marginTop: 10 }}>
             <Button label='Cancel' variant='default' />
             <Button label='Save' type='submit' variant='primary' loading={isSubmitting} />
@@ -133,7 +135,7 @@ const ContentForm: FC<Props> = memo(
 );
 ContentForm.displayName = 'ContentForm';
 
-interface Helper {
+interface FormBaseInfo {
   langToLearn: string;
   translationLang: string;
   isValidationStarted: boolean;
@@ -142,6 +144,7 @@ interface Helper {
 interface FieldArrayProps {
   fieldKey: 'children' | `children.${number}.children`;
   isCourseLevel: boolean;
+  formBaseInfo: FormBaseInfo;
   helper: Helper;
 }
 
@@ -151,7 +154,7 @@ interface FieldArrayRef {
 }
 
 const FieldArray = memo(
-  forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, helper }, ref) => {
+  forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, formBaseInfo, helper }, ref) => {
     const { control } = useFormContext<FormData>();
 
     const { fields, append, remove } = useFieldArray<FormData>({
@@ -204,6 +207,7 @@ const FieldArray = memo(
                 onRemove={remove}
                 index={index}
                 fieldKey={`${fieldKey as 'children'}.${index}`}
+                formBaseInfo={formBaseInfo}
                 helper={helper}
               />
             );
@@ -215,6 +219,7 @@ const FieldArray = memo(
               index={index}
               fieldKey={`${fieldKey as 'children'}.${index}`}
               parentKey={fieldKey as 'children'}
+              formBaseInfo={formBaseInfo}
               helper={helper}
             />
           );
@@ -231,10 +236,11 @@ interface LessonFieldProps {
   onRemove: (index: number) => void;
   index: number;
   fieldKey: `children.${number}`;
+  formBaseInfo: FormBaseInfo;
   helper: Helper;
 }
 
-const LessonField: FC<LessonFieldProps> = memo(({ helper, onRemove, index, fieldKey }) => {
+const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index, fieldKey, helper }) => {
   const fieldArrayRef = useRef<FieldArrayRef>(null);
   const { control } = useFormContext<FormData>();
   const {
@@ -285,7 +291,13 @@ const LessonField: FC<LessonFieldProps> = memo(({ helper, onRemove, index, field
         </Dropdown>
       </div>
       <div className={styles.lessonChildren}>
-        <FieldArray isCourseLevel={false} helper={helper} fieldKey={`${fieldKey}.children`} ref={fieldArrayRef} />
+        <FieldArray
+          isCourseLevel={false}
+          formBaseInfo={formBaseInfo}
+          fieldKey={`${fieldKey}.children`}
+          ref={fieldArrayRef}
+          helper={helper}
+        />
         {childrenError && childrenError.ref && (
           <p style={{ color: 'red' }}>
             Lesson cannot be empty. Add at least 1 word or sub-lesson or delete it from the settings icon
@@ -312,20 +324,21 @@ interface WordFieldProps {
   index: number;
   fieldKey: `children.${number}`;
   parentKey: `children`;
+  formBaseInfo: FormBaseInfo;
   helper: Helper;
 }
 
-const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, helper, index, onRemove }) => {
+const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, formBaseInfo, index, onRemove, helper }) => {
   const { control, setValue, trigger, setFocus } = useFormContext<LessonInfo>();
 
   const handleSetValue: UseFormSetValue<LessonInfo> = useCallback(
     (...args) => {
       (setValue as CallableFunction)(...args);
-      if (helper.isValidationStarted) {
+      if (formBaseInfo.isValidationStarted) {
         trigger(parentKey);
       }
     },
-    [helper.isValidationStarted, trigger, setValue, parentKey],
+    [formBaseInfo.isValidationStarted, trigger, setValue, parentKey],
   );
 
   const subType = useWatch({ control, name: `${fieldKey}.subType` });
@@ -335,30 +348,40 @@ const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, helper, index
 
   return (
     <>
-      {subType === 'known-word' && <ExistingWord control={control} fieldKey={fieldKey} onRemove={handleRemove} />}
+      {subType === 'known-word' && (
+        <ExistingWord control={control} fieldKey={fieldKey} onRemove={handleRemove} helper={helper} />
+      )}
       {subType === 'search-word' && (
         <SearchWord
           onRemove={handleRemove}
-          helper={helper}
+          formBaseInfo={formBaseInfo}
           control={control}
           fieldKey={fieldKey}
           setValue={handleSetValue}
           setFocus={setFocus}
+          helper={helper}
         />
       )}
       {subType === 'custom-word' && (
-        <CustomWord onRemove={handleRemove} helper={helper} control={control} fieldKey={fieldKey} />
+        <CustomWord
+          onRemove={handleRemove}
+          formBaseInfo={formBaseInfo}
+          control={control}
+          fieldKey={fieldKey}
+          helper={helper}
+        />
       )}
     </>
   );
 });
 WordField.displayName = 'WordField';
 
-const ExistingWord: FC<{ control: Control<LessonInfo, any>; fieldKey: `children.${number}`; onRemove: () => void }> = ({
-  control,
-  fieldKey,
-  onRemove,
-}) => {
+const ExistingWord: FC<{
+  control: Control<LessonInfo, any>;
+  fieldKey: `children.${number}`;
+  onRemove: () => void;
+  helper: Helper;
+}> = ({ control, fieldKey, onRemove, helper }) => {
   const value = useWatch({ control, name: fieldKey });
 
   if (value.type !== 'word' || value.subType !== 'known-word') return null;
@@ -367,7 +390,7 @@ const ExistingWord: FC<{ control: Control<LessonInfo, any>; fieldKey: `children.
     <div style={{ display: 'flex', gap: 10 }}>
       <div style={{ width: '100%' }}>
         <div>
-          <span>{value.word.type}</span> <span>{value.word.value}</span>
+          <span>{helper.getCardType(value.word.type, value.word.lang)?.abbr}</span> <span>{value.word.value}</span>
         </div>
         <div>{value.word.translation}</div>
       </div>
@@ -380,10 +403,11 @@ const SearchWord: FC<{
   onRemove: () => void;
   fieldKey: `children.${number}`;
   control: Control<LessonInfo, any>;
+  formBaseInfo: FormBaseInfo;
   helper: Helper;
   setValue: UseFormSetValue<LessonInfo>;
   setFocus: UseFormSetFocus<LessonInfo<WordInfo>>;
-}> = ({ helper, fieldKey, control, setValue, onRemove, setFocus }) => {
+}> = ({ formBaseInfo, fieldKey, control, setValue, onRemove, setFocus, helper }) => {
   const value = useWatch({ control, name: fieldKey }) as SearchWordInfo;
 
   const searchValue = (value as SearchWordInfo).searchValue ?? '';
@@ -391,9 +415,9 @@ const SearchWord: FC<{
   const [debouncedSearchValue] = useDebounce(searchValue, 300);
 
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } = useSearchWords({
-    lang: helper.langToLearn,
+    lang: formBaseInfo.langToLearn,
     searchValue: debouncedSearchValue,
-    translationLang: helper.translationLang,
+    translationLang: formBaseInfo.translationLang,
     wordType: wordDisplayType ?? undefined,
     limit: 5,
   });
@@ -421,6 +445,8 @@ const SearchWord: FC<{
     });
     setTimeout(() => setFocus(`${fieldKey}.translation`), 10);
   }, [debouncedSearchValue, fieldKey, wordDisplayType, setValue, setFocus]);
+
+  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper);
 
   if (value.type !== 'word' || value.subType !== 'search-word') return null;
 
@@ -470,7 +496,7 @@ const SearchWord: FC<{
                 <React.Fragment key={index}>
                   {page.words.map((word) => (
                     <div key={word.id} onClick={() => handleChoose(word)}>
-                      <span>{word.type}</span> <span>{word.value}</span>
+                      <span>{helper.getCardType(word.type, word.lang)?.abbr}</span> <span>{word.value}</span>
                       <span>{word.translation}</span>
                     </div>
                   ))}
@@ -488,24 +514,21 @@ const SearchWord: FC<{
   );
 };
 
-const wordTypeChoices: { value: number; label: string }[] = [
-  { value: 1, label: 'PHRASE' }, // TODO: don't hardcode
-  { value: 2, label: 'NOUN' },
-  { value: 3, label: 'VERB' },
-  { value: 4, label: 'PRONOUN' },
-  { value: 5, label: 'ADJECTIVE' },
-  { value: 6, label: 'PREPOSITION' },
-  { value: 7, label: 'CONJUNCTION' },
-  { value: 8, label: 'NUMBER' },
-  { value: 9, label: 'ARTICLE' },
-];
+const useWordTypeChoices = (lang: string, { getSupportedCardTypes }: Helper) => {
+  return useMemo(
+    () => getSupportedCardTypes(lang).map((e) => ({ value: e.id, label: e.name })),
+    [lang, getSupportedCardTypes],
+  );
+};
 
 const CustomWord: FC<{
   onRemove: () => void;
   fieldKey: `children.${number}`;
   control: Control<LessonInfo, any>;
+  formBaseInfo: FormBaseInfo;
   helper: Helper;
-}> = ({ control, onRemove, fieldKey }) => {
+}> = ({ control, onRemove, formBaseInfo, fieldKey, helper }) => {
+  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper);
   return (
     <div>
       <div style={{ width: '100%', display: 'flex', gap: 10 }}>

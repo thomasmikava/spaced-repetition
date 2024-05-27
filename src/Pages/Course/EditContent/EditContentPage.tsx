@@ -12,6 +12,7 @@ import type { FormData, KnownWordInfo, LessonInfo, WordInfo } from './Form';
 import { ContentForm, DEFAULT_WORD_DISPLAY_TYPE } from './Form';
 import { paths } from '../../../routes/paths';
 import { isNonNullable } from '../../../utils/array';
+import { useHelper } from '../../hooks/text-helpers';
 
 const EditContentPage = () => {
   const params = useParams();
@@ -19,6 +20,8 @@ const EditContentPage = () => {
   const searchParams = new URL(window.location.href).searchParams;
   const courseId = +(params.courseId as string);
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
+
+  const helper = useHelper();
 
   const { data: course, isLoading: isCourseLoading } = useCourseById(courseId);
   const { data: allCourseLessons, isLoading: isLessonLoading } = useCourseLessons({
@@ -40,7 +43,7 @@ const EditContentPage = () => {
     return calculateInitialData({ courseId, lessonId, lessons, courseWords });
   }, [courseId, courseWords, lessonId, lessons]);
 
-  if (isLessonLoading || isCourseLoading || areCourseWordsLoading) return <div>Loading...</div>;
+  if (isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper) return <div>Loading...</div>;
   if (!course || !initialData) return <div>Error</div>;
 
   const handleSubmit = (newData: FormData) => {
@@ -70,6 +73,7 @@ const EditContentPage = () => {
           isSubmitting={isSubmitting}
           translationLang={course.translationLang}
           onSubmit={handleSubmit}
+          helper={helper}
         />
       </div>
     </div>

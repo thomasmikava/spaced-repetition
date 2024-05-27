@@ -93,6 +93,7 @@ const generateColumnedTable = <Row extends string[]>(
 const getVerbTranslationsContent2 = (
   translations: TranslationVariant[],
   cardValue: string | null,
+  langToLearn: string,
   helper: Helper,
 ): AnyContent[] => {
   return translations.flatMap(({ schema, attrs, translation }): AnyContent | AnyContent[] => {
@@ -120,7 +121,7 @@ const getVerbTranslationsContent2 = (
         attrs
           ? {
               type: 'tag',
-              content: getTranslationVariantTags(attrs, helper),
+              content: getTranslationVariantTags(attrs, langToLearn, helper),
             }
           : null,
         { type: 'paragraph', content: translation, style: { textAlign: 'center' } },
@@ -130,13 +131,17 @@ const getVerbTranslationsContent2 = (
   });
 };
 
-const getTranslationVariantTags = (attrs: NonNullable<TranslationVariant['attrs']>, helper: Helper): ContentTag[] => {
+const getTranslationVariantTags = (
+  attrs: NonNullable<TranslationVariant['attrs']>,
+  lang: string,
+  helper: Helper,
+): ContentTag[] => {
   const tags: string[] = [];
   for (const attrId in attrs) {
     const valueId = attrs[attrId];
     const valueIds = Array.isArray(valueId) ? valueId : [valueId];
     for (const id of valueIds) {
-      const value = helper.attributeRecords[id];
+      const value = helper.getAttributeRecord(id, lang);
       if (value) tags.push(value.name);
     }
   }
@@ -146,30 +151,34 @@ const getTranslationVariantTags = (attrs: NonNullable<TranslationVariant['attrs'
 const getVerbTranslationBeforeAndAfterAnswer2 = (
   translations: TranslationVariant[],
   cardValue: string,
+  langToLearn: string,
   helper: Helper,
 ): AnyContent[] => {
   return [
-    { type: 'beforeAnswer', content: getVerbTranslationsContent2(translations, '*', helper) },
-    { type: 'afterAnswer', content: getVerbTranslationsContent2(translations, cardValue, helper) },
+    { type: 'beforeAnswer', content: getVerbTranslationsContent2(translations, '*', langToLearn, helper) },
+    { type: 'afterAnswer', content: getVerbTranslationsContent2(translations, cardValue, langToLearn, helper) },
   ];
 };
 
 export interface Helper {
-  cardTypes: Record<string, CardTypeRecord | undefined>;
-  attributes: Record<string, Attribute | undefined>;
-  attributeRecords: Record<string, AttributeRecord | undefined>;
+  getCardType: (cardTypeId: number, lang: string) => CardTypeRecord | undefined;
+  getSupportedCardTypes(lang: string): CardTypeRecord[];
+  getAttribute: (attributeId: number | string, lang: string) => Attribute | undefined;
+  getAttributeRecord: (attrRecordId: number | string, lang: string) => AttributeRecord | undefined;
+  getAttributeRecordsByAttributeId: (attributeId: number | string, lang: string) => AttributeRecord[];
 }
 
 const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helper) => {
-  const viewAttrs = helper.cardTypes[record.displayType]?.configuration?.tags;
-  const tags: ContentTag[] = [helper.cardTypes[record.displayType]?.name ?? ''];
+  const viewAttrs = helper.getCardType(record.displayType, record.card.lang)?.configuration?.tags;
+  const cardTypeDisplayName = helper.getCardType(record.displayType, record.card.lang)?.cardDisplayName;
+  const tags: ContentTag[] = !cardTypeDisplayName ? [] : [cardTypeDisplayName];
 
   const getAttrInfo = (attrId: IdType | string, value: IdType) => {
-    const attr = helper.attributes[attrId];
+    const attr = helper.getAttribute(attrId, record.card.lang);
     if (!attr) return null;
-    const record = helper.attributeRecords[value];
-    if (!record) return null;
-    return { color: record.color || '', text: record.name };
+    const attrRecord = helper.getAttributeRecord(value, record.card.lang);
+    if (!attrRecord) return null;
+    return { color: attrRecord.color || '', text: attrRecord.name };
   };
   if (viewAttrs) {
     viewAttrs.forEach(({ attrId, type, defValue, matcher }) => {
@@ -207,12 +216,17 @@ const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helpe
   return tags;
 };
 
-const getAffix = (affix: AudioAffix, attrs: StandardCardAttributes | null | undefined, helper: Helper): string => {
+const getAffix = (
+  affix: AudioAffix,
+  attrs: StandardCardAttributes | null | undefined,
+  langToLearn: string,
+  helper: Helper,
+): string => {
   if (affix.type === 'text') {
     return affix.text + ' ';
   }
   const attrRecordId = attrs ? attrs[affix.attrId] : undefined;
-  const attributeValueName = helper.attributeRecords[attrRecordId ?? '']?.name;
+  const attributeValueName = attrRecordId ? helper.getAttributeRecord(attrRecordId, langToLearn)?.name : undefined;
   return attributeValueName ? attributeValueName + ' ' : '';
 };
 
@@ -221,7 +235,7 @@ export const getCardViewContent2 = (
   mode: CardViewMode,
   helper: Helper,
 ): (AnyContent | null | undefined)[] => {
-  const config = helper.cardTypes[record.displayType]?.configuration;
+  const config = helper.getCardType(record.displayType, record.card.lang)?.configuration;
   // const mathcer = config?.variantGroups?.find((e) => e.id === record.groupMeta.matcherId)?.matcher;
   const myViewId =
     mode === CardViewMode.test
@@ -311,16 +325,26 @@ export const getCardViewContent2 = (
       case ViewLineType.TranslationVariants:
         if (!record.card.advancedTranslation || record.card.advancedTranslation.length < 1) return null;
         if (line.partiallyHiddenBeforeAnswer) {
-          return getVerbTranslationBeforeAndAfterAnswer2(record.card.advancedTranslation, record.card.value, helper);
+          return getVerbTranslationBeforeAndAfterAnswer2(
+            record.card.advancedTranslation,
+            record.card.value,
+            record.card.lang,
+            helper,
+          );
         }
-        return getVerbTranslationsContent2(record.card.advancedTranslation, record.card.value, helper);
+        return getVerbTranslationsContent2(
+          record.card.advancedTranslation,
+          record.card.value,
+          record.card.lang,
+          helper,
+        );
       case ViewLineType.AttrValue:
         const attrs = record.variant.attrs || {};
         const attrValueIds = line.attrs.map((attrId) => attrs[attrId]);
         const attrValues = attrValueIds
           .map((attrValueId) => {
-            const record = helper.attributeRecords[attrValueId];
-            return record ? record.name : null;
+            const attrRecord = helper.getAttributeRecord(attrValueId, record.card.lang);
+            return attrRecord ? attrRecord.name : null;
           })
           .filter(isNonNullable);
         return { type: 'text', content: attrValues.join(line.separator ?? ', '), style: textStyle };
@@ -338,7 +362,7 @@ export const getCardViewContent2 = (
           style: { textAlign: 'center' },
           audioProps: prepareInputAudio(
             correctValues,
-            line.audioPrefix ? getAffix(line.audioPrefix, record.variant.attrs, helper) : undefined,
+            line.audioPrefix ? getAffix(line.audioPrefix, record.variant.attrs, record.card.lang, helper) : undefined,
           ),
         };
       case ViewLineType.AfterAnswer:
@@ -352,7 +376,7 @@ export const getCardViewContent2 = (
         const mainAttr = line.columns.find((e) => e.type === 'attr' && e.main);
         if (!mainAttr) return undefined;
         const attrId = mainAttr.type === 'attr' ? mainAttr.attr : 0;
-        const attr = helper.attributes[attrId];
+        const attr = helper.getAttribute(attrId, record.card.lang);
         if (!attr) return undefined;
         const myAttrObjects =
           mainAttr.type === 'attr' && mainAttr.attrRecordValues
@@ -362,15 +386,12 @@ export const getCardViewContent2 = (
                     const firstRecord = id.find((realId) =>
                       record.groupMeta.variants.some((e) => e.attrs?.[attrId] === realId),
                     );
-                    return helper.attributeRecords[firstRecord ?? id[0]];
+                    return helper.getAttributeRecord(firstRecord ?? id[0], record.card.lang);
                   }
-                  return helper.attributeRecords[id];
+                  return helper.getAttributeRecord(id, record.card.lang);
                 })
                 .filter(isNonNullable)
-            : Object.values(helper.attributeRecords)
-                .filter((e) => e?.attributeId === attrId)
-                .filter(isNonNullable)
-                .sort((a, b) => (a.id as number) - (b.id as number));
+            : helper.getAttributeRecordsByAttributeId(attrId, record.card.lang);
         const audioInfo: string[] = [];
         const rows = myAttrObjects
           .map((attrValue) => {
@@ -386,7 +407,11 @@ export const getCardViewContent2 = (
                 const attrId = column.attr;
                 const valueId = variant?.attrs?.[attrId];
                 const valueRecord =
-                  attrValue.attributeId === attrId ? attrValue : valueId ? helper.attributeRecords[valueId] : undefined;
+                  attrValue.attributeId === attrId
+                    ? attrValue
+                    : valueId
+                      ? helper.getAttributeRecord(valueId, record.card.lang)
+                      : undefined;
                 row.push(valueRecord?.name ?? '');
               } else if (column.type === 'article') {
                 if (!variant) row.push('');

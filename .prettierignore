@@ -1,1 +1,8 @@
-src/database/*.ts
+src/database/adjectives.ts
+src/database/articles.ts
+src/database/conjunctions.ts
+src/database/nouns.ts
+src/database/phrases.ts
+src/database/prepositions.ts
+src/database/pronouns.ts
+src/database/verbs.ts

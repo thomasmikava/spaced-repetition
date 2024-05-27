@@ -15,11 +15,11 @@ interface ReviewPageProps {
   mode: 'normal' | 'endless';
   words: StandardCard[];
   isInsideLesson: boolean;
-  helper: ReturnType<typeof useHelper>;
+  helper: NonNullable<ReturnType<typeof useHelper>>;
 }
 
 const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
-  const [reviewer] = useState(() => new Reviewer(words, isInsideLesson, mode));
+  const [reviewer] = useState(() => new Reviewer(words, helper, isInsideLesson, mode));
   const [questionNumber, setQuestionNumber] = useState(0);
 
   const [currentCard, setCurrentCard] = useState(() => reviewer.getNextCard());

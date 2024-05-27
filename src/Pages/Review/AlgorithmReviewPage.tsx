@@ -20,7 +20,7 @@ interface ReviewPageProps {
   mode: 'normal' | 'endless';
   words: StandardCard[];
   isInsideLesson: boolean;
-  helper: ReturnType<typeof useHelper>;
+  helper: NonNullable<ReturnType<typeof useHelper>>;
 }
 
 const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
@@ -60,7 +60,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
   useLogs({ mode, getQuestion, correctness, maxCards });
 
   const entries = useMemo(() => {
-    const reviewer = new Reviewer(words, isInsideLesson, mode, true);
+    const reviewer = new Reviewer(words, helper, isInsideLesson, mode, true);
     const cards: CardWithProbability[] = [];
     const questions: NonNullable<ReturnType<typeof getQuestion>>[] = [];
     let lastDate = 0;
