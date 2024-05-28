@@ -1,3 +1,4 @@
+import { getModifiedSearchValue } from '../../../functions/texts';
 import { apiRequest } from '../../api';
 import type { IRequest } from '../../request';
 import type {
@@ -30,7 +31,8 @@ class WordController {
   };
 
   searchWords = async (query: SearchWordReqDTO): Promise<SearchWordResDTO> => {
-    return this.request.get('/words', query);
+    const modifiedSearch = getModifiedSearchValue(query.searchValue, query.lang, query.wordType);
+    return this.request.get('/words', { ...query, searchValue: modifiedSearch });
   };
 }
 

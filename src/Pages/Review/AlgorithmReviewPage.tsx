@@ -14,7 +14,7 @@ import { useHelper } from '../hooks/text-helpers';
 import { withNoEventAction } from '../../utils/event';
 import { useLatestCallback } from '../../utils/hooks';
 import { useWords } from './useWords';
-import { CardTypeMapper } from '../../database/attributes';
+import { CardTypeMapper } from '../../database/card-types';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless';
@@ -87,7 +87,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
       index++;
     } while (cards.length < maxCards);
     return { cards, questions };
-  }, [words, isInsideLesson, mode, getQuestion, correctness, maxCards]);
+  }, [words, isInsideLesson, mode, getQuestion, correctness, helper, maxCards]);
 
   const showMore = (count: number) => {
     setMaxCards(maxCards + count);

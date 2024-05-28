@@ -1,5 +1,6 @@
 /* eslint-disable sonarjs/cognitive-complexity */
-import { AttributeMapper, CardTypeMapper } from '../database/attributes';
+import { AttributeMapper } from '../database/attributes';
+import { CardTypeMapper } from '../database/card-types';
 import { CATEGORY_MAPPER } from '../database/categories';
 import type {
   StandardCard,

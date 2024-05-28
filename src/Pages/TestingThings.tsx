@@ -14,8 +14,9 @@ import type { Course } from '../courses/lessons';
 import { courses } from '../courses/lessons';
 import { courseController } from '../api/controllers/courses/courses.controller';
 import type { LessonUpdateActionDTO } from '../api/controllers/lessons/lessons.schema';
-import { AttributeMapper, CardTypeMapper } from '../database/attributes';
+import { AttributeMapper } from '../database/attributes';
 import { getWithArticleOld } from '../functions/texts';
+import { CardTypeMapper } from '../database/card-types';
 
 const TestingThingsPage = () => {
   const oldDb = generateCardTypeThings();

@@ -3,7 +3,6 @@ import {
   AdjectiveInflection,
   Attribute,
   AttributeRecord,
-  CardType,
   Case,
   NounGender,
   NounNumber,
@@ -482,16 +481,4 @@ export const AttributeMapper = {
       modalVerb: 45,
     },
   },
-};
-
-export const CardTypeMapper = {
-  [CardType.PHRASE]: 1,
-  [CardType.NOUN]: 2,
-  [CardType.VERB]: 3,
-  [CardType.PRONOUN]: 4,
-  [CardType.ADJECTIVE]: 5,
-  [CardType.PREPOSITION]: 6,
-  [CardType.CONJUNCTION]: 7,
-  [CardType.NUMBER]: 8,
-  [CardType.ARTICLE]: 9,
 };

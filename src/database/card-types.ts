@@ -1,9 +1,11 @@
 import { CardViewMode } from '../functions/reviews';
 import { Matcher, SELF_REF } from '../utils/matcher';
-import { AttributeMapper, CardTypeMapper } from './attributes';
+import { AttributeMapper } from './attributes';
 import {
   AdjectiveDegree,
   AdjectiveInflection,
+  CardType,
+  Case,
   IdType,
   NounGender,
   NounNumber,
@@ -13,6 +15,18 @@ import {
   VerbPronoun,
   VerbTense,
 } from './types';
+
+export const CardTypeMapper = {
+  [CardType.PHRASE]: 1,
+  [CardType.NOUN]: 2,
+  [CardType.VERB]: 3,
+  [CardType.PRONOUN]: 4,
+  [CardType.ADJECTIVE]: 5,
+  [CardType.PREPOSITION]: 6,
+  [CardType.CONJUNCTION]: 7,
+  [CardType.NUMBER]: 8,
+  [CardType.ARTICLE]: 9,
+};
 
 export interface CardTypeRecord {
   id: IdType;
@@ -157,6 +171,7 @@ export type ViewLine =
   | { type: ViewLineType.AfterAnswer; lines: ViewLine[] }
   | { type: ViewLineType.AfterAnswerDropdown; lines: ViewLine[] };
 
+export type SortBy = { attrId: number; attrRecords: number[] };
 export interface VariantGroup {
   id: string;
   matcher: CategoryAttrsMatcher | null;
@@ -166,6 +181,7 @@ export interface VariantGroup {
   indViewId?: string;
   testViewId?: string;
   forcefullyGroup?: boolean;
+  sortBy?: SortBy[];
 }
 
 export interface CardTypeConfiguration {
@@ -191,6 +207,16 @@ export interface CardTypeConfiguration {
   /** It determines how many non-standard form group might have to still be regarded as standard group; default = 0 */
   maxAllowedNonStandardForms?: number;
 }
+
+const nounSortBy: SortBy = {
+  attrId: AttributeMapper.CASE.id,
+  attrRecords: [
+    AttributeMapper.CASE.records[Case.Nominativ],
+    AttributeMapper.CASE.records[Case.Akkusativ],
+    AttributeMapper.CASE.records[Case.Dativ],
+    AttributeMapper.CASE.records[Case.Genitiv],
+  ],
+};
 
 const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
@@ -314,6 +340,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         },
         groupViewId: 'gr-view',
         testViewId: 'gr-test',
+        sortBy: [nounSortBy],
       },
       {
         id: 'pl',
@@ -323,6 +350,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         },
         groupViewId: 'gr-view',
         testViewId: 'gr-test',
+        sortBy: [nounSortBy],
       },
       { id: 'skip', matcher: null, skip: true },
     ],

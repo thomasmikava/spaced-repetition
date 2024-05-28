@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { CardTypeConfiguration, VariantGroup } from '../database/card-types';
+import type { CardTypeConfiguration, SortBy, VariantGroup } from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
 import { groupArray, sortArrayByOriginalArray } from '../utils/array';
 import { isMatch } from '../utils/matcher';
@@ -117,15 +117,18 @@ const divideVariantsInGroups = (card: StandardCard, config: CardTypeConfiguratio
           i--;
         }
       }
-      if (matchedVariants.length && !pr.skip)
+      if (matchedVariants.length && !pr.skip) {
+        // TODO: sort matchedVariants
+
         groups.push({
           matcherId: pr.id ?? null,
           groupViewId: pr.groupViewId ?? null,
           indViewId: pr.indViewId ?? null,
           testViewId: pr.testViewId ?? null,
-          variants: matchedVariants,
+          variants: pr.sortBy ? sortVariants(pr.sortBy, matchedVariants) : matchedVariants,
           gr: pr,
         });
+      }
     }
   }
   freeVariants.forEach((variant) => {
@@ -139,6 +142,31 @@ const divideVariantsInGroups = (card: StandardCard, config: CardTypeConfiguratio
     });
   });
   return groups;
+};
+
+const sortVariants = (sortStrategy: SortBy[], variants: StandardCardVariant[]): StandardCardVariant[] => {
+  const compare = (a: StandardCardVariant, b: StandardCardVariant, strategyIndex: number = 0): number => {
+    if (strategyIndex >= sortStrategy.length) return 0;
+
+    const { attrId, attrRecords } = sortStrategy[strategyIndex];
+    const attrA = a.attrs?.[attrId];
+    const attrB = b.attrs?.[attrId];
+
+    const indexA = attrA ? attrRecords.indexOf(attrA) : -1;
+    const indexB = attrB ? attrRecords.indexOf(attrB) : -1;
+
+    if (indexA !== -1 && indexB !== -1) {
+      if (indexA < indexB) return -1;
+      if (indexA > indexB) return 1;
+    }
+
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+
+    return compare(a, b, strategyIndex + 1);
+  };
+
+  return variants.sort((a, b) => compare(a, b));
 };
 
 const addGroupStandardFormFlag = <T extends GeneralTestableCard>(variants: T[]): T[] => {

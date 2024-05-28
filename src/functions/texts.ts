@@ -1,4 +1,5 @@
 import { AttributeMapper } from '../database/attributes';
+import { CardTypeMapper } from '../database/card-types';
 import type { IdType, StandardCardAttributes } from '../database/types';
 import { NounGender, NounNumber } from '../database/types';
 import { isMatch } from '../utils/matcher';
@@ -14,7 +15,7 @@ export function getWithArticleOld(word: string, gender: NounGender) {
   return prefix + word;
 }
 
-const articleObjects: { value: string; attrs: StandardCardAttributes }[] = [
+const GermanArticleObjects: { value: string; attrs: StandardCardAttributes }[] = [
   {
     value: 'der',
     attrs: {
@@ -324,15 +325,39 @@ const articleObjects: { value: string; attrs: StandardCardAttributes }[] = [
     },
   },
 ];
-export function getArticle(_locale: string, searchAttrs: Record<PropertyKey, number>, onlyFirst = false) {
+
+function getGermanArticle(searchAttrs: Record<PropertyKey, number>, onlyFirst = false) {
   const normalizedSearchAttrs =
     searchAttrs[AttributeMapper.NUMBER.id] === AttributeMapper.NUMBER.records[NounNumber.plural]
       ? removeKeys(searchAttrs, AttributeMapper.GENDER.id)
       : searchAttrs;
-  const articles = articleObjects.filter((art) => isMatch(art.attrs, normalizedSearchAttrs));
+  const articles = GermanArticleObjects.filter((art) => isMatch(art.attrs, normalizedSearchAttrs));
   if (onlyFirst) return articles[0]?.value ?? '';
   return articles.map((e) => e.value).join('/');
 }
+
+export function getArticle(lang: string, searchAttrs: Record<PropertyKey, number>, onlyFirst = false) {
+  if (lang === 'de') return getGermanArticle(searchAttrs, onlyFirst);
+  return '';
+}
+
+const GermanArticles = new Set(GermanArticleObjects.map((e) => e.value));
+const getModifiedGermanSearchValue = (searchValue: string, wordType: number | undefined): string => {
+  if ((wordType === undefined || wordType === CardTypeMapper.NOUN) && searchValue.includes(' ')) {
+    const searchWords = searchValue.split(' ');
+    if (searchWords.length > 1 && GermanArticles.has(searchWords[0])) {
+      return searchWords.slice(1).join(' ').trim();
+    }
+  }
+  return searchValue;
+};
+
+export const getModifiedSearchValue = (searchValue: string, lang: string, wordType: number | undefined): string => {
+  if (lang === 'de') {
+    return getModifiedGermanSearchValue(searchValue, wordType) || searchValue;
+  }
+  return searchValue;
+};
 
 export function getWithSymbolArticle(_locale: string, word: string, gender: IdType) {
   const prefix = {
