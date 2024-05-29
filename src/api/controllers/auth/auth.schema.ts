@@ -36,3 +36,12 @@ export interface RevokeTokensReqDTO {
   accessToken: string;
   refreshToken: string;
 }
+
+////
+
+export interface UserToken {
+  /** Email */
+  sub: string;
+  userId: number;
+  adminLangs: string[] | null;
+}

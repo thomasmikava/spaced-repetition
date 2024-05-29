@@ -1,9 +1,12 @@
 import { apiRequest } from '../../api';
 import type { IRequest } from '../../request';
 import type {
+  AddToMyCoursesReqDTO,
   CreateCourseReqDTO,
   CreateCourseResDTO,
   DeleteCourseReqDTO,
+  ExploreCoursesReqDTO,
+  ExploreCoursesResDTO,
   GetCourseReqDTO,
   GetCourseResDTO,
   GetMyCoursesResDTO,
@@ -19,6 +22,10 @@ class CourseController {
     return this.request.get('courses');
   };
 
+  explore = async (query: ExploreCoursesReqDTO): Promise<ExploreCoursesResDTO> => {
+    return this.request.get('/courses/explore', query);
+  };
+
   getById = async (data: GetCourseReqDTO): Promise<GetCourseResDTO> => {
     return this.request.get('courses/:id', data);
   };
@@ -29,6 +36,10 @@ class CourseController {
 
   createCourse = (data: CreateCourseReqDTO): Promise<CreateCourseResDTO> => {
     return this.request.post('courses', data);
+  };
+
+  addToMyCourses = (data: AddToMyCoursesReqDTO): Promise<void> => {
+    return this.request.post('courses/add-to-my-courses', data);
   };
 
   updateCourse = (data: UpdateCourseReqDTO): Promise<UpdateCourseResDTO> => {

@@ -1,13 +1,13 @@
-import { Link } from 'react-router-dom';
+import GlobalOutlined from '@ant-design/icons/lib/icons/GlobalOutlined';
+import PlusOutlined from '@ant-design/icons/lib/icons/PlusOutlined';
+import SearchOutlined from '@ant-design/icons/lib/icons/SearchOutlined';
+import { Link, useNavigate } from 'react-router-dom';
 import appCssModule from '../../App.module.css';
 import ReviewButtons from '../../ReviewButtons';
 import { useMyMainCourses } from '../../api/controllers/courses/courses.query';
-import type { CourseDTO } from '../../api/controllers/courses/courses.schema';
 import { paths } from '../../routes/paths';
+import { CourseBox } from '../Course/Box';
 import cssModule from './styles.module.css';
-import SearchOutlined from '@ant-design/icons/lib/icons/SearchOutlined';
-import GlobalOutlined from '@ant-design/icons/lib/icons/GlobalOutlined';
-import PlusOutlined from '@ant-design/icons/lib/icons/PlusOutlined';
 
 const HomePage = () => {
   const { data: mainCourses } = useMyMainCourses();
@@ -25,14 +25,6 @@ const HomePage = () => {
         <AddBox />
       </div>
     </div>
-  );
-};
-
-const CourseBox = ({ course }: { course: CourseDTO }) => {
-  return (
-    <Link to={paths.app.course.page(course.id)} className={appCssModule.courseCard}>
-      <div>{course.title}</div>
-    </Link>
   );
 };
 
@@ -55,8 +47,10 @@ const AddBox = () => {
 };
 
 const PublicCourses = () => {
+  const navigate = useNavigate();
+  const onClick = () => navigate(paths.app.explore());
   return (
-    <div className={cssModule.specialBox}>
+    <div className={cssModule.specialBox} onClick={onClick}>
       <GlobalOutlined />
       <span className={cssModule.title}>Explore courses</span>
     </div>

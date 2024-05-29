@@ -1,20 +1,22 @@
+import type { UserToken } from './controllers/auth/auth.schema';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const getTokenInfo = () => {
   const tokens = getTokenFromStorage();
-  const decodedAccessToken = !tokens ? null : decodeToken(tokens.accessToken);
+  const decodedAccessToken = !tokens ? null : decodeToken<UserToken>(tokens.accessToken);
 
   const expirationDate = decodedAccessToken ? getTokenExpirationDate(decodedAccessToken) : null;
   const isExpired = expirationDate ? expirationDate.valueOf() < new Date().valueOf() : false;
 
-  return { tokens, expirationDate, isExpired };
+  return { tokens, expirationDate, isExpired, decodedAccessToken };
 };
 
-type TokenData = {
+type Tokens = {
   accessToken: string;
   refreshToken: string;
 };
 
-const validateTokenData = (data: unknown): TokenData | null => {
+const validateTokenData = (data: unknown): Tokens | null => {
   if (
     typeof data === 'object' &&
     data !== null &&
@@ -23,14 +25,14 @@ const validateTokenData = (data: unknown): TokenData | null => {
     'refreshToken' in data &&
     typeof data.refreshToken === 'string'
   ) {
-    return data as TokenData;
+    return data as Tokens;
   }
   return null;
 };
 
 const AUTH_STORAGE_KEY = '__auth';
 
-export const getTokenFromStorage = (): TokenData | null => {
+export const getTokenFromStorage = (): Tokens | null => {
   const authStr = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!authStr) return null;
   try {
@@ -41,7 +43,7 @@ export const getTokenFromStorage = (): TokenData | null => {
   }
 };
 
-export const saveTokenInStorage = (token: TokenData) => {
+export const saveTokenInStorage = (token: Tokens) => {
   const validatedToken = validateTokenData({ ...token });
   if (!validatedToken) return false;
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(validatedToken));
@@ -53,7 +55,7 @@ export const destroyTokenInStorage = () => {
   return true;
 };
 
-function decodeToken(token: string) {
+function decodeToken<T>(token: string): T | null {
   try {
     if (token.split('.').length !== 3 || typeof token !== 'string') {
       return null;

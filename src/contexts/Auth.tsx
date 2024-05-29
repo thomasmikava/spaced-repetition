@@ -1,20 +1,19 @@
 import type { FC, ReactNode } from 'react';
-import { createContext, memo, useContext } from 'react';
-import { useMemo } from 'react';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useInterval, useLatestCallback } from '../utils/hooks';
-import { destroyTokenInStorage, getTokenInfo, saveTokenInStorage } from '../api/helpers';
+import { createContext, memo, useContext, useEffect, useMemo, useState } from 'react';
 import {
   useAuthLoginState,
   useAuthRenewAccessToken,
   useAuthRevokeAccessToken,
 } from '../api/controllers/auth/auth.queries';
+import type { UserToken } from '../api/controllers/auth/auth.schema';
+import { destroyTokenInStorage, getTokenInfo, saveTokenInStorage } from '../api/helpers';
+import { useInterval, useLatestCallback } from '../utils/hooks';
 
 export interface AuthData {
   signOut: () => void;
   isSignedIn: boolean;
   isExpired: boolean;
+  userData: UserToken | null;
 }
 
 const AuthContext = createContext<AuthData | null>(null);
@@ -28,13 +27,23 @@ export const useAuth = (): AuthData => {
   }
   return data;
 };
+export const useSignInUserData = (): UserToken => {
+  const data = useContext(AuthContext);
+  if (!data) {
+    throw new Error('Auth context provider not used');
+  }
+  if (!data.isSignedIn || !data.userData) {
+    throw new Error('User is not signed in');
+  }
+  return data.userData;
+};
 
 export const AuthProvider: FC<{ children?: ReactNode }> = memo(({ children }) => {
   const { data: loginResponse } = useAuthLoginState();
   const { data: renewTokenSuccessResponse, mutate: renewToken } = useAuthRenewAccessToken();
   const { mutate: revokeTokens } = useAuthRevokeAccessToken();
 
-  const [{ tokens, expirationDate, isExpired }, setState] = useState(getTokenInfo);
+  const [{ tokens, expirationDate, isExpired, decodedAccessToken }, setState] = useState(getTokenInfo);
   const [isAboutToExpire, setIsAboutToExpire] = useState(() => willExpireSoon(expirationDate));
 
   const tokenFetchingResponse = renewTokenSuccessResponse || loginResponse;
@@ -86,8 +95,9 @@ export const AuthProvider: FC<{ children?: ReactNode }> = memo(({ children }) =>
       isExpired,
       isSignedIn,
       signOut,
+      userData: decodedAccessToken,
     }),
-    [isExpired, isSignedIn, signOut],
+    [isExpired, isSignedIn, decodedAccessToken, signOut],
   );
 
   return <AuthContext.Provider value={authData}>{children}</AuthContext.Provider>;

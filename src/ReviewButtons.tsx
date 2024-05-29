@@ -5,6 +5,7 @@ import cssModule from './App.module.css';
 import { useWordIds } from './api/controllers/words/words.query';
 import { PreviousReviews } from './functions/previous-reviews';
 import { uniquelize } from './utils/array';
+import { paths } from './routes/paths';
 
 interface Props {
   courseId?: number;
@@ -44,11 +45,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
   }, [wordIds]);
 
   const handleReview = (endless: boolean) => {
-    const params = [];
-    if (courseId) params.push(`courseId=${courseId}`);
-    if (lessonId) params.push(`lessonId=${lessonId}`);
-    if (endless) params.push('mode=endless');
-    navigate(params.length ? `/review?${params.join('&')}` : '/review');
+    navigate(paths.app.review({ courseId, lessonId, endless }));
   };
 
   return (

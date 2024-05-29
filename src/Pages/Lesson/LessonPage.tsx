@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import cssModule from '../../App.module.css';
 import ReviewButtons from '../../ReviewButtons';
-import { useCourseById } from '../../api/controllers/courses/courses.query';
+import { useCourseById, useMyMainCourses } from '../../api/controllers/courses/courses.query';
 import { useCourseLessons, useDeleteLesson } from '../../api/controllers/lessons/lessons.query';
 import { useCourseWords } from '../../api/controllers/words/words.query';
 import { PreviousReviews } from '../../functions/previous-reviews';
@@ -17,8 +17,11 @@ import { formatTime } from '../../utils/time';
 import { useHelper } from '../hooks/text-helpers';
 import { LessonBody } from './Body';
 import { useFilteredLessons } from './useFilteredLessons';
+import { useSignInUserData } from '../../contexts/Auth';
+import { AddToMyCoursesButton } from '../Course/AddToMyCourses';
 
 const LessonPage = () => {
+  const userData = useSignInUserData();
   const params = useParams();
   const navigate = useNavigate();
 
@@ -28,6 +31,7 @@ const LessonPage = () => {
   const lessonId = +(params.lessonId as string);
 
   const { data: course, isLoading: isCourseLoading } = useCourseById(courseId);
+  const { data: myMainCourses, isLoading: isMyMainCourseLoading } = useMyMainCourses();
   const { data: allCourseLessons, isLoading: isLessonLoading } = useCourseLessons({
     courseId,
     returnAllChildrenLessons: true,
@@ -67,7 +71,11 @@ const LessonPage = () => {
     );
   };
 
-  if (isLessonLoading || isCourseLoading || isWordLoading || !helper) return <div>Loading lesson...</div>;
+  if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || !helper) {
+    return <div>Loading lesson...</div>;
+  }
+
+  if (!myMainCourses) return <div>Error</div>;
 
   if (!course) return <div>Course not found</div>;
 
@@ -83,7 +91,9 @@ const LessonPage = () => {
   const studiedCards = lessonsInfo.filter((item) => item.closestDueIn !== Infinity).length;
   const allCardsCount = lessonsInfo.length;
 
-  const canManageCourse = true; // TODO: check if I have the permission to delete it
+  const canManageCourse = course?.userId === userData.userId || userData.adminLangs?.includes(course.langToLearn);
+
+  const isInMyCoursesList = myMainCourses.some((c) => c.id === courseId);
 
   return (
     <div className='body'>
@@ -98,23 +108,27 @@ const LessonPage = () => {
           )}
         </div>
 
-        <Dropdown
-          menu={{
-            items: [
-              { label: 'Edit', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
-              canManageCourse
-                ? { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal }
-                : undefined,
-            ].filter(isNonNullable),
-          }}
-          placement='bottom'
-        >
-          <Button>
-            <SettingFilled />
-          </Button>
-        </Dropdown>
+        {canManageCourse && isInMyCoursesList && (
+          <Dropdown
+            menu={{
+              items: [
+                { label: 'Edit', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
+                { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal },
+              ].filter(isNonNullable),
+            }}
+            placement='bottom'
+          >
+            <Button>
+              <SettingFilled />
+            </Button>
+          </Dropdown>
+        )}
       </div>
-      <ReviewButtons courseId={courseId} lessonId={lessonId} />
+      {isInMyCoursesList ? (
+        <ReviewButtons courseId={courseId} lessonId={lessonId} />
+      ) : (
+        <AddToMyCoursesButton courseId={courseId} />
+      )}
       {lessons && lessons.length > 0 && <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} />}
       <table className={cssModule.lessonTable}>
         <tbody>

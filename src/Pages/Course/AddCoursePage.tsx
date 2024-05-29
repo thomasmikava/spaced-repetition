@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useCreateNewCourse } from '../../api/controllers/courses/courses.query';
+import { useSignInUserData } from '../../contexts/Auth';
+import { paths } from '../../routes/paths';
 import type { CourseFormData } from './Form';
 import { CourseForm } from './Form';
-import { paths } from '../../routes/paths';
 
 const AddCoursePage = () => {
+  const userData = useSignInUserData();
   const navigate = useNavigate();
   const { mutate: createCourse, isPending } = useCreateNewCourse();
   const handleSubmit = (data: CourseFormData) => {
@@ -18,7 +20,12 @@ const AddCoursePage = () => {
     <div className='body'>
       <div>Create a new course</div>
       <br />
-      <CourseForm onSubmit={handleSubmit} isSubmitting={isPending} submitLabel='Create' />
+      <CourseForm
+        onSubmit={handleSubmit}
+        isSubmitting={isPending}
+        submitLabel='Create'
+        officialLangs={userData.adminLangs || undefined}
+      />
     </div>
   );
 };

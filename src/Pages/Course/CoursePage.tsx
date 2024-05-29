@@ -5,19 +5,23 @@ import Modal from 'antd/es/modal';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReviewButtons from '../../ReviewButtons';
-import { useCourseById, useDeleteCourse } from '../../api/controllers/courses/courses.query';
+import { useCourseById, useDeleteCourse, useMyMainCourses } from '../../api/controllers/courses/courses.query';
 import { useCourseLessons } from '../../api/controllers/lessons/lessons.query';
 import { paths } from '../../routes/paths';
 import { isNonNullable } from '../../utils/array';
 import { LessonBody } from '../Lesson/Body';
 import { useFilteredLessons } from '../Lesson/useFilteredLessons';
+import { useSignInUserData } from '../../contexts/Auth';
+import { AddToMyCoursesButton } from './AddToMyCourses';
 
 const CoursePage = () => {
+  const userData = useSignInUserData();
   const params = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const courseId = +params.courseId!;
 
   const { data: course, isLoading: isCourseLoading } = useCourseById(courseId);
+  const { data: myMainCourses, isLoading: isMyMainCourseLoading } = useMyMainCourses();
 
   const { data: allCourseLessons, isLoading: isLessonLoading } = useCourseLessons({
     courseId,
@@ -57,43 +61,49 @@ const CoursePage = () => {
     );
   };
 
-  const canManageCourse = true; // TODO: check if I have the permission to delete it
+  if (isLessonLoading || isCourseLoading || isMyMainCourseLoading) return <div>Loading course...</div>;
 
-  if (isLessonLoading || isCourseLoading) return <div>Loading course...</div>;
+  if (!myMainCourses) return <div>Error</div>;
 
   if (!course) return <div>Course not found</div>;
 
   if (!lessons) return <div>Loading course...</div>;
+
+  const canManageCourse = course?.userId === userData.userId || userData.adminLangs?.includes(course.langToLearn);
+
+  const isInMyCoursesList = myMainCourses.some((c) => c.id === courseId);
 
   return (
     <div className='body'>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <LeftOutlined onClick={goToMainPage} style={{ cursor: 'pointer' }} />
         <h3>{course.title}</h3>
-        <Dropdown
-          menu={{
-            items: [
-              { label: 'Edit content', key: 'edit-c', icon: <EditOutlined />, onClick: goToContent },
-              { label: 'Edit course', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
-              {
-                label: canManageCourse ? 'Remove from my courses' : 'Remove',
-                key: 'remove',
-                icon: <DeleteOutlined />,
-                onClick: showRemoveModal,
-              },
-              canManageCourse
-                ? { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal }
-                : undefined,
-            ].filter(isNonNullable),
-          }}
-          placement='bottom'
-        >
-          <Button>
-            <SettingFilled />
-          </Button>
-        </Dropdown>
+        {isInMyCoursesList && (
+          <Dropdown
+            menu={{
+              items: [
+                { label: 'Edit content', key: 'edit-c', icon: <EditOutlined />, onClick: goToContent },
+                { label: 'Edit course', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
+                {
+                  label: canManageCourse ? 'Remove from my courses' : 'Remove',
+                  key: 'remove',
+                  icon: <DeleteOutlined />,
+                  onClick: showRemoveModal,
+                },
+                canManageCourse
+                  ? { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal }
+                  : undefined,
+              ].filter(isNonNullable),
+            }}
+            placement='bottom'
+          >
+            <Button>
+              <SettingFilled />
+            </Button>
+          </Dropdown>
+        )}
       </div>
-      <ReviewButtons courseId={courseId} />
+      {isInMyCoursesList ? <ReviewButtons courseId={courseId} /> : <AddToMyCoursesButton courseId={courseId} />}
       <LessonBody courseId={courseId} lessonId={null} lessons={lessons} />
       <Modal
         title='Modal'

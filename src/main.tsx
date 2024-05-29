@@ -22,6 +22,7 @@ import TestingThingsPage from './Pages/TestingThings.tsx';
 import { PageGuard } from './routes/PageGuard.tsx';
 import { paths } from './routes/paths.ts';
 import { queryClient } from './utils/queries.ts';
+import ExploreCoursesPage from './Pages/Course/ExploreCoursesPage.tsx';
 
 const router = createBrowserRouter(
   [
@@ -78,7 +79,15 @@ const router = createBrowserRouter(
       ),
     },
     {
-      path: '/review',
+      path: paths.app.explore.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <ExploreCoursesPage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: paths.app.review.routePath,
       element: (
         <PageGuard onlyAuth>
           <ReviewPageLoader />

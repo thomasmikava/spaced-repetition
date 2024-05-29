@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { queryClient, useMutation, useQuery } from '../../../utils/queries';
 import { courseController } from './courses.controller';
-import type { GetMyCoursesResDTO } from './courses.schema';
+import type { ExploreCoursesReqDTO, GetMyCoursesResDTO } from './courses.schema';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 const prefixes = {
   getOneMinified: 'course:getMinified',
@@ -11,6 +12,7 @@ const prefixes = {
 export const CourseQueryKeys = {
   getOne: (id: number) => [prefixes.getOne, `course:getOne-${id}`],
   getMyMainCourses: () => ['course:getMyMainCourses'],
+  searchCourses: (query: Omit<ExploreCoursesReqDTO, 'skip'>) => [`word:searchCourses`, query],
 };
 
 export const useMyMainCourses = () => {
@@ -24,7 +26,16 @@ export const useCreateNewCourse = () => {
   return useMutation({
     mutationFn: courseController.createCourse,
     onSuccess: (): Promise<unknown> => {
-      return queryClient.ensureQueryData({ queryKey: CourseQueryKeys.getMyMainCourses() });
+      return queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() });
+    },
+  });
+};
+
+export const useAddToMyCourses = () => {
+  return useMutation({
+    mutationFn: courseController.addToMyCourses,
+    onSuccess: (): Promise<unknown> => {
+      return queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() });
     },
   });
 };
@@ -77,6 +88,23 @@ export const useUpdateCourseContent = () => {
         queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] }), // TODO: export from lessons.query
         queryClient.invalidateQueries({ queryKey: [`word:getCourseWords${args.courseId}`] }), // TODO: export from words.query
       ]);
+    },
+  });
+};
+
+export const useSearchCourses = (query: Omit<ExploreCoursesReqDTO, 'skip'>) => {
+  return useInfiniteQuery({
+    queryFn: ({ pageParam }) => courseController.explore({ ...query, skip: pageParam ?? 0 }),
+    queryKey: CourseQueryKeys.searchCourses(query),
+    staleTime: 1000 * 60,
+    retry: false,
+    enabled: query.searchValue !== '',
+    initialPageParam: 0,
+    getPreviousPageParam: (firstPage, allPages, firstPageParam) => Math.max(0, firstPageParam - query.limit),
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      if (lastPage.isLastPage) return undefined;
+      if (lastPage.courses.length < query.limit) return undefined;
+      return lastPageParam + query.limit;
     },
   });
 };
