@@ -6,17 +6,17 @@ const reverseMapper = new Map<object, Map<number, unknown>>();
 export function getAttrEnumValue<T extends number>(
   attrs: StandardCardAttributes | null | undefined,
   enumObject: { id: number; records: Record<T, number> },
-): T | undefined {
-  if (!attrs) return undefined;
-  const value = attrs[enumObject.id];
-  if (value === undefined) return undefined;
+): { value: T | undefined; id: number | undefined } {
+  if (!attrs) return { value: undefined, id: undefined };
+  const recordValueId = attrs[enumObject.id];
+  if (recordValueId === undefined) return { value: undefined, id: undefined };
 
   let rMapper = reverseMapper.has(enumObject.records) ? reverseMapper.get(enumObject.records) : null;
   if (!rMapper) {
     rMapper = reverseObject(enumObject.records);
     reverseMapper.set(enumObject.records, rMapper);
   }
-  return (rMapper as Map<number, T>).get(value) as T;
+  return { value: ((rMapper as Map<number, T>).get(recordValueId) ?? undefined) as T, id: recordValueId };
 }
 
 const reverseObject = <T extends number, K extends string | number>(obj: Record<T, K>) => {

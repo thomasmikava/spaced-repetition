@@ -28,9 +28,9 @@ export const getGermanStandardFormFn = (
   if (card.type === CardTypeMapper.VERB) {
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
-      const mood = getAttrEnumValue<VerbMood>(variant.attrs, AttributeMapper.MOOD);
-      const tense = getAttrEnumValue<VerbTense>(variant.attrs, AttributeMapper.TENSE);
-      const pronoun = getAttrEnumValue<VerbPronoun>(variant.attrs, AttributeMapper.PRONOUN);
+      const { value: mood, id: moodId } = getAttrEnumValue<VerbMood>(variant.attrs, AttributeMapper.MOOD);
+      const { value: tense, id: tenseId } = getAttrEnumValue<VerbTense>(variant.attrs, AttributeMapper.TENSE);
+      const { value: pronoun } = getAttrEnumValue<VerbPronoun>(variant.attrs, AttributeMapper.PRONOUN);
       if (mood === undefined || tense === undefined || pronoun === undefined) return false;
       const standardForm = getVerbStandardForm(
         card.value,
@@ -40,8 +40,8 @@ export const getGermanStandardFormFn = (
         allCardVariants.find(
           (x) =>
             x.attrs &&
-            x.attrs[AttributeMapper.MOOD.id] === mood &&
-            x.attrs[AttributeMapper.TENSE.id] === tense &&
+            x.attrs[AttributeMapper.MOOD.id] === moodId &&
+            x.attrs[AttributeMapper.TENSE.id] === tenseId &&
             x.attrs[AttributeMapper.PRONOUN.id] === AttributeMapper.PRONOUN.records[VerbPronoun.ich],
         )?.value,
       );
@@ -49,6 +49,8 @@ export const getGermanStandardFormFn = (
     };
   }
   if (card.type === CardTypeMapper.ADJECTIVE) {
+    const KomparativeValue = allCardVariants.find((v) => v.category === 2)?.value ?? card.value;
+    const SuperlativValue = allCardVariants.find((v) => v.category === 3)?.value ?? card.value;
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
       if (variant.category === 2) {
@@ -58,10 +60,13 @@ export const getGermanStandardFormFn = (
         return isStandardEqual(variant.value, getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Superlativ));
       }
 
-      const degree = getAttrEnumValue<AdjectiveDegree>(variant.attrs, AttributeMapper.DEGREE);
-      const inflection = getAttrEnumValue<AdjectiveInflection>(variant.attrs, AttributeMapper.INFLECTION);
-      const gender = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER);
-      const caseValue = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
+      const { value: degree, id: degreeId } = getAttrEnumValue<AdjectiveDegree>(variant.attrs, AttributeMapper.DEGREE);
+      const { value: inflection, id: inflectionId } = getAttrEnumValue<AdjectiveInflection>(
+        variant.attrs,
+        AttributeMapper.INFLECTION,
+      );
+      const { value: gender } = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER);
+      const { value: caseValue } = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
 
       if (degree === undefined || inflection === undefined || gender === undefined || caseValue === undefined) {
         return false;
@@ -71,12 +76,21 @@ export const getGermanStandardFormFn = (
         allCardVariants.find(
           (x) =>
             x.attrs &&
-            x.attrs[AttributeMapper.DEGREE.id] === degree &&
-            x.attrs[AttributeMapper.INFLECTION.id] === inflection,
+            x.attrs[AttributeMapper.DEGREE.id] === degreeId &&
+            x.attrs[AttributeMapper.INFLECTION.id] === inflectionId &&
+            x.attrs[AttributeMapper.GENDER.id] === AttributeMapper.GENDER.records[NounGender.Maskulinum],
         )?.value ?? null;
 
+      let cardValue = card.value;
+      if (degree === AdjectiveDegree.Komparativ) {
+        cardValue = KomparativeValue;
+      }
+      if (degree === AdjectiveDegree.Superlativ) {
+        cardValue = SuperlativValue;
+      }
+
       const standardForm = getAdjectiveStandardForm(
-        card.value,
+        cardValue,
         caseValue === Case.Nominativ && gender === NounGender.Maskulinum ? null : nominativeMasculine,
         degree,
         inflection,
@@ -88,6 +102,7 @@ export const getGermanStandardFormFn = (
   }
 
   if (card.type === CardTypeMapper.NOUN) {
+    const initialValue = allCardVariants.find((x) => x.category === INITIAL_CARD_CATEGORY)?.value ?? card.value;
     const pluralNominative = allCardVariants.find(
       (x) =>
         x.attrs &&
@@ -97,13 +112,13 @@ export const getGermanStandardFormFn = (
 
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
-      const gender = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER);
-      const number = getAttrEnumValue<number>(variant.attrs, AttributeMapper.NUMBER);
-      const caseValue = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
+      const { value: gender } = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER);
+      const { value: number } = getAttrEnumValue<number>(variant.attrs, AttributeMapper.NUMBER);
+      const { value: caseValue } = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
 
       if (gender === undefined || number === undefined || caseValue === undefined) return false;
 
-      const standardForm = generateNounStandardVariant(card.value, pluralNominative, gender, number, caseValue);
+      const standardForm = generateNounStandardVariant(initialValue, pluralNominative, gender, number, caseValue);
       return isStandardEqual(variant.value, standardForm);
     };
   }
@@ -111,10 +126,13 @@ export const getGermanStandardFormFn = (
   if (card.type === CardTypeMapper.PRONOUN) {
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
-      const function_ = getAttrEnumValue<PronounFunction>(variant.attrs, AttributeMapper.FUNCTION);
-      const gender = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER) ?? null;
-      const number = getAttrEnumValue<number>(variant.attrs, AttributeMapper.NUMBER);
-      const caseValue = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
+      const { value: function_, id: functioId } = getAttrEnumValue<PronounFunction>(
+        variant.attrs,
+        AttributeMapper.FUNCTION,
+      );
+      const { value: gender } = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER) ?? null;
+      const { value: number } = getAttrEnumValue<number>(variant.attrs, AttributeMapper.NUMBER);
+      const { value: caseValue } = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
 
       if (function_ === undefined || number === undefined || caseValue === undefined) {
         return false;
@@ -124,7 +142,7 @@ export const getGermanStandardFormFn = (
         allCardVariants.find(
           (x) =>
             x.attrs &&
-            x.attrs[AttributeMapper.FUNCTION.id] === function_ &&
+            x.attrs[AttributeMapper.FUNCTION.id] === functioId &&
             x.attrs[AttributeMapper.NUMBER.id] === AttributeMapper.NUMBER.records[NounNumber.singular] &&
             x.attrs[AttributeMapper.CASE.id] === AttributeMapper.CASE.records[Case.Nominativ],
         )?.value ?? null;
@@ -132,7 +150,7 @@ export const getGermanStandardFormFn = (
         allCardVariants.find(
           (x) =>
             x.attrs &&
-            x.attrs[AttributeMapper.FUNCTION.id] === function_ &&
+            x.attrs[AttributeMapper.FUNCTION.id] === functioId &&
             x.attrs[AttributeMapper.NUMBER.id] === AttributeMapper.NUMBER.records[NounNumber.singular] &&
             x.attrs[AttributeMapper.CASE.id] === AttributeMapper.CASE.records[Case.Nominativ] &&
             x.attrs[AttributeMapper.GENDER.id] === AttributeMapper.GENDER.records[NounGender.Maskulinum],
@@ -146,7 +164,7 @@ export const getGermanStandardFormFn = (
           : nominativeMasculine,
         function_,
         number,
-        gender,
+        gender ?? null,
         caseValue,
       );
       return isStandardEqual(variant.value, standardForm);

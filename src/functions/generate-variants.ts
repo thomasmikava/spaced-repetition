@@ -3,10 +3,9 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { CardTypeConfiguration, SortBy, VariantGroup } from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
-import { groupArray, sortArrayByOriginalArray } from '../utils/array';
 import { isMatch } from '../utils/matcher';
 import type { Helper } from './generate-card-content';
-import type { GeneralTestableCard, StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
+import type { StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
 import { getIsStandardFormFn } from './standard-forms';
 
 function _generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
@@ -51,10 +50,21 @@ function _generateTestableCards(card: StandardCard, helper: Helper): StandardTes
   let lastGroupKey: string | undefined | null = undefined;
   const isStandardForm = getIsStandardFormFn(card, allStandardizedVariants);
   groups.forEach((group, groupIndex) => {
-    const hasGroupViewMode = group.variants.length > 1 || !!group.gr?.forcefullyGroup;
+    const variants = grandVariants[groupIndex];
+    // debugger;
+    const standardness = variants.map((variant) => isStandardForm(variant));
+    const nonStandardCount = standardness.filter((x) => !x).length;
+    // if ((grandVariants[groupIndex + 1]?.map((variant) => isStandardForm(variant)).filter((x) => !x).length || 0) > 0) {
+    //   debugger;
+    // }
+    if (nonStandardCount === 0 && group.gr?.skipIfStandard) return;
+
+    const isGroupStandard =
+      nonStandardCount === 0 ? true : nonStandardCount <= maxAllowedNonStandardForms ? undefined : false;
+
+    const hasGroupViewMode = variants.length > 1 || !!group.gr?.forcefullyGroup;
     const hasIndividualViewMode = !hasGroupViewMode;
     // TODO: go through all tags and set default tags as well
-    const variants = grandVariants[groupIndex];
     const groupMeta: StandardTestableCardGroupMeta = {
       matcherId: group.matcherId,
       groupViewId: group.groupViewId,
@@ -63,10 +73,6 @@ function _generateTestableCards(card: StandardCard, helper: Helper): StandardTes
       variants,
       gr: group.gr,
     };
-    const standardness = group.variants.map((variant) => isStandardForm(variant));
-    const nonStandardCount = standardness.filter((x) => !x).length;
-    const isGroupStandard =
-      nonStandardCount === 0 ? true : nonStandardCount <= maxAllowedNonStandardForms ? undefined : false;
     group.variants.forEach((variant, i) => {
       testable.push({
         card: newCard,
@@ -90,7 +96,8 @@ function _generateTestableCards(card: StandardCard, helper: Helper): StandardTes
     lastGroupLevel++;
     lastGroupKey = hasGroupViewMode ? ('gr-' + (group.matcherId || '')).toLocaleLowerCase() : null;
   });
-  return addGroupStandardFormFlag(testable);
+
+  return testable;
 }
 
 const shouldSkipTest = (card: StandardCard, variantGroup: VariantGroup | null | undefined): boolean => {
@@ -169,36 +176,6 @@ const sortVariants = (sortStrategy: SortBy[], variants: StandardCardVariant[]): 
   return variants.sort((a, b) => compare(a, b));
 };
 
-const addGroupStandardFormFlag = <T extends GeneralTestableCard>(variants: T[]): T[] => {
-  return groupArray(
-    variants,
-    (e) => e.groupViewKey,
-    (grouped): T[] => {
-      const areAllStandard = grouped.every((e) => e.isStandardForm);
-      if (!areAllStandard) return grouped;
-      return grouped.map((e) => ({ ...e, isGroupStandardForm: true }));
-    },
-  ).flat(1);
-};
-
-function removeUnnecessaryGroups<T extends GeneralTestableCard>(allVariants: T[]): T[] {
-  const nullGroup = '#J@*@!';
-  const grouped = groupArray(
-    allVariants,
-    (variant) => variant.groupViewKey ?? nullGroup,
-    (groupedElements) => {
-      if (groupedElements[0].isGroupStandardForm !== false) {
-        const filtered = groupedElements.filter((e) => !e.isStandardForm);
-        return filtered.length > 0 ? filtered : [groupedElements[0]];
-      }
-      return groupedElements;
-    },
-  );
-  const newVariants = grouped.flat(1);
-  if (newVariants.length === allVariants.length) return allVariants;
-  return sortArrayByOriginalArray(newVariants, allVariants);
-}
-
 export function generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
-  return removeUnnecessaryGroups(_generateTestableCards(card, helper));
+  return _generateTestableCards(card, helper);
 }

@@ -189,8 +189,8 @@ const TestingThingsPage = () => {
       for (const course of courses) {
         await importFullCourse(course);
       }
+      console.log('imported all courses');
     })();
-    console.log('imported all courses');
   };
   useEffect(() => {
     (window as any).createWordsInDB = createWordsInDB;

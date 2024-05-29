@@ -20,7 +20,11 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
     () =>
       !wordsInfo
         ? undefined
-        : uniquelize(wordsInfo.map((courseInfo) => courseInfo.lessons.map((l) => l.words.map((w) => w.id))).flat(2)),
+        : uniquelize(
+            wordsInfo
+              .map((courseInfo) => courseInfo.lessons.map((l) => l.words.filter((e) => !e.h).map((w) => w.id)))
+              .flat(2),
+          ),
     [wordsInfo],
   );
 

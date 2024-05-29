@@ -177,6 +177,7 @@ export interface VariantGroup {
   matcher: CategoryAttrsMatcher | null;
   skipTest?: boolean | { only1variant: boolean };
   skip?: boolean;
+  skipIfStandard?: boolean;
   groupViewId?: string;
   indViewId?: string;
   testViewId?: string;
@@ -458,6 +459,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         },
         groupViewId: 'gr',
         testViewId: 'gr-test',
+        skipIfStandard: true,
       })),
       { id: 'skip', matcher: null, skip: true },
     ],
@@ -609,15 +611,18 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
             attrs: {
               [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[func],
               [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[number],
+              [AttributeMapper.GENDER.id]: null,
             },
           },
           groupViewId: 'gr',
           testViewId: 'gr-test',
           forcefullyGroup: true,
+          skipIfStandard: true,
         }),
       ),
       ...cartesianProduct(
         [
+          PronounFunction.Declanation,
           PronounFunction.Attributive,
           PronounFunction.Interrogative,
           PronounFunction.NonAttributiveWithArticle,
@@ -633,16 +638,16 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
             category: null,
             attrs: {
               [AttributeMapper.FUNCTION.id]: AttributeMapper.FUNCTION.records[func],
-              // [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[number],
               [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[gender],
             },
           },
           groupViewId: 'gr',
           testViewId: 'gr-test',
           forcefullyGroup: true,
+          skipIfStandard: true,
         }),
       ),
-      { id: 'rest', matcher: { category: null } },
+      { id: 'rest', matcher: { category: null }, skip: true },
     ],
     views: [
       {
