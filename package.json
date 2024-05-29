@@ -29,6 +29,7 @@
     "react-router-dom": "^6.22.3",
     "simple-subscriptions": "^0.0.3",
     "use-debounce": "^10.0.0",
+    "usehooks-ts": "^3.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

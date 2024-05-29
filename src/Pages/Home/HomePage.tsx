@@ -29,8 +29,10 @@ const HomePage = () => {
 };
 
 const SearchBox = () => {
+  const navigate = useNavigate();
+  const onClick = () => navigate(paths.app.search());
   return (
-    <div className={cssModule.specialBox}>
+    <div className={cssModule.specialBox} onClick={onClick}>
       <SearchOutlined />
       <span className={cssModule.title}>Search words</span>
     </div>

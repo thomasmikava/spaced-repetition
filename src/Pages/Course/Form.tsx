@@ -7,6 +7,7 @@ import { Checkbox } from '../../ui/Checkbox/Checkbox';
 import Button from '../../ui/Button';
 import Form from 'antd/es/form';
 import Select from '../../ui/Select';
+import { useLangToLearnOptions, useTranslationLangOptions } from '../../hooks/langs';
 
 export interface CourseFormData {
   title: string;
@@ -64,6 +65,9 @@ export const CourseForm: FC<CourseFormProps> = ({
   const colSpan = 16;
   const wrapperCol = { offset: labelSpan, span: colSpan };
 
+  const learnLangOptions = useLangToLearnOptions();
+  const translationLangOptions = useTranslationLangOptions();
+
   return (
     <Form
       labelCol={{ span: labelSpan }}
@@ -96,15 +100,7 @@ export const CourseForm: FC<CourseFormProps> = ({
             name='langToLearn'
             control={control}
             defaultValue={defaultData.langToLearn}
-            render={({ field }) => (
-              <Select
-                options={[
-                  { value: 'de', label: 'German' },
-                  { value: 'fr', label: 'French' },
-                ]}
-                {...field}
-              />
-            )}
+            render={({ field }) => <Select options={learnLangOptions} {...field} />}
           />
         </Form.Item>
 
@@ -113,16 +109,7 @@ export const CourseForm: FC<CourseFormProps> = ({
             name='translationLang'
             control={control}
             defaultValue={defaultData.translationLang}
-            render={({ field }) => (
-              <Select
-                options={[
-                  { value: 'de', label: 'German' },
-                  { value: 'fr', label: 'French' },
-                  { value: 'en', label: 'English' },
-                ]}
-                {...field}
-              />
-            )}
+            render={({ field }) => <Select options={translationLangOptions} {...field} />}
           />
         </Form.Item>
 

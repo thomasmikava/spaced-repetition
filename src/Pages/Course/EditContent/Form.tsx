@@ -22,6 +22,7 @@ import Select from '../../../ui/Select';
 import { useValidation } from './Form.validation';
 import React from 'react';
 import type { Helper } from '../../../functions/generate-card-content';
+import { useWordTypeChoices } from '../../../hooks/cards';
 
 export interface KnownWordInfo {
   fieldUniqueId: string;
@@ -390,9 +391,13 @@ const ExistingWord: FC<{
     <div style={{ display: 'flex', gap: 10 }}>
       <div style={{ width: '100%' }}>
         <div>
-          <span>{helper.getCardType(value.word.type, value.word.lang)?.abbr}</span> <span>{value.word.value}</span>
+          <span style={{ marginRight: 5, opacity: 0.5 }}>
+            {helper.getCardType(value.word.type, value.word.lang)?.abbr}
+          </span>
+          <span>{value.word.value}</span>
+          <span style={{ margin: '0 10px' }}> - </span>
+          <span>{value.word.translation}</span>
         </div>
-        <div>{value.word.translation}</div>
       </div>
       <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
     </div>
@@ -416,7 +421,7 @@ const SearchWord: FC<{
 
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } = useSearchWords({
     lang: formBaseInfo.langToLearn,
-    searchValue: debouncedSearchValue,
+    searchValue: debouncedSearchValue.trim(),
     translationLang: formBaseInfo.translationLang,
     wordType: wordDisplayType ?? undefined,
     limit: 5,
@@ -438,7 +443,7 @@ const SearchWord: FC<{
     setValue(fieldKey, {
       type: 'word',
       subType: 'custom-word',
-      value: debouncedSearchValue,
+      value: debouncedSearchValue.trim(),
       wordDisplayType: wordDisplayType ?? DEFAULT_WORD_DISPLAY_TYPE,
       translation: '',
       fieldUniqueId: Math.random().toString(),
@@ -446,7 +451,7 @@ const SearchWord: FC<{
     setTimeout(() => setFocus(`${fieldKey}.translation`), 10);
   }, [debouncedSearchValue, fieldKey, wordDisplayType, setValue, setFocus]);
 
-  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper);
+  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper) || [];
 
   if (value.type !== 'word' || value.subType !== 'search-word') return null;
 
@@ -496,7 +501,11 @@ const SearchWord: FC<{
                 <React.Fragment key={index}>
                   {page.words.map((word) => (
                     <div key={word.id} onClick={() => handleChoose(word)}>
-                      <span>{helper.getCardType(word.type, word.lang)?.abbr}</span> <span>{word.value}</span>
+                      <span style={{ marginRight: 5, opacity: 0.5 }}>
+                        {helper.getCardType(word.type, word.lang)?.abbr}
+                      </span>
+                      <span>{word.value}</span>
+                      <span style={{ margin: '0 10px' }}> - </span>
                       <span>{word.translation}</span>
                     </div>
                   ))}
@@ -514,13 +523,6 @@ const SearchWord: FC<{
   );
 };
 
-const useWordTypeChoices = (lang: string, { getSupportedCardTypes }: Helper) => {
-  return useMemo(
-    () => getSupportedCardTypes(lang).map((e) => ({ value: e.id, label: e.name })),
-    [lang, getSupportedCardTypes],
-  );
-};
-
 const CustomWord: FC<{
   onRemove: () => void;
   fieldKey: `children.${number}`;
@@ -528,7 +530,7 @@ const CustomWord: FC<{
   formBaseInfo: FormBaseInfo;
   helper: Helper;
 }> = ({ control, onRemove, formBaseInfo, fieldKey, helper }) => {
-  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper);
+  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper) || [];
   return (
     <div>
       <div style={{ width: '100%', display: 'flex', gap: 10 }}>

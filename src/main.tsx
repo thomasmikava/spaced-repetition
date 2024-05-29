@@ -23,6 +23,7 @@ import { PageGuard } from './routes/PageGuard.tsx';
 import { paths } from './routes/paths.ts';
 import { queryClient } from './utils/queries.ts';
 import ExploreCoursesPage from './Pages/Course/ExploreCoursesPage.tsx';
+import SearchPage from './Pages/Search/SearchPage.tsx';
 
 const router = createBrowserRouter(
   [
@@ -83,6 +84,14 @@ const router = createBrowserRouter(
       element: (
         <PageGuard onlyAuth>
           <ExploreCoursesPage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: paths.app.search.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <SearchPage />
         </PageGuard>
       ),
     },

@@ -77,19 +77,19 @@ const filterWordIds = (query: { courseId: number; lessonIds: number[] }, data: G
   ];
 };
 
-export const useSearchWords = (query: Omit<SearchWordReqDTO, 'skip'>) => {
+export const useSearchWords = (query?: Omit<SearchWordReqDTO, 'skip'>) => {
   return useInfiniteQuery({
-    queryFn: ({ pageParam }) => wordController.searchWords({ ...query, skip: pageParam ?? 0 }),
-    queryKey: WordQueryKeys.searchWords(query),
+    queryFn: ({ pageParam }) => wordController.searchWords({ ...query!, skip: pageParam ?? 0 }),
+    queryKey: WordQueryKeys.searchWords(query!),
     staleTime: 1000 * 60,
     retry: false,
-    enabled: query.searchValue !== '',
+    enabled: !!query && query.searchValue !== '',
     initialPageParam: 0,
-    getPreviousPageParam: (firstPage, allPages, firstPageParam) => Math.max(0, firstPageParam - query.limit),
+    getPreviousPageParam: (firstPage, allPages, firstPageParam) => Math.max(0, firstPageParam - query!.limit),
     getNextPageParam: (lastPage, allPages, lastPageParam) => {
       if (lastPage.isLastPage) return undefined;
-      if (lastPage.words.length < query.limit) return undefined;
-      return lastPageParam + query.limit;
+      if (lastPage.words.length < query!.limit) return undefined;
+      return lastPageParam + query!.limit;
     },
   });
 };

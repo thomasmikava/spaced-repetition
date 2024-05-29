@@ -15,6 +15,7 @@ export const paths = addPrefix('/')({
       }, '/:courseId/edit-content'),
     }),
     explore: '/explore',
+    search: '/search',
     lesson: {
       page: withParams(
         (lessonId: number, courseId: number) => `/course/${courseId}/lesson/${lessonId}`,
