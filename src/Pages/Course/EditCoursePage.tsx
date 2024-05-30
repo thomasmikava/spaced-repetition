@@ -3,8 +3,11 @@ import { useCourseById, useUpdateCourse } from '../../api/controllers/courses/co
 import type { CourseFormData } from './Form';
 import { CourseForm } from './Form';
 import { paths } from '../../routes/paths';
+import LoadingPage from '../Loading/LoadingPage';
+import { useSignInUserData } from '../../contexts/Auth';
 
 const EditCoursePage = () => {
+  const userData = useSignInUserData();
   const params = useParams();
   const courseId = +(params.courseId as string);
   const navigate = useNavigate();
@@ -19,7 +22,7 @@ const EditCoursePage = () => {
     );
   };
 
-  if (isCourseLoading) return <div>Loading course...</div>;
+  if (isCourseLoading) return <LoadingPage />;
   if (!course) return <div>Course not found</div>;
 
   return (
@@ -37,6 +40,7 @@ const EditCoursePage = () => {
           langToLearn: course.langToLearn,
           translationLang: course.translationLang,
         }}
+        officialLangs={userData.adminLangs || undefined}
         submitLabel='Save'
       />
     </div>

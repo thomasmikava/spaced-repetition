@@ -10,6 +10,7 @@ import { withNoEventAction } from '../../utils/event';
 import cssModule from '../../App.module.css';
 import { useHelper } from '../hooks/text-helpers';
 import { useWords } from './useWords';
+import LoadingPage from '../Loading/LoadingPage';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless';
@@ -124,7 +125,7 @@ export const ReviewPageLoader = () => {
 
   const isLoading = !helper || areWordsLoading;
   if (isLoading) {
-    return <div className='body'>Loading...</div>;
+    return <LoadingPage />;
   }
 
   if (!words || !helper) return <div className='body'>Error...</div>;

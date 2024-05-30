@@ -116,7 +116,7 @@ export const CourseForm: FC<CourseFormProps> = ({
         {canSelectOfficiality && (
           <Form.Item wrapperCol={wrapperCol}>
             <Controller
-              name='isPublic'
+              name='isOfficial'
               control={control}
               defaultValue={defaultData.isOfficial}
               render={({ field: { value, ...field } }) => <Checkbox label='Official' checked={value} {...field} />}

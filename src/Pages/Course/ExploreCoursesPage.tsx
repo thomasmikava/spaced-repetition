@@ -5,6 +5,7 @@ import appCssModule from '../../App.module.css';
 import { useSearchCourses } from '../../api/controllers/courses/courses.query';
 import { paths } from '../../routes/paths';
 import { CourseBox } from './Box';
+import LoadingPage from '../Loading/LoadingPage';
 
 const ExploreCoursesPage = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const ExploreCoursesPage = () => {
   };
 
   if (isError) return <div>Error</div>;
-  if (!data) return <div>Loading...</div>;
+  if (!data) return <LoadingPage />;
   return (
     <div className='body'>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

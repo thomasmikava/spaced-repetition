@@ -12,6 +12,7 @@ import {
 } from '../functions/storage';
 import type { AnyReviewHistory } from '../functions/reviews';
 import { removeKeys } from '../utils/object';
+import LoadingPage from '../Pages/Loading/LoadingPage';
 
 interface ReviewContextProps {}
 const ReviewContext = createContext<ReviewContextProps | undefined>(undefined);
@@ -55,7 +56,7 @@ export const ReviewContextProvider: FC<{ children: ReactElement }> = ({ children
     setUpdated(true);
   }, [data, updated]);
 
-  if (!updated && isSignedIn) return <div className='body'>Loading...</div>;
+  if (!updated && isSignedIn) return <LoadingPage />;
   return <ReviewContext.Provider value={{}}>{children}</ReviewContext.Provider>;
 };
 

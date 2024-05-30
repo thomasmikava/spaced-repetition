@@ -8,13 +8,14 @@ import { CardType } from '../../database/types';
 import { getCardViewContent2 } from '../../functions/generate-card-content';
 import type { CardWithProbability } from '../../functions/reviewer';
 import { Reviewer } from '../../functions/reviewer';
-import { CardViewMode, secondsUntilProbabilityIsHalf } from '../../functions/reviews';
+import { CardViewMode, initialTestS, secondsUntilProbabilityIsHalf } from '../../functions/reviews';
 import { formatTime } from '../../utils/time';
 import { useHelper } from '../hooks/text-helpers';
 import { withNoEventAction } from '../../utils/event';
 import { useLatestCallback } from '../../utils/hooks';
 import { useWords } from './useWords';
 import { CardTypeMapper } from '../../database/card-types';
+import LoadingPage from '../Loading/LoadingPage';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless';
@@ -150,7 +151,10 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
                 <span>due: {formatTime(entries.cards[index].reviewDue)}; </span>
                 {entries.cards[index].historyRecord && (
                   <span>
-                    Half: {formatTime(secondsUntilProbabilityIsHalf(entries.cards[index].historyRecord!.lastS))}
+                    Half:{' '}
+                    {formatTime(
+                      secondsUntilProbabilityIsHalf(entries.cards[index].historyRecord!.lastS ?? initialTestS),
+                    )}
                   </span>
                 )}
                 {!isView && (
@@ -225,7 +229,7 @@ export const AlgorithmReviewPageLoader = () => {
 
   const isLoading = !helper || areWordsLoading;
   if (isLoading) {
-    return <div className='body'>Loading...</div>;
+    return <LoadingPage />;
   }
 
   if (!words || !helper) return <div className='body'>Error...</div>;

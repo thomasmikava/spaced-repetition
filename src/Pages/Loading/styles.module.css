@@ -1,0 +1,27 @@
+.loadingCard {
+  width: 300px;
+  height: 300px;
+  padding: 20px;
+  background: #2e2e2e;
+  border-radius: 40px;
+  box-shadow: rgba(0, 0, 0, 0.4) 0 5px 10px;
+  animation: heyy 2s infinite;
+}
+.loadingCard img {
+  width: 100%;
+}
+
+@keyframes heyy {
+  0% {
+    transform: rotate3d(1, 1, 1, 0deg);
+  }
+  /* 33% {
+    transform: scale(0.8) rotate(30deg);
+  }
+  66% {
+    transform: scale(0.7) rotate(-30deg);
+  } */
+  100% {
+    transform: rotate3d(1, 1, 1, 360deg);
+  }
+}

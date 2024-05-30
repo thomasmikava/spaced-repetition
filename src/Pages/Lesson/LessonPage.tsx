@@ -19,6 +19,7 @@ import { LessonBody } from './Body';
 import { useFilteredLessons } from './useFilteredLessons';
 import { useSignInUserData } from '../../contexts/Auth';
 import { AddToMyCoursesButton } from '../Course/AddToMyCourses';
+import LoadingPage from '../Loading/LoadingPage';
 
 const LessonPage = () => {
   const userData = useSignInUserData();
@@ -72,7 +73,7 @@ const LessonPage = () => {
   };
 
   if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || !helper) {
-    return <div>Loading lesson...</div>;
+    return <LoadingPage />;
   }
 
   if (!myMainCourses) return <div>Error</div>;
@@ -154,6 +155,7 @@ const LessonPage = () => {
           })}
         </tbody>
       </table>
+      <br />
       <Modal
         title='Modal'
         open={isDeleteModalVisible}

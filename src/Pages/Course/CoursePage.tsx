@@ -13,6 +13,7 @@ import { LessonBody } from '../Lesson/Body';
 import { useFilteredLessons } from '../Lesson/useFilteredLessons';
 import { useSignInUserData } from '../../contexts/Auth';
 import { AddToMyCoursesButton } from './AddToMyCourses';
+import LoadingPage from '../Loading/LoadingPage';
 
 const CoursePage = () => {
   const userData = useSignInUserData();
@@ -61,7 +62,7 @@ const CoursePage = () => {
     );
   };
 
-  if (isLessonLoading || isCourseLoading || isMyMainCourseLoading) return <div>Loading course...</div>;
+  if (isLessonLoading || isCourseLoading || isMyMainCourseLoading) return <LoadingPage />;
 
   if (!myMainCourses) return <div>Error</div>;
 
@@ -105,6 +106,7 @@ const CoursePage = () => {
       </div>
       {isInMyCoursesList ? <ReviewButtons courseId={courseId} /> : <AddToMyCoursesButton courseId={courseId} />}
       <LessonBody courseId={courseId} lessonId={null} lessons={lessons} />
+      <br />
       <Modal
         title='Modal'
         open={isDeleteModalVisible !== 'closed'}

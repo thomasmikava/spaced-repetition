@@ -14,6 +14,7 @@ import Button from '../../ui/Button';
 import ArrowLeftOutlined from '@ant-design/icons/lib/icons/ArrowLeftOutlined';
 import { useNavigate } from 'react-router-dom';
 import { paths } from '../../routes/paths';
+import LoadingPage from '../Loading/LoadingPage';
 
 const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
   const navigate = useNavigate();
@@ -131,7 +132,7 @@ const SearchPageLoader = () => {
   const helper = useHelper();
 
   if (!helper) {
-    return <div>Loading...</div>;
+    return <LoadingPage />;
   }
 
   return <SearchPage helper={helper} />;

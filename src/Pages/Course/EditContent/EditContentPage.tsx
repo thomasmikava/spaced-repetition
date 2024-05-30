@@ -13,6 +13,7 @@ import { ContentForm, DEFAULT_WORD_DISPLAY_TYPE } from './Form';
 import { paths } from '../../../routes/paths';
 import { isNonNullable } from '../../../utils/array';
 import { useHelper } from '../../hooks/text-helpers';
+import LoadingPage from '../../Loading/LoadingPage';
 
 const EditContentPage = () => {
   const params = useParams();
@@ -43,7 +44,7 @@ const EditContentPage = () => {
     return calculateInitialData({ courseId, lessonId, lessons, courseWords });
   }, [courseId, courseWords, lessonId, lessons]);
 
-  if (isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper) return <div>Loading...</div>;
+  if (isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper) return <LoadingPage />;
   if (!course || !initialData) return <div>Error</div>;
 
   const handleSubmit = (newData: FormData) => {

@@ -18,6 +18,7 @@ import type {
   WordDTO,
 } from '../api/controllers/words/words.schema';
 import { CardTypeMapper } from '../database/card-types';
+import LoadingPage from './Loading/LoadingPage';
 
 const NewWordsPage: FC<{ helper: Helper }> = () => {
   const [langToLearn, setLangToLearn] = useLocalStorage('lang-to-learn', null as null | string);
@@ -72,7 +73,7 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
     navigator.clipboard.writeText(text);
   };
 
-  if (isLoadingWordIds || isLoadingCourses) return <div>Loading...</div>;
+  if (isLoadingWordIds || isLoadingCourses) return <LoadingPage />;
   if (!mainCourses || !wordsInfo) return <div>No courses</div>;
 
   return (
