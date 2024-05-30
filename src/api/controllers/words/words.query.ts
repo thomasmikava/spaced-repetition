@@ -1,7 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { queryClient, useQuery } from '../../../utils/queries';
 import { wordController } from './words.controller';
-import type { GetWordIdsReqDTO, GetWordIdsResDTO, GetWordsReqDTO, SearchWordReqDTO } from './words.schema';
+import type {
+  GetLanguageDictionaryReqDTO,
+  GetWordIdsReqDTO,
+  GetWordIdsResDTO,
+  GetWordsReqDTO,
+  SearchWordReqDTO,
+} from './words.schema';
 import { useMemo } from 'react';
 import { getCourseLessonsOffline } from '../lessons/lessons.query';
 
@@ -17,6 +23,7 @@ export const WordQueryKeys = {
     `word:searchWords`,
     { courseId: query.courseId ?? null, lessonId: query.lessonId ?? null },
   ],
+  getDictionary: (query: GetLanguageDictionaryReqDTO) => [`word:lang`, query],
 };
 
 export const useCourseWords = (query: GetWordsReqDTO, avoid = false) => {
@@ -33,6 +40,14 @@ export const useMyCoursesWords = (avoid = false) => {
     enabled: !avoid,
   });
 };
+export const useDictionary = (lang: string | undefined | null) => {
+  return useQuery({
+    queryFn: () => wordController.getDictionary({ lang: lang as string }),
+    queryKey: WordQueryKeys.getDictionary({ lang: lang as string }),
+    enabled: !!lang,
+  });
+};
+
 export const useWordIds = (query: GetWordIdsReqDTO, avoid = false) => {
   const previousDataset = useMemo(() => {
     if (query.courseId && !query.lessonId) {

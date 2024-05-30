@@ -3,6 +3,8 @@ import { apiRequest } from '../../api';
 import type { IRequest } from '../../request';
 import type {
   CreateManyWordsDTO,
+  GetLanguageDictionaryReqDTO,
+  GetLanguageDictionaryResDTO,
   GetMyCoursesWordsResDTO,
   GetWordIdsReqDTO,
   GetWordIdsResDTO,
@@ -22,6 +24,11 @@ class WordController {
   getMyMainCoursesWords = async (): Promise<GetMyCoursesWordsResDTO> => {
     return this.request.get('/words/my-courses');
   };
+
+  getDictionary = async (query: GetLanguageDictionaryReqDTO): Promise<GetLanguageDictionaryResDTO> => {
+    return this.request.get('/words/dictionary', query);
+  };
+
   getWordIds = async (query: GetWordIdsReqDTO): Promise<GetWordIdsResDTO> => {
     return this.request.get('/word-ids', query);
   };

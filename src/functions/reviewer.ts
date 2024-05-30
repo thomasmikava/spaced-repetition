@@ -3,7 +3,7 @@ import type { StandardCard } from '../database/types';
 import type { Helper } from './generate-card-content';
 import { generateTestableCards } from './generate-variants';
 import { PreviousReviews } from './previous-reviews';
-import type { GroupReviewHistory, IndividualReviewHistory, StandardTestableCard, TestReviewHistory } from './reviews';
+import type { StandardTestableCard, AnyReviewHistory } from './reviews';
 import {
   CardViewMode,
   DEFAULT_REVIEW_DUE,
@@ -15,15 +15,16 @@ import {
   calculateProbability,
   dueDateUntilProbabilityIsHalf,
   getRecordUniqueKey,
+  initialTestS,
   initialViewS,
 } from './reviews';
 import { addUpdatedItemsInStorage, getDbRecord } from './storage';
 
 export interface CardWithProbability {
   record: StandardTestableCard;
-  historyRecord?: TestReviewHistory;
-  reviewRecord?: TestReviewHistory;
-  groupVewRecord?: TestReviewHistory;
+  historyRecord?: AnyReviewHistory;
+  reviewRecord?: AnyReviewHistory;
+  groupVewRecord?: AnyReviewHistory;
   probability: number;
   isCriticalForReview?: boolean;
   isReadyForReview?: boolean;
@@ -181,7 +182,10 @@ export class Reviewer {
         const lastNormalizedViewDate = lastGroupViewDate ?? historyRecord?.lastDate;
         const probability =
           historyRecord && lastNormalizedViewDate
-            ? calculateProbability(Math.floor(currentDate / 1000) - lastNormalizedViewDate, historyRecord.lastS)
+            ? calculateProbability(
+                Math.floor(currentDate / 1000) - lastNormalizedViewDate,
+                historyRecord.lastS ?? initialTestS,
+              )
             : 0;
         const reviewDue = historyRecord
           ? getReviewDue(historyRecord, lastNormalizedViewDate, currentDate)
@@ -374,17 +378,17 @@ export class Reviewer {
   };
 }
 
-function getReviewDue(record: TestReviewHistory, lastGroupViewDate: number | undefined, currentDateMS: number) {
+function getReviewDue(record: AnyReviewHistory, lastGroupViewDate: number | undefined, currentDateMS: number) {
   return dueDateUntilProbabilityIsHalf(
     lastGroupViewDate ?? record.lastDate,
     Math.floor(currentDateMS / 1000),
-    record.lastS,
+    record.lastS ?? initialTestS,
   );
 }
 
 function getFirstDue(
-  groupRecord: GroupReviewHistory | undefined,
-  individualRecord: IndividualReviewHistory | undefined,
+  groupRecord: AnyReviewHistory | undefined,
+  individualRecord: AnyReviewHistory | undefined,
   hasGroupViewMode: boolean,
   groupLastView: number | undefined,
   currentDateMS: number,
@@ -405,13 +409,9 @@ function isReadyToBeReviewed(probability: number, reviewDue: number) {
   return probability <= 0.55 || reviewDue <= REVIEW_MAX_DUE;
 }
 
-// function calculateReviewCoefficient(probability: number) {
-//   return 1 - (2 * (0.5 - probability)) ** 2;
-// }
-
 function calculateViewCoefficient(
-  groupRecord: GroupReviewHistory | undefined,
-  individualRecord: IndividualReviewHistory | undefined,
+  groupRecord: AnyReviewHistory | undefined,
+  individualRecord: AnyReviewHistory | undefined,
   hasGroupViewMode: boolean,
   currentDate: number,
 ) {

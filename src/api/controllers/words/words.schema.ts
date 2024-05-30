@@ -67,6 +67,9 @@ export type WordWithTranslationAndLessonsDTO = WordWithTranslationDTO & {
 export type WordWithTranslationAndLessonsAndVariantsDTO = WordWithTranslationAndLessonsDTO & {
   variants?: BaseWordVariantDTO[];
 };
+export type WordWithTranslationVariantsDTO = WordWithTranslationDTO & {
+  variants?: BaseWordVariantDTO[];
+};
 
 ///
 
@@ -81,6 +84,12 @@ export type GetWordsResDTO = WordWithTranslationAndLessonsAndVariantsDTO[];
 ///
 
 export type GetMyCoursesWordsResDTO = WordWithTranslationAndLessonsAndVariantsDTO[];
+
+///
+export interface GetLanguageDictionaryReqDTO {
+  lang: string;
+}
+export type GetLanguageDictionaryResDTO = WordWithTranslationVariantsDTO[];
 
 ///
 

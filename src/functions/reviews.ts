@@ -54,7 +54,7 @@ export const getRecordUniqueKey = (record: Pick<ReviewWithOptionalDTO, 'wordId' 
   return `${record.wordId}$${record.sKey}`;
 };
 
-interface BaseReviewHistory {
+export interface AnyReviewHistory {
   id?: number;
   uniqueKey: string;
   wordId: number;
@@ -68,25 +68,9 @@ interface BaseReviewHistory {
   /** in seconds */
   lastDate: number;
   savedInDb: boolean;
-}
-
-export interface TestReviewHistory extends BaseReviewHistory {
-  viewMode: CardViewMode.test;
-  lastS: number;
+  lastS: number | null;
   dueDate: number | null;
 }
-export interface IndividualReviewHistory extends BaseReviewHistory {
-  viewMode: CardViewMode.individualView;
-  lastS?: null;
-  dueDate?: null;
-}
-export interface GroupReviewHistory extends BaseReviewHistory {
-  viewMode: CardViewMode.groupView;
-  lastS?: null;
-  dueDate?: null;
-}
-
-export type AnyReviewHistory = TestReviewHistory | IndividualReviewHistory | GroupReviewHistory;
 
 export type AllCardsReviewHistory = Record<string, AnyReviewHistory | undefined>;
 

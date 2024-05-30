@@ -1,16 +1,9 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { MinimalReviewRecordDTO, ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
+import { isNonNullable } from '../utils/array';
 import { formatTime } from '../utils/time';
 import { globalHistory } from './history';
-import type {
-  AllCardsReviewHistory,
-  AnyReviewHistory,
-  CardKeys,
-  GroupReviewHistory,
-  IndividualReviewHistory,
-  StandardTestableCard,
-  TestReviewHistory,
-} from './reviews';
+import type { AllCardsReviewHistory, AnyReviewHistory, CardKeys, StandardTestableCard } from './reviews';
 import {
   CardViewMode,
   calculateHalfLifeCoefficient,
@@ -103,7 +96,7 @@ export class PreviousReviews {
         ...record,
         uniqueKey: key,
         savedInDb: true,
-      } as AnyReviewHistory;
+      };
     }
     for (const record of notSavedData) {
       const key = getRecordUniqueKey(record);
@@ -111,7 +104,7 @@ export class PreviousReviews {
         ...record,
         uniqueKey: key,
         savedInDb: false,
-      } as AnyReviewHistory;
+      };
     }
     this.history = history;
   };
@@ -129,9 +122,10 @@ export class PreviousReviews {
     }
   }
 
-  getCardHistory(card: StandardTestableCard, mode: CardViewMode.test): TestReviewHistory | undefined;
-  getCardHistory(card: StandardTestableCard, mode: CardViewMode.individualView): IndividualReviewHistory | undefined;
-  getCardHistory(card: StandardTestableCard, mode: CardViewMode.groupView): GroupReviewHistory | undefined;
+  getHistoryRecords = () => {
+    return Object.values(this.history).filter(isNonNullable);
+  };
+
   getCardHistory(card: StandardTestableCard, mode: CardViewMode): AnyReviewHistory | undefined {
     const key = this.getFinalKey(card, mode);
     if (!key) return undefined;
@@ -206,7 +200,7 @@ export class PreviousReviews {
     let newValue: AnyReviewHistory;
 
     if (mode === CardViewMode.groupView || mode === CardViewMode.individualView) {
-      const currentValue = history[key] as IndividualReviewHistory | GroupReviewHistory;
+      const currentValue = history[key];
       if (currentValue) {
         newValue = history[key] = {
           ...currentValue,
@@ -220,7 +214,7 @@ export class PreviousReviews {
         newValue = history[key] = {
           uniqueKey: key,
           sKey,
-          viewMode: mode,
+          // viewMode: mode,
           corr: success ? 1 : 0,
           rep: 1,
           lc: success,
@@ -233,10 +227,10 @@ export class PreviousReviews {
       }
     } else {
       const isGroup = !!card.groupViewKey;
-      const currentValue = history[key] as TestReviewHistory;
+      const currentValue = history[key];
       if (currentValue) {
         const passedTime = dateInSec - currentValue.lastDate;
-        const newS = updateS(success, isGroup, currentValue.lastS, passedTime);
+        const newS = updateS(success, isGroup, currentValue.lastS ?? initialTestS, passedTime);
         const dueDate = willThereBeAnotherRepetition
           ? dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS)
           : null;
@@ -258,7 +252,7 @@ export class PreviousReviews {
         newValue = history[key] = {
           uniqueKey: key,
           sKey,
-          viewMode: mode,
+          // viewMode: mode,
           lc: success,
           lastDate: dateInSec,
           corr: success ? 1 : 0,
