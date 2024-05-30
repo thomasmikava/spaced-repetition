@@ -11,7 +11,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'German Space Repetition',
+        name: 'Memoriko - Space Repetition',
         short_name: 'G SP',
         theme_color: '#242424',
         icons: [

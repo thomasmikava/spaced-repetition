@@ -1,0 +1,49 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #2e2e2e;
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  height: 64px;
+  box-shadow: rgba(0, 0, 0, 0.4) 0 0 12px;
+  padding: 0 50px;
+}
+
+@media (min-width: 1500px) {
+  .header {
+    width: unset;
+    padding: 0 calc((100vw - 1400px) / 2);
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 10px;
+  }
+}
+
+.inCenter {
+  justify-content: center;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.middle {
+  flex: 1;
+}
+
+.logo {
+  width: 300px;
+  max-width: 100%;
+}
+
+.avatarDropdown {
+  justify-self: flex-end;
+  cursor: pointer;
+}

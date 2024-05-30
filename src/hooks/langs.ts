@@ -8,6 +8,8 @@ interface Option<T> {
 export const useLangToLearnOptions = () => {
   return useMemo(
     (): Option<string>[] => [
+      { value: 'en', label: 'English' },
+      { value: 'ka', label: 'Georgian' },
       { value: 'de', label: 'German' },
       { value: 'fr', label: 'French' },
     ],
@@ -18,9 +20,11 @@ export const useLangToLearnOptions = () => {
 export const useTranslationLangOptions = () => {
   return useMemo(
     (): Option<string>[] => [
+      { value: 'en', label: 'English' },
+      { value: 'ka', label: 'Georgian' },
       { value: 'de', label: 'German' },
       { value: 'fr', label: 'French' },
-      { value: 'en', label: 'English' },
+      { value: 'ru', label: 'Russian' },
     ],
     [],
   );
