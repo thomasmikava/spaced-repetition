@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-constraint */
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -5,10 +6,13 @@ import { useCourseById, useUpdateCourseContent } from '../../../api/controllers/
 import { useCourseLessons } from '../../../api/controllers/lessons/lessons.query';
 import type { LessonDTO, LessonUpdateActionDTO } from '../../../api/controllers/lessons/lessons.schema';
 import { useCourseWords } from '../../../api/controllers/words/words.query';
-import type { WordWithTranslationAndLessonsDTO } from '../../../api/controllers/words/words.schema';
+import type {
+  WordWithTranslationAndLessonsDTO,
+  WordWithTranslationDTO,
+} from '../../../api/controllers/words/words.schema';
 import { removeKeys } from '../../../utils/object';
 import { useFilteredLessons } from '../../Lesson/useFilteredLessons';
-import type { FormData, KnownWordInfo, LessonInfo, WordInfo } from './Form';
+import type { FormData, LessonInfo, WordInfo } from './Form';
 import { ContentForm, DEFAULT_WORD_DISPLAY_TYPE } from './Form';
 import { paths } from '../../../routes/paths';
 import { isNonNullable } from '../../../utils/array';
@@ -56,19 +60,23 @@ const EditContentPage = () => {
   };
 
   const handleSubmit = (newData: FormData) => {
+    console.log('newData', newData);
     const convertedData = convertLessonUpdates(parentLessonId, newData.children, initialData.children);
-    updateCourseContent(
-      { courseId, actions: convertedData },
-      {
-        onSuccess: gotoCourseLesson,
-      },
-    );
+    if (convertedData.length === 0) gotoCourseLesson();
+    else {
+      updateCourseContent(
+        { courseId, actions: convertedData },
+        {
+          onSuccess: gotoCourseLesson,
+        },
+      );
+    }
   };
 
   return (
-    <div className='body'>
-      Edit Content Page
-      <div style={{ width: 1000, maxWidth: '100%' }}>
+    <div className='body' style={{ justifyContent: 'flex-start' }}>
+      <h1>Edit Content Page</h1>
+      <div style={{ width: '100%' }}>
         <ContentForm
           isCourseLevel={!lessonId}
           langToLearn={course.langToLearn}
@@ -94,21 +102,26 @@ const calculateInitialData = ({
   lessonId: number | undefined;
   lessons: LessonDTO[];
   courseWords: WordWithTranslationAndLessonsDTO[];
-}): FormData<KnownWordInfo> => {
+}): FormData<WordInfo> => {
   const initialLessons = lessonId
     ? lessons.filter((lesson) => lesson.id === lessonId)
     : lessons.filter((lesson) => lesson.parentLessonId === null);
 
-  function getLessonInfo(lesson: LessonDTO): LessonInfo<KnownWordInfo> {
+  function getLessonInfo(lesson: LessonDTO): LessonInfo<WordInfo> {
     const childLessons = lessons.filter((l) => l.parentLessonId === lesson.id);
     const lessonWords = courseWords
       .filter((word) => word.relations.some((rel) => rel.courseId === courseId && rel.lessonId === lesson.id))
       .map(
-        (word): KnownWordInfo => ({
+        (word): WordInfo => ({
           type: 'word',
-          subType: 'known-word',
+          subType: 'search-word',
           fieldUniqueId: Math.random().toString(),
           word: removeKeys(word, 'relations'),
+          translation: word.translation || '',
+          advancedTranslation: word.advancedTranslation ?? null,
+          wordValue: word.value,
+          changed: false,
+          wordDisplayType: word.mainType ?? (word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : word.type),
         }),
       );
     return {
@@ -126,34 +139,41 @@ const calculateInitialData = ({
   };
 };
 
+const getCustomTranslation = ({
+  word,
+  translation,
+}: WordInfo): { translation: string; translationVariants: any[] | null } | undefined => {
+  if (!word) return undefined;
+  if (translation === word.translation || translation.trim() === word.translation?.trim()) return undefined;
+  return { translation, translationVariants: word.advancedTranslation ?? null };
+};
+const getTranslation = ({ translation }: WordInfo): { translation: string; translationVariants: any[] | null } => {
+  return { translation, translationVariants: null };
+};
+
 const convertLessonUpdates = (
   rootParentLessonId: number | null,
   newData: LessonInfo[],
-  initialData: LessonInfo<KnownWordInfo>[],
+  initialData: LessonInfo[],
 ): LessonUpdateActionDTO[] => {
   const initialDataTree = buildTree(initialData, rootParentLessonId);
   const newDataTree = buildTree(newData, rootParentLessonId);
   function mapWord(word: WordInfo, isNew: boolean): LessonUpdateActionDTO | null {
-    if (word.subType === 'known-word') {
+    if (word.word) {
       return {
         type: 'existing-word',
         isNewRecord: isNew,
         wordId: word.word.id,
+        customTranslation: getCustomTranslation(word),
       };
     }
-    if (word.subType === 'custom-word') {
-      return {
-        type: 'new-word',
-        wordType: 'phrase',
-        value: word.value,
-        displayType: word.wordDisplayType === DEFAULT_WORD_DISPLAY_TYPE ? null : word.wordDisplayType,
-        translation: {
-          translation: word.translation,
-          translationVariants: [],
-        },
-      };
-    }
-    return null;
+    return {
+      type: 'new-word',
+      wordType: 'phrase',
+      value: word.wordValue,
+      displayType: word.wordDisplayType === DEFAULT_WORD_DISPLAY_TYPE ? null : word.wordDisplayType,
+      translation: getTranslation(word),
+    };
   }
 
   function convertLessonInfo(
@@ -174,9 +194,7 @@ const convertLessonUpdates = (
       };
     }
 
-    const initialWords = initialInfo.children.filter(
-      (child): child is KnownWordInfo => child.type === 'word' && child.subType === 'known-word',
-    );
+    const initialWords = initialInfo.children.filter(isKnownWordInfo);
     const initialWordIds = new Set(initialWords.map((word) => word.word.id));
     const newWords = info.children.filter(isKnownWordInfo).map((word) => word.word.id);
     const deletedWordIds = [...initialWordIds].filter((id) => !newWords.includes(id));
@@ -192,8 +210,8 @@ const convertLessonUpdates = (
         ...info.children
           .filter(isWord)
           .filter((child) => {
-            if (child.subType === 'known-word') {
-              return !initialWordIds.has(child.word.id);
+            if (child.word && initialWordIds.has(child.word.id)) {
+              return getCustomTranslation(child) !== undefined;
             }
             return true;
           })
@@ -277,8 +295,8 @@ const isLesson = <T extends WordInfo>(info: T | LessonInfo<T>): info is LessonIn
 
 const isWord = <T extends WordInfo>(info: T | LessonInfo<T>): info is T => info.type === 'word';
 
-const isKnownWordInfo = (info: WordInfo | LessonInfo<WordInfo>): info is KnownWordInfo =>
-  info.type === 'word' && info.subType === 'known-word';
+const isKnownWordInfo = (info: WordInfo | LessonInfo<WordInfo>): info is WordInfo & { word: WordWithTranslationDTO } =>
+  info.type === 'word' && !!info.word;
 
 const buildTree = <T extends WordInfo>(data: LessonInfo<T>[], rootParentId: number | null) => {
   const tree: { [lessonId in string]?: LessonInfo<T> & { parentLessonId: number | null } } = {};

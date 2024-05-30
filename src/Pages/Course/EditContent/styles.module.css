@@ -36,3 +36,33 @@
   cursor: pointer;
   height: 31.6px;
 }
+
+.suggestionsContainer {
+  margin-top: 5px;
+}
+.wordSuggestion {
+  cursor: pointer;
+  padding: 5px;
+  margin-bottom: 1px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.75);
+  display: flex;
+}
+.suggestedWords .wordSuggestion:last-of-type {
+  border-bottom: none;
+}
+.wordSuggestion:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.wordSuggestion span:nth-of-type(1) {
+  flex: 2;
+  padding: 0 5px;
+}
+.wordSuggestion span:nth-of-type(2) {
+  flex: 5;
+  padding: 0 5px;
+}
+.wordSuggestion span:nth-of-type(3) {
+  flex: 1;
+  text-align: right;
+}

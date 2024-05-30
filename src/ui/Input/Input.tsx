@@ -31,6 +31,7 @@ interface InputProps {
   onChange?: ChangeEventHandler<HTMLInputElement>;
   onEnterClick?: KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   inputProps?: AntInputProps;
+  size?: AntInputProps['size'];
 }
 
 export const Input = forwardRef<ExtractRef<typeof AntInput>, InputProps>((props, ref) => {

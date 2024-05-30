@@ -16,14 +16,14 @@ export type LessonUpdateActionDTO =
       type: 'existing-word';
       isNewRecord: boolean;
       wordId: number;
-      customTranslation?: { translation: string; translationVariants: any[] };
+      customTranslation?: { translation: string; translationVariants: any[] | null };
     }
   | {
       type: 'new-word';
       wordType: 'phrase';
       displayType?: number | null;
       value: string;
-      translation: { translation: string; translationVariants: any[] };
+      translation: { translation: string; translationVariants: any[] | null };
     }
   | {
       type: 'update-lesson';

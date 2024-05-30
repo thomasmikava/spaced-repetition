@@ -4,40 +4,18 @@ import { WordWithTranslationSchema } from '../../../api/controllers/words/words.
 import type { LessonInfo } from './Form';
 
 export const useValidation = () => {
-  const { createObjectResolver, validators } = useValidators();
+  const { createObjectResolver } = useValidators();
 
-  const KnownWordInfo = z.object({
-    fieldUniqueId: z.string(),
-    type: z.literal('word'),
-    subType: z.literal('known-word'),
-    word: WordWithTranslationSchema,
-  });
-  const SearchWordInfo = z.object({
+  const WordInfoSchema = z.object({
     fieldUniqueId: z.string(),
     type: z.literal('word'),
     subType: z.literal('search-word'),
-    searchValue: z.literal(''),
+    wordValue: z.string().trim(),
+    wordDisplayType: z.number().optional(),
+    word: WordWithTranslationSchema.optional(),
+    translation: z.string().min(1).trim(),
+    advancedTranslation: z.array(z.any()).nullish(),
   });
-  const CustomWordInfoSchema = z.object({
-    fieldUniqueId: z.string(),
-    type: z.literal('word'),
-    subType: z.literal('custom-word'),
-    wordDisplayType: z.number(),
-    value: validators.trim(z.string().min(1)),
-    translation: validators.trim(z.string().min(1)),
-  });
-  const WordInfoSchema = z.discriminatedUnion('subType', [KnownWordInfo, SearchWordInfo, CustomWordInfoSchema]);
-  const NonSearchableWordInfoSchema = z.discriminatedUnion('subType', [KnownWordInfo, CustomWordInfoSchema]);
-
-  // HACK: zod doesn't support discrimination of discriminated unions
-  (WordInfoSchema as never as Record<string, unknown>).shape = {
-    ...(WordInfoSchema as never as Record<'shape', Record<string, unknown>>).shape,
-    type: z.literal('word'),
-  };
-  (NonSearchableWordInfoSchema as never as Record<string, unknown>).shape = {
-    ...(NonSearchableWordInfoSchema as never as Record<'shape', Record<string, unknown>>).shape,
-    type: z.literal('word'),
-  };
 
   const LessonInfoBaseSchema = z.object({
     fieldUniqueId: z.string(),
@@ -53,7 +31,7 @@ export const useValidation = () => {
 
   type LessonItem = LessonInfo['children'][number];
   const filterEmptyItems = (item: LessonItem) => {
-    return item.type !== 'word' || item.subType !== 'search-word';
+    return item.type !== 'word' || item.wordValue !== '';
   };
 
   const LessonInfoSchema: z.ZodType<LessonInfoSchemaType> = LessonInfoBaseSchema.extend({

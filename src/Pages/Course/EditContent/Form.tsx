@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, type FC } from 'react';
 import Button from '../../../ui/Button';
-import type { Control, FieldError, UseFormSetFocus, UseFormSetValue } from 'react-hook-form';
+import type {
+  Control,
+  FieldError,
+  UseFormGetValues,
+  UseFormSetFocus,
+  UseFormSetValue,
+  UseFormWatch,
+} from 'react-hook-form';
 import {
   Controller,
   FormProvider,
@@ -15,7 +22,7 @@ import styles from './styles.module.css';
 import Input from '../../../ui/Input';
 import Dropdown from 'antd/es/dropdown';
 import { DeleteOutlined, LoadingOutlined, MinusOutlined, PlusOutlined, SettingFilled } from '@ant-design/icons';
-import type { WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
+import type { WordDTO, WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
 import { useSearchWords } from '../../../api/controllers/words/words.query';
 import { useDebounce } from 'use-debounce';
 import Select from '../../../ui/Select';
@@ -24,31 +31,21 @@ import React from 'react';
 import type { Helper } from '../../../functions/generate-card-content';
 import { useWordTypeChoices } from '../../../hooks/cards';
 
-export interface KnownWordInfo {
-  fieldUniqueId: string;
-  type: 'word';
-  subType: 'known-word';
-  word: WordWithTranslationDTO;
-}
 interface SearchWordInfo {
   fieldUniqueId: string;
   type: 'word';
   subType: 'search-word';
-  searchValue: string;
+  wordValue: string;
   wordDisplayType?: number;
-}
-interface CustomWordInfo {
-  fieldUniqueId: string;
-  type: 'word';
-  subType: 'custom-word';
-  wordDisplayType: number;
-  value: string;
+  word?: WordWithTranslationDTO;
   translation: string;
+  advancedTranslation: WordWithTranslationDTO['advancedTranslation'];
+  changed?: boolean;
 }
 
 export const DEFAULT_WORD_DISPLAY_TYPE = 1;
 
-export type WordInfo = KnownWordInfo | SearchWordInfo | CustomWordInfo;
+export type WordInfo = SearchWordInfo;
 
 export interface LessonInfo<W = WordInfo> {
   fieldUniqueId: string;
@@ -74,7 +71,7 @@ interface Props {
   helper: Helper;
 }
 
-const emptyWord: WordInfo = { type: 'word', subType: 'search-word', searchValue: '', fieldUniqueId: '2' };
+// const emptyWord: WordInfo = { type: 'word', subType: 'search-word', wordValue: '', fieldUniqueId: '2' };
 
 const emptyValues: FormData = {
   children: [
@@ -84,7 +81,7 @@ const emptyValues: FormData = {
       title: '',
       description: '',
       fieldUniqueId: '1',
-      children: [emptyWord],
+      children: [],
     },
   ],
 };
@@ -182,29 +179,33 @@ const FieldArray = memo(
     });
 
     const handleAddNewLesson = useCallback(() => {
-      append({
+      const newLesson: LessonInfo = {
         type: 'lesson',
         title: '',
         description: '',
         children: [
-          {
-            type: 'word',
-            subType: 'search-word',
-            searchValue: '',
-            fieldUniqueId: Math.random().toString(),
-          },
+          // {
+          //   type: 'word',
+          //   subType: 'search-word',
+          //   wordValue: '',
+          //   fieldUniqueId: Math.random().toString(),
+          // },
         ],
         fieldUniqueId: Math.random().toString(),
-      });
+      };
+      append(newLesson);
     }, [append]);
 
     const handleAddNewWord = useCallback(() => {
-      append({
+      const newWord: WordInfo = {
         type: 'word',
         subType: 'search-word',
-        searchValue: '',
+        wordValue: '',
+        translation: '',
+        advancedTranslation: null,
         fieldUniqueId: Math.random().toString(),
-      });
+      };
+      append(newWord);
     }, [append]);
 
     useImperativeHandle(
@@ -244,7 +245,7 @@ const FieldArray = memo(
           );
           return null;
         })}
-        {isCourseLevel && <Button label={'Add new lesson'} variant='default' onClick={handleAddNewLesson} />}
+        {isCourseLevel && <Button label={'Add new top-level lesson'} variant='default' onClick={handleAddNewLesson} />}
       </div>
     );
   }),
@@ -264,8 +265,13 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
   const { control } = useFormContext<FormData>();
   const {
     fieldState: { error },
+    field: { value: fieldValue },
   } = useController({ control, name: `${fieldKey}.children` });
   const childrenError = (error as { root?: FieldError } | undefined)?.root ?? error;
+
+  const areOnlyWords = fieldValue.every((f) => f.type === 'word');
+  const areOnlyLessons = fieldValue.every((f) => f.type === 'lesson');
+  const hasChildren = fieldValue.length > 0;
 
   const handleAddNewLesson = () => {
     if (!fieldArrayRef.current) return;
@@ -288,6 +294,7 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
               placeholder='Lesson title'
               fullWidth
               {...field}
+              size='large'
               inputProps={{ status: error ? 'error' : undefined }}
             />
           )}
@@ -295,7 +302,8 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
         <Dropdown
           menu={{
             items: [
-              { label: 'Add sub lesson', key: 'add', icon: <PlusOutlined />, onClick: handleAddNewLesson },
+              { label: 'Add sub lesson', key: 'add-l', icon: <PlusOutlined />, onClick: handleAddNewLesson },
+              { label: 'Add new word', key: 'add-w', icon: <PlusOutlined />, onClick: handleAddNewWord },
               {
                 label: 'Delete',
                 key: 'remove',
@@ -306,7 +314,7 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
           }}
           placement='bottom'
         >
-          <Button label={<SettingFilled />} />
+          <Button label={<SettingFilled />} size='large' />
         </Dropdown>
       </div>
       <div className={styles.lessonChildren}>
@@ -322,16 +330,30 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
             Lesson cannot be empty. Add at least 1 word or sub-lesson or delete it from the settings icon
           </p>
         )}
-        <Button
-          style={{ marginTop: 10 }}
-          label={
-            <span>
-              <PlusOutlined />
-              <span style={{ marginLeft: 10 }}>Add new word</span>
-            </span>
-          }
-          onClick={handleAddNewWord}
-        />
+        {(!hasChildren || !areOnlyLessons) && (
+          <Button
+            style={{ marginTop: 10, marginRight: 10 }}
+            label={
+              <span>
+                <PlusOutlined />
+                <span style={{ marginLeft: 10 }}>Add new word</span>
+              </span>
+            }
+            onClick={handleAddNewWord}
+          />
+        )}
+        {(!hasChildren || !areOnlyWords) && (
+          <Button
+            style={{ marginTop: 10 }}
+            label={
+              <span>
+                <PlusOutlined />
+                <span style={{ marginLeft: 10 }}>Add sub-level</span>
+              </span>
+            }
+            onClick={handleAddNewLesson}
+          />
+        )}
       </div>
     </div>
   );
@@ -348,7 +370,7 @@ interface WordFieldProps {
 }
 
 const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, formBaseInfo, index, onRemove, helper }) => {
-  const { control, setValue, trigger, setFocus } = useFormContext<LessonInfo>();
+  const { control, setValue, getValues, trigger, setFocus, watch } = useFormContext<LessonInfo>();
 
   const handleSetValue: UseFormSetValue<LessonInfo> = useCallback(
     (...args) => {
@@ -367,9 +389,6 @@ const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, formBaseInfo,
 
   return (
     <>
-      {subType === 'known-word' && (
-        <ExistingWord control={control} fieldKey={fieldKey} onRemove={handleRemove} helper={helper} />
-      )}
       {subType === 'search-word' && (
         <SearchWord
           onRemove={handleRemove}
@@ -378,49 +397,15 @@ const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, formBaseInfo,
           fieldKey={fieldKey}
           setValue={handleSetValue}
           setFocus={setFocus}
+          getValues={getValues}
           helper={helper}
-        />
-      )}
-      {subType === 'custom-word' && (
-        <CustomWord
-          onRemove={handleRemove}
-          formBaseInfo={formBaseInfo}
-          control={control}
-          fieldKey={fieldKey}
-          helper={helper}
+          watchFn={watch}
         />
       )}
     </>
   );
 });
 WordField.displayName = 'WordField';
-
-const ExistingWord: FC<{
-  control: Control<LessonInfo, any>;
-  fieldKey: `children.${number}`;
-  onRemove: () => void;
-  helper: Helper;
-}> = ({ control, fieldKey, onRemove, helper }) => {
-  const value = useWatch({ control, name: fieldKey });
-
-  if (value.type !== 'word' || value.subType !== 'known-word') return null;
-
-  return (
-    <div style={{ display: 'flex', gap: 10 }}>
-      <div style={{ width: '100%' }}>
-        <div>
-          <span style={{ marginRight: 5, opacity: 0.5 }}>
-            {helper.getCardType(value.word.type, value.word.lang)?.abbr}
-          </span>
-          <span>{value.word.value}</span>
-          <span style={{ margin: '0 10px' }}> - </span>
-          <span>{value.word.translation}</span>
-        </div>
-      </div>
-      <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
-    </div>
-  );
-};
 
 const SearchWord: FC<{
   onRemove: () => void;
@@ -430,16 +415,25 @@ const SearchWord: FC<{
   helper: Helper;
   setValue: UseFormSetValue<LessonInfo>;
   setFocus: UseFormSetFocus<LessonInfo<WordInfo>>;
-}> = ({ formBaseInfo, fieldKey, control, setValue, onRemove, setFocus, helper }) => {
-  const value = useWatch({ control, name: fieldKey }) as SearchWordInfo;
+  getValues: UseFormGetValues<LessonInfo<WordInfo>>;
+  watchFn: UseFormWatch<LessonInfo<WordInfo>>;
+}> = ({ formBaseInfo, fieldKey, control, setValue, getValues, setFocus, onRemove, helper }) => {
+  const searchValue = useWatch({ control, name: `${fieldKey}.wordValue` }) as string;
+  const wordDisplayType = useWatch({ control, name: `${fieldKey}.wordDisplayType` }) as number | undefined;
+  const word = useWatch({ control, name: `${fieldKey}.word` }) as WordDTO | undefined;
+  const isChanged = useWatch({ control, name: `${fieldKey}.changed` }) as WordDTO | undefined;
 
-  const searchValue = (value as SearchWordInfo).searchValue ?? '';
-  const wordDisplayType = value.wordDisplayType;
+  // const [isBlurred, setIsBlurred] = useState(true);
+
+  const lastWordRef = useRef(word);
+
+  const areSame = word?.value === searchValue;
   const [debouncedSearchValue] = useDebounce(searchValue, 300);
 
+  const finalSearchValue = areSame && !isChanged ? '' : debouncedSearchValue.trim();
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } = useSearchWords({
     lang: formBaseInfo.langToLearn,
-    searchValue: debouncedSearchValue.trim(),
+    searchValue: finalSearchValue,
     translationLang: formBaseInfo.translationLang,
     wordType: wordDisplayType ?? undefined,
     limit: 5,
@@ -447,47 +441,77 @@ const SearchWord: FC<{
 
   const handleChoose = useCallback(
     (suggestion: WordWithTranslationDTO) => {
+      // debugger;
+      const currentValue = getValues(fieldKey) as SearchWordInfo;
       setValue(fieldKey, {
-        type: 'word',
-        subType: 'known-word',
+        ...currentValue,
         word: suggestion,
-        fieldUniqueId: Math.random().toString(),
+        translation: suggestion.translation ?? currentValue.translation,
+        advancedTranslation: suggestion.advancedTranslation ?? currentValue.advancedTranslation,
+        wordValue: suggestion.value,
+        wordDisplayType: suggestion.mainType ?? suggestion.type,
+        changed: false,
       });
+      lastWordRef.current = suggestion;
+      setFocus(`${fieldKey}.translation`);
     },
-    [fieldKey, setValue],
+    [fieldKey, setValue, getValues, setFocus],
   );
 
-  const handleAddAsCustomWord = useCallback(() => {
-    setValue(fieldKey, {
-      type: 'word',
-      subType: 'custom-word',
-      value: debouncedSearchValue.trim(),
-      wordDisplayType: wordDisplayType ?? DEFAULT_WORD_DISPLAY_TYPE,
-      translation: '',
-      fieldUniqueId: Math.random().toString(),
-    });
-    setTimeout(() => setFocus(`${fieldKey}.translation`), 10);
-  }, [debouncedSearchValue, fieldKey, wordDisplayType, setValue, setFocus]);
-
   const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper) || [];
-
-  if (value.type !== 'word' || value.subType !== 'search-word') return null;
-
-  const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
 
   return (
     <div className={styles.wordSearchContainer}>
       <div className={styles.topPart}>
         <div style={{ width: '100%', display: 'flex', gap: 10 }}>
-          <div style={{ flex: 5 }}>
+          <div style={{ flex: 2 }}>
             <Controller
-              name={`${fieldKey}.searchValue`}
+              name={`${fieldKey}.wordValue`}
               control={control}
-              render={({ field, fieldState: { error } }) => (
+              render={({ field: { onBlur, onChange, ...rest }, fieldState: { error } }) => (
                 <>
-                  <Input placeholder='Search word' fullWidth {...field} />
+                  <Input
+                    placeholder='Word'
+                    fullWidth
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setValue(`${fieldKey}.changed`, true);
+                      if (lastWordRef.current) {
+                        if (newValue === lastWordRef.current.value) {
+                          setValue(`${fieldKey}.word`, lastWordRef.current);
+                        } else {
+                          setValue(`${fieldKey}.word`, undefined);
+                        }
+                      }
+                      onChange(e);
+                    }}
+                    onFocus={() => {
+                      // setIsBlurred(false);
+                    }}
+                    onBlur={() => {
+                      // setTimeout(() => setIsBlurred(true), 100);
+                      onBlur();
+                    }}
+                    {...rest}
+                    size='large'
+                  />
                   {error && <p style={{ color: 'red' }}>Choose one of the options or clear the search field</p>}
                 </>
+              )}
+            />
+          </div>
+          <div style={{ flex: 5 }}>
+            <Controller
+              name={`${fieldKey}.translation`}
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <Input
+                  placeholder='translation'
+                  fullWidth
+                  {...field}
+                  size='large'
+                  inputProps={{ status: error ? 'error' : undefined }}
+                />
               )}
             />
           </div>
@@ -502,6 +526,7 @@ const SearchWord: FC<{
                   allowClear
                   style={{ width: '100%' }}
                   placeholder='Choose type'
+                  size='large'
                 />
               )}
             />
@@ -509,77 +534,62 @@ const SearchWord: FC<{
         </div>
         <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
       </div>
-      {debouncedSearchValue && (
-        <div>
-          {status === 'pending' && <LoadingOutlined />}
-          {status === 'error' && <span>Error</span>}
-          {status === 'success' && data && areResultsFound && (
-            <div>
-              {data.pages.map((page, index) => (
-                <React.Fragment key={index}>
-                  {page.words.map((word) => (
-                    <div key={word.id} onClick={() => handleChoose(word)}>
-                      <span style={{ marginRight: 5, opacity: 0.5 }}>
-                        {helper.getCardType(word.type, word.lang)?.abbr}
-                      </span>
-                      <span>{word.value}</span>
-                      <span style={{ margin: '0 10px' }}> - </span>
-                      <span>{word.translation}</span>
-                    </div>
-                  ))}
-                </React.Fragment>
-              ))}
-              {hasNextPage && (
-                <Button onClick={() => fetchNextPage()} label='Load more words' loading={isFetchingNextPage} />
-              )}
-              <Button onClick={handleAddAsCustomWord} label='Add as custom word' />
-            </div>
-          )}
-        </div>
+      {finalSearchValue && (
+        <Suggestions
+          data={data}
+          status={status}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          handleChoose={handleChoose}
+          helper={helper}
+        />
       )}
     </div>
   );
 };
 
-const CustomWord: FC<{
-  onRemove: () => void;
-  fieldKey: `children.${number}`;
-  control: Control<LessonInfo, any>;
-  formBaseInfo: FormBaseInfo;
+type SuggestionProps = Pick<
+  ReturnType<typeof useSearchWords>,
+  'data' | 'status' | 'fetchNextPage' | 'hasNextPage' | 'isFetchingNextPage'
+> & {
+  handleChoose: (word: WordWithTranslationDTO) => void;
   helper: Helper;
-}> = ({ control, onRemove, formBaseInfo, fieldKey, helper }) => {
-  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper) || [];
-  return (
-    <div>
-      <div style={{ width: '100%', display: 'flex', gap: 10 }}>
-        <Controller
-          name={`${fieldKey}.wordDisplayType`}
-          control={control}
-          render={({ field }) => <Select<number> options={wordTypeChoices} {...field} />}
-        />
-        <Controller
-          name={`${fieldKey}.value`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <Input placeholder='word' fullWidth {...field} inputProps={{ status: error ? 'error' : undefined }} />
-          )}
-        />
-        <Controller
-          name={`${fieldKey}.translation`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <Input
-              placeholder='translation'
-              fullWidth
-              {...field}
-              inputProps={{ status: error ? 'error' : undefined }}
-            />
-          )}
-        />
-        <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
-      </div>
-    </div>
-  );
 };
+
+const Suggestions: FC<SuggestionProps> = memo(
+  ({ data, status, handleChoose, hasNextPage, fetchNextPage, isFetchingNextPage, helper }) => {
+    const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
+
+    return (
+      <div>
+        {status === 'pending' && <LoadingOutlined />}
+        {status === 'error' && <span>Error</span>}
+        {status === 'success' && data && areResultsFound && (
+          <div className={styles.suggestionsContainer}>
+            <div className={styles.suggestedWords}>
+              {data.pages.map((page, index) => (
+                <React.Fragment key={index}>
+                  {page.words.map((word) => (
+                    <div key={word.id} onClick={() => handleChoose(word)} className={styles.wordSuggestion}>
+                      <span>{word.value}</span>
+                      <span>{word.translation}</span>
+                      <span style={{ marginRight: 5, opacity: 0.5 }}>
+                        {helper.getCardType(word.type, word.lang)?.abbr}
+                      </span>
+                    </div>
+                  ))}
+                </React.Fragment>
+              ))}
+            </div>
+            {hasNextPage && (
+              <Button onClick={() => fetchNextPage()} label='Load more words' loading={isFetchingNextPage} />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  },
+);
 
 export { ContentForm };
