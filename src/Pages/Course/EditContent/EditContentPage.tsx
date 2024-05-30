@@ -47,18 +47,20 @@ const EditContentPage = () => {
   if (isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper) return <LoadingPage />;
   if (!course || !initialData) return <div>Error</div>;
 
+  const gotoCourseLesson = () => {
+    if (lessonId) {
+      navigate(paths.app.lesson.page(lessonId, courseId));
+    } else {
+      navigate(paths.app.course.page(courseId));
+    }
+  };
+
   const handleSubmit = (newData: FormData) => {
     const convertedData = convertLessonUpdates(parentLessonId, newData.children, initialData.children);
     updateCourseContent(
       { courseId, actions: convertedData },
       {
-        onSuccess: () => {
-          if (lessonId) {
-            navigate(paths.app.lesson.page(lessonId, courseId));
-          } else {
-            navigate(paths.app.course.page(courseId));
-          }
-        },
+        onSuccess: gotoCourseLesson,
       },
     );
   };
@@ -75,6 +77,7 @@ const EditContentPage = () => {
           translationLang={course.translationLang}
           onSubmit={handleSubmit}
           helper={helper}
+          onCancel={gotoCourseLesson}
         />
       </div>
     </div>

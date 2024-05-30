@@ -55,7 +55,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
         {!isLoading && dueReview > 0 && (
           <>
             : {`${dueReview} `}
-            <sup>{`(${uniqueCards})`}</sup>
+            {uniqueCards !== dueReview && <sup>{`(${uniqueCards})`}</sup>}
           </>
         )}
       </button>

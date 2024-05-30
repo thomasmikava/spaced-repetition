@@ -68,7 +68,7 @@ const CoursePage = () => {
 
   if (!course) return <div>Course not found</div>;
 
-  if (!lessons) return <div>Loading course...</div>;
+  if (!lessons) return <LoadingPage />;
 
   const canManageCourse = course?.userId === userData.userId || userData.adminLangs?.includes(course.langToLearn);
 
@@ -104,7 +104,16 @@ const CoursePage = () => {
           </Dropdown>
         )}
       </div>
-      {isInMyCoursesList ? <ReviewButtons courseId={courseId} /> : <AddToMyCoursesButton courseId={courseId} />}
+      {lessons.length === 0 ? null : isInMyCoursesList ? (
+        <ReviewButtons courseId={courseId} />
+      ) : (
+        <AddToMyCoursesButton courseId={courseId} />
+      )}
+      {canManageCourse && lessons.length === 0 && (
+        <Button onClick={goToContent} type='primary'>
+          Add content
+        </Button>
+      )}
       <LessonBody courseId={courseId} lessonId={null} lessons={lessons} />
       <br />
       <Modal

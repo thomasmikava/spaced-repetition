@@ -12,7 +12,7 @@ const AddCoursePage = () => {
   const handleSubmit = (data: CourseFormData) => {
     createCourse(
       { ...data, description: data.description || null },
-      { onSuccess: (data) => navigate(paths.app.course.page(data.id), { replace: true }) },
+      { onSuccess: (data) => navigate(paths.app.course.editContent(data.id), { replace: true }) },
     );
   };
 

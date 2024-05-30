@@ -96,6 +96,8 @@ const LessonPage = () => {
 
   const isInMyCoursesList = myMainCourses.some((c) => c.id === courseId);
 
+  const isEmpty = !!lessons && lessons.length === 0 && lessonWords.length === 0;
+
   return (
     <div className='body'>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -125,7 +127,7 @@ const LessonPage = () => {
           </Dropdown>
         )}
       </div>
-      {isInMyCoursesList ? (
+      {isEmpty ? null : isInMyCoursesList ? (
         <ReviewButtons courseId={courseId} lessonId={lessonId} />
       ) : (
         <AddToMyCoursesButton courseId={courseId} />

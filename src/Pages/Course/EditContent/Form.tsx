@@ -70,6 +70,7 @@ interface Props {
   translationLang: string;
   defaultData?: FormData;
   onSubmit: (data: FormData) => void;
+  onCancel: () => void;
   helper: Helper;
 }
 
@@ -89,7 +90,16 @@ const emptyValues: FormData = {
 };
 
 const ContentForm: FC<Props> = memo(
-  ({ defaultData = emptyValues, isSubmitting, isCourseLevel, langToLearn, onSubmit, translationLang, helper }) => {
+  ({
+    defaultData = emptyValues,
+    isSubmitting,
+    isCourseLevel,
+    langToLearn,
+    onSubmit,
+    onCancel,
+    translationLang,
+    helper,
+  }) => {
     const { resolver } = useValidation();
     const form = useForm({
       shouldFocusError: true,
@@ -97,8 +107,16 @@ const ContentForm: FC<Props> = memo(
       resolver,
     });
     const {
-      formState: { isSubmitted },
+      formState: { isSubmitted, isDirty },
     } = form;
+
+    const handleCancel = () => {
+      if (!isDirty) {
+        onCancel();
+      } else {
+        if (confirm('Are you sure you want to cancel changes?')) onCancel();
+      }
+    };
 
     /* const watch = form.watch;
 
@@ -126,7 +144,7 @@ const ContentForm: FC<Props> = memo(
         <form onSubmit={form.handleSubmit(handleSuccess, console.error)}>
           <FieldArray fieldKey='children' isCourseLevel={isCourseLevel} formBaseInfo={formBaseInfo} helper={helper} />
           <div style={{ gap: 10, display: 'flex', marginTop: 10 }}>
-            <Button label='Cancel' variant='default' />
+            <Button label='Cancel' variant='default' onClick={handleCancel} />
             <Button label='Save' type='submit' variant='primary' loading={isSubmitting} />
           </div>
         </form>
