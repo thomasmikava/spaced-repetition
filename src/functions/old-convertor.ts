@@ -64,7 +64,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         variants: [getInitialVariant(rawCard.value)].concat(getNounVariants(rawCard.variants)),
       };
     }
-    case CardType.ADJECTIVE: {
+    case CardType.ADJECTIVE_ADVERB: {
       const topVariants: (StandardCardVariant | null)[] = [
         {
           ...getInitialVariant(rawCard.value),
@@ -88,7 +88,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
           : null,
       ];
       return {
-        type: CardTypeMapper[CardType.ADJECTIVE],
+        type: CardTypeMapper[CardType.ADJECTIVE_ADVERB],
         value: rawCard.value,
         lang: defaultLang,
         uniqueValue: rawCard.uniqueValue,

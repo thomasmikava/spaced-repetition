@@ -70,7 +70,7 @@ export const phrases: Phrase[] = [
   { type: CardType.PHRASE, value: 'Sehr geehrte', translation: 'Dear' },
   { type: CardType.PHRASE, mainType: CardType.NOUN, value: 'die 3-Tagekarte', translation: '3 day-ticket' },
   { type: CardType.PHRASE, mainType: CardType.NOUN, value: 'Tschechien', translation: 'Czech Republic' },
-  { type: CardType.PHRASE, mainType: CardType.ADJECTIVE, value: 'Tschechisch', translation: 'Czech' },
+  { type: CardType.PHRASE, mainType: CardType.ADJECTIVE_ADVERB, value: 'Tschechisch', translation: 'Czech' },
   { type: CardType.PHRASE, mainType: CardType.NOUN, value: 'Österreich', translation: 'Austria' },
   { type: CardType.PHRASE, mainType: CardType.NOUN, value: 'die Gasteltern', translation: 'host parents' },
   { type: CardType.PHRASE, mainType: CardType.PREPOSITION, value: 'mitten in', translation: 'in the middle of' },

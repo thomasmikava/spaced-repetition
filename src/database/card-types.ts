@@ -22,7 +22,7 @@ export const CardTypeMapper = {
   [CardType.NOUN]: 2,
   [CardType.VERB]: 3,
   [CardType.PRONOUN]: 4,
-  [CardType.ADJECTIVE]: 5,
+  [CardType.ADJECTIVE_ADVERB]: 5,
   [CardType.PREPOSITION]: 6,
   [CardType.CONJUNCTION]: 7,
   [CardType.NUMBER]: 8,

@@ -13,7 +13,7 @@ import type { StandardTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
 import { getArticle, getWithSymbolArticle } from './texts';
 
-const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
+const getTopRow = (lang: string, tags: ContentTag[], word: string): AnyContent => {
   return {
     type: 'div',
     content: [
@@ -21,7 +21,7 @@ const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
       word
         ? {
             type: 'voice',
-            language: 'de',
+            language: lang,
             text: prepareTextForAudio(word),
             autoplay: true,
             style: { alignSelf: 'baseline' },
@@ -35,8 +35,8 @@ const getTopRow = (tags: ContentTag[], word: string): AnyContent => {
 const generateColumnedTable = <Row extends string[]>(
   rows: Row[],
   getVoiceText: (row: Row, index: number) => string,
+  lang: string,
   mainValueIndex: number = 1,
-  locale: string = 'de',
 ): AnyContent[] => {
   return [
     {
@@ -67,7 +67,7 @@ const generateColumnedTable = <Row extends string[]>(
                 content: [
                   {
                     type: 'voice',
-                    language: locale,
+                    language: lang,
                     text: getVoiceText(row, index),
                     autoplay: false,
                     size: 'mini',
@@ -361,6 +361,7 @@ export const getCardViewContent2 = (
           caseInsensitive: record.caseSensitive,
           style: { textAlign: 'center' },
           audioProps: prepareInputAudio(
+            record.card.lang,
             correctValues,
             line.audioPrefix ? getAffix(line.audioPrefix, record.variant.attrs, record.card.lang, helper) : undefined,
           ),
@@ -437,7 +438,11 @@ export const getCardViewContent2 = (
             }
             return row.filter(isNonNullable);
           });
-        return generateColumnedTable(rows, (_row, index) => prepareTextForAudio(audioInfo[index] || ''));
+        return generateColumnedTable(
+          rows,
+          (_row, index) => prepareTextForAudio(audioInfo[index] || ''),
+          record.card.lang,
+        );
       //
       default:
         return undefined;
@@ -454,7 +459,7 @@ export const getCardViewContent2 = (
   }
 
   const tags = getTags(record, mode, helper);
-  return [getTopRow(tags, audioText), ...lineContents];
+  return [getTopRow(record.card.lang, tags, audioText), ...lineContents];
 };
 
 const getColumnsFromRow = (row: (string | null)[], metaKeys: string[]) => {
@@ -476,8 +481,8 @@ const getColumnsFromRow = (row: (string | null)[], metaKeys: string[]) => {
 };
 
 const prepareTextForAudio = (text: string) => slashSplit(text).join('. ');
-const prepareInputAudio = (correctValues: string[], prefix: string = ''): Omit<ContentVoice, 'type'> => ({
-  language: 'de',
+const prepareInputAudio = (lang: string, correctValues: string[], prefix: string = ''): Omit<ContentVoice, 'type'> => ({
+  language: lang,
   text: prepareTextForAudio(correctValues.map((e) => `(${prefix + e})`).join('/')),
   autoplay: true,
   size: 'mini',

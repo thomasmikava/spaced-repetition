@@ -111,7 +111,7 @@ export type ArticleTestableCard = GeneralTestableCard & {
 } & ({ initial: true } | { initial: false; variant: { case: Case; value: string } });
 
 export type AdjectiveTestableCard = GeneralTestableCard & {
-  type: CardType.ADJECTIVE;
+  type: CardType.ADJECTIVE_ADVERB;
   card: Adjective;
 } & (
     | { initial: true; isInitialTrio: true; degree: AdjectiveDegree.Positiv; value: string }

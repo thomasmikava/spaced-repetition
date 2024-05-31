@@ -5,7 +5,7 @@ export enum CardType {
   NOUN = 'NOUN',
   VERB = 'VERB',
   PRONOUN = 'PRONOUN',
-  ADJECTIVE = 'ADJECTIVE',
+  ADJECTIVE_ADVERB = 'ADJECTIVE',
   PREPOSITION = 'PREPOSITION',
   CONJUNCTION = 'CONJUNCTION',
   NUMBER = 'NUMBER',
@@ -134,7 +134,7 @@ export interface AdjectiveVariant {
 }
 
 export interface Adjective extends Card {
-  type: CardType.ADJECTIVE;
+  type: CardType.ADJECTIVE_ADVERB;
   value: string;
   translation: string;
   komparativ: string | null;

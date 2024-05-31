@@ -26,7 +26,7 @@ interface ReviewPageProps {
 
 const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
   const [mainKey, setMainKey] = useState(0);
-  const [maxCards, setMaxCards] = useState(40);
+  const [maxCards, setMaxCards] = useState(400);
 
   const [correctness, setCorrectness] = useState<boolean[]>([]);
 
