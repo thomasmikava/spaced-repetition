@@ -53,10 +53,6 @@ export const attributes: Attribute[] = [
     id: 10,
     name: 'Definiteness',
   },
-  {
-    id: 11,
-    name: 'Speciality',
-  },
 ];
 
 export interface AttributeLocalization {
@@ -76,7 +72,6 @@ export const attributeLocalizations: AttributeLocalization[] = [
   { lang: 'de', attributeId: 8, name: 'Flexion' },
   { lang: 'de', attributeId: 9, name: 'Funktion' },
   { lang: 'de', attributeId: 10, name: 'Definitheit' },
-  { lang: 'de', attributeId: 11, name: 'Spezialität' },
 ];
 
 export interface AttributeRecordLocalization {
@@ -378,7 +373,6 @@ export const attributeRecordLocalizations: AttributeRecordLocalization[] = [
   { lang: 'de', attributeId: 9, attributeRecordId: 42, name: 'Interrogativ' },
   { lang: 'de', attributeId: 10, attributeRecordId: 43, name: 'Bestimmter' },
   { lang: 'de', attributeId: 10, attributeRecordId: 44, name: 'Unbestimmter' },
-  { lang: 'de', attributeId: 11, attributeRecordId: 45, name: 'Modalverb' },
 ];
 
 export const AttributeMapper = {
@@ -473,12 +467,6 @@ export const AttributeMapper = {
     records: {
       ['true']: 43,
       ['false']: 44,
-    },
-  },
-  SPECIALITY: {
-    id: 11,
-    records: {
-      modalVerb: 45,
     },
   },
 };

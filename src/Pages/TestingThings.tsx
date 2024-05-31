@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { wordController } from '../api/controllers/words/words.controller';
 import type { CreateManyWordsDTO, WordWithTranslationDTO } from '../api/controllers/words/words.schema';
 import type { Phrase } from '../database/types';
@@ -17,11 +17,14 @@ import type { LessonUpdateActionDTO } from '../api/controllers/lessons/lessons.s
 import { AttributeMapper } from '../database/attributes';
 import { getWithArticleOld } from '../functions/texts';
 import { CardTypeMapper } from '../database/card-types';
+import type { IndexedDatabase } from '../functions/dictionary';
+import { getAllMatchingVariants, getIndexedDictionary } from '../functions/dictionary';
 
 const TestingThingsPage = () => {
   const oldDb = generateCardTypeThings();
   const db = generateIndexedDatabase2();
   const dbIndexed = generateIndexedDatabase();
+  const indRef = useRef<IndexedDatabase>();
 
   const createWordsInDBHelper = async (cardType = CardType.VERB, limit: number, skip: number) => {
     const originalWords = oldDb[cardType];
@@ -49,6 +52,7 @@ const TestingThingsPage = () => {
             attributes: card.attributes,
             isOfficial: true,
             variantsIncludeTopCard: true,
+            labels: card.labels,
             variants: card.variants.map((variant) => ({
               value: variant.value,
               attrs: variant.attrs,
@@ -63,7 +67,7 @@ const TestingThingsPage = () => {
         }),
       )
       .then(() => {
-        return { count: wordCards.length };
+        return { count: someWords.length };
       });
   };
   const createWordsInDB = () => {
@@ -85,6 +89,10 @@ const TestingThingsPage = () => {
   };
 
   async function importFullCourse(course: Course) {
+    let ind = indRef.current;
+    if (!ind) {
+      ind = indRef.current = getIndexedDictionary(await wordController.getDictionary({ lang: 'de' }));
+    }
     const { title, lessons } = course;
     const courseRes = await courseController.createCourse({
       isPublic: true,
@@ -97,6 +105,9 @@ const TestingThingsPage = () => {
     const courseId = courseRes.id;
 
     const isSameWord = (a: WordWithTranslationDTO, card: NonNullable<(typeof dbIndexed)[CardType][string]>) => {
+      if (a.type !== CardTypeMapper[card.type]) return false;
+      if ((a.mainType ?? undefined) !== (CardTypeMapper[(card as Phrase).mainType as unknown as 'VERB'] ?? undefined))
+        return false;
       if (card.type === CardType.NOUN) {
         const withArticle = getWithArticleOld(card.value, card.gender);
         return a.value === withArticle;
@@ -127,20 +138,16 @@ const TestingThingsPage = () => {
           return null;
         }
         const searchValue = card.value;
-        const typeToSearch = (card as Phrase).mainType ?? card.type;
-        const typeId = CardTypeMapper[typeToSearch];
-        const { words: foundWords } = await wordController.searchWords({
-          lang: 'de',
-          translationLang: 'en',
-          wordType: typeId,
-          searchValue,
-          limit: 100,
-          skip: 0,
-        });
-        const foundWord = foundWords.find((v) => isSameWord(v, card));
+        const matches = getAllMatchingVariants(searchValue, ind).filter(
+          (e) => e.variant.categoryId === 1 && isSameWord(e.word, card),
+        );
+        const foundWord = matches[0];
         if (!foundWord) {
           console.error('Word not found ' + word.type + ' ' + word.value);
           return null;
+        }
+        if (matches.length > 1) {
+          console.error('multiple matches found ' + word.type + ' ' + word.value, matches);
         }
         return {
           type: 'existing-word',

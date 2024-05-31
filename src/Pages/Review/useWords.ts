@@ -25,6 +25,7 @@ const transformToStandardCard = (word: WordWithTranslationAndLessonsAndVariantsD
     mainType: word.mainType,
     value: word.value,
     attributes: word.attributes,
+    labels: word.labels,
     translation: word.translation || '',
     advancedTranslation: word.advancedTranslation as TranslationVariant[] | null,
     variants: (word.variants || []).map((variant) => ({

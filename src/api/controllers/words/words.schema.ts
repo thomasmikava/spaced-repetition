@@ -4,6 +4,8 @@ import { z } from 'zod';
 const StandardCardAttributesSchema = z.record(z.number());
 export type StandardCardAttributes = Record<string, number>; // key: attribute id, value: attribute record id
 
+export type CardLabelsDTO = number[];
+
 const WordSchema = z.object({
   id: z.number(),
   lang: z.string(),
@@ -22,6 +24,7 @@ export interface WordDTO {
   mainType: number | null;
   value: string;
   attributes: StandardCardAttributes | null;
+  labels?: CardLabelsDTO | null;
   userId: number | null;
   isOfficial: boolean;
 }
@@ -134,6 +137,7 @@ interface CreateWordDTO {
   mainType?: number | null;
   value: string;
   attributes?: StandardCardAttributes | null;
+  labels?: CardLabelsDTO | null;
   isOfficial: boolean;
   variants: CreateStandardCardVariantDTO[];
   variantsIncludeTopCard: boolean;

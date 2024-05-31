@@ -24,6 +24,7 @@ import { paths } from './routes/paths.ts';
 import { queryClient } from './utils/queries.ts';
 import ExploreCoursesPage from './Pages/Course/ExploreCoursesPage.tsx';
 import SearchPage from './Pages/Search/SearchPage.tsx';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const router = createBrowserRouter(
   [
@@ -133,6 +134,8 @@ const router = createBrowserRouter(
   },
 );
 
+const isTansackVisible = false;
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ConfigProvider
@@ -145,6 +148,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <ReviewContextProvider>
             <RouterProvider router={router} />
           </ReviewContextProvider>
+          {isTansackVisible && <ReactQueryDevtools initialIsOpen={false} />}
         </AuthProvider>
       </QueryClientProvider>
     </ConfigProvider>

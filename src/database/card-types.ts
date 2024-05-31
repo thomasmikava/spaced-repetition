@@ -1,6 +1,7 @@
 import { CardViewMode } from '../functions/reviews';
 import { Matcher, SELF_REF } from '../utils/matcher';
 import { AttributeMapper } from './attributes';
+import { LabelMapper } from './labels';
 import {
   AdjectiveDegree,
   AdjectiveInflection,
@@ -201,7 +202,8 @@ export interface CardTypeConfiguration {
   maxNumOfGroups?: number;
   groupPriorities?: {
     cardMatcher: Matcher<{
-      attrs: StandardCardAttributes;
+      attrs?: StandardCardAttributes;
+      labels?: number[];
     }> | null;
     groupIds: string[];
   }[];
@@ -296,7 +298,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
     ],
     groupPriorities: [
       {
-        cardMatcher: { attrs: { [AttributeMapper.SPECIALITY.id]: AttributeMapper.SPECIALITY.records.modalVerb } },
+        cardMatcher: { labels: LabelMapper.ModalVerb },
         groupIds: [
           'init',
           `m${AttributeMapper.MOOD.records[VerbMood.Indikativ]}-t${AttributeMapper.TENSE.records[VerbTense.Präsens]}`,

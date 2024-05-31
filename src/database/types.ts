@@ -1,3 +1,5 @@
+import { CardLabelsDTO } from '../api/controllers/words/words.schema';
+
 export enum CardType {
   ARTICLE = 'ARTICLE',
   NOUN = 'NOUN',
@@ -232,6 +234,7 @@ export type StandardCard = {
   value: string;
   /** @deprecated needs to be removed */
   uniqueValue?: string | undefined;
+  labels?: CardLabelsDTO | null;
   attributes?: StandardCardAttributes | null;
   variants: StandardCardVariant[];
   /** Should be moved into separate table */
@@ -241,7 +244,12 @@ export type StandardCard = {
 };
 
 export interface Attribute {
-  id: IdType;
+  id: number;
+  name: string;
+}
+
+export interface Label {
+  id: number;
   name: string;
 }
 

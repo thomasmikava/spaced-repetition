@@ -2,6 +2,7 @@
 import { AttributeMapper } from '../database/attributes';
 import { CardTypeMapper } from '../database/card-types';
 import { CATEGORY_MAPPER } from '../database/categories';
+import { LabelMapper } from '../database/labels';
 import type {
   StandardCard,
   StandardCardVariant,
@@ -38,9 +39,7 @@ export const convertToStandardCard = (rawCard: RawCard): StandardCard => {
         lang: defaultLang,
         id: 0,
         translation: rawCard.translation,
-        attributes: priorities
-          ? { [AttributeMapper.SPECIALITY.id]: AttributeMapper.SPECIALITY.records.modalVerb }
-          : undefined,
+        labels: priorities ? [LabelMapper.ModalVerb] : null,
         variants: [getInitialVariant(rawCard.value)].concat(variants),
         advancedTranslation:
           rawCard.translations.length > 0

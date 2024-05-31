@@ -1,24 +1,25 @@
 import type { FC } from 'react';
 import { useMemo, useRef, useState } from 'react';
-import Select from '../ui/Select';
-import { uniquelize } from '../utils/array';
+import { useLocalStorage } from 'usehooks-ts';
+import { useMyMainCourses } from '../api/controllers/courses/courses.query';
+import { useDictionary, useWordIds } from '../api/controllers/words/words.query';
+import type { GetWordIdsResDTO, WordDTO } from '../api/controllers/words/words.schema';
+import { CardTypeMapper } from '../database/card-types';
+import {
+  getAllMatchingVariants,
+  getIndexedDictionary,
+  isInDatabase,
+  type IndexedDatabase,
+} from '../functions/dictionary';
+import type { Helper } from '../functions/generate-card-content';
 import { PreviousReviews } from '../functions/previous-reviews';
 import { calculateHalfLifeCoefficient } from '../functions/reviews';
-import Button from '../ui/Button';
-import { useHelper } from './hooks/text-helpers';
-import type { Helper } from '../functions/generate-card-content';
-import { useMyMainCourses } from '../api/controllers/courses/courses.query';
-import { useLocalStorage } from 'usehooks-ts';
 import { useLangToLearnOptions } from '../hooks/langs';
-import { useDictionary, useWordIds } from '../api/controllers/words/words.query';
-import type {
-  BaseWordVariantDTO,
-  GetLanguageDictionaryResDTO,
-  GetWordIdsResDTO,
-  WordDTO,
-} from '../api/controllers/words/words.schema';
-import { CardTypeMapper } from '../database/card-types';
+import Button from '../ui/Button';
+import Select from '../ui/Select';
+import { uniquelize } from '../utils/array';
 import LoadingPage from './Loading/LoadingPage';
+import { useHelper } from './hooks/text-helpers';
 
 const NewWordsPage: FC<{ helper: Helper }> = () => {
   const [langToLearn, setLangToLearn] = useLocalStorage('lang-to-learn', null as null | string);
@@ -148,30 +149,6 @@ const getCourseWordIds = (courseId: number, wordsInfo: GetWordIdsResDTO): number
   return course.lessons.map((e) => e.words.map((w) => w.id)).flat();
 };
 
-type IndexedDatabase = {
-  wordMap: Map<string, { id: number; variantId: number; word: WordDTO; variant: BaseWordVariantDTO }[]>;
-  wordsByIds: Map<number, WordDTO>;
-  wordsAllValues: Map<number, string[]>;
-};
-
-const getIndexedDictionary = (dictionary: GetLanguageDictionaryResDTO): IndexedDatabase => {
-  const wordMap: IndexedDatabase['wordMap'] = new Map();
-  const wordsByIds: IndexedDatabase['wordsByIds'] = new Map();
-  const wordsAllValues: IndexedDatabase['wordsAllValues'] = new Map();
-  for (const word of dictionary) {
-    const variants = word.variants || [];
-    wordsByIds.set(word.id, word);
-    if (!wordsAllValues.has(word.id)) wordsAllValues.set(word.id, []);
-    for (const variant of variants) {
-      const key = variant.value;
-      if (!wordMap.has(key)) wordMap.set(key, []);
-      wordMap.get(key)!.push({ id: word.id, variantId: variant.id, word, variant });
-      wordsAllValues.get(word.id)!.push(variant.value);
-    }
-  }
-  return { wordMap, wordsByIds, wordsAllValues };
-};
-
 const getMyReviewedWordIds = (wellKnown: boolean): number[] => {
   const histRecords = new PreviousReviews().getHistoryRecords();
 
@@ -243,14 +220,6 @@ const getTokens = (value: string, existingWordIds: number[], database: IndexedDa
   }
   return { unknownWords: uniquelize(unknownTokens), knownTokens: uniquelize(matchedKnownWordIds, (e) => e.word.id) };
 };
-
-function getAllMatchingVariants(token: string, database: IndexedDatabase) {
-  return database.wordMap.get(token) || [];
-}
-
-function isInDatabase(token: string, database: IndexedDatabase) {
-  return getAllMatchingVariants(token, database).length > 0;
-}
 
 const NewWordsPageLoader = () => {
   const helper = useHelper();

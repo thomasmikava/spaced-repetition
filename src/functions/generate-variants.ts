@@ -8,7 +8,7 @@ import type { Helper } from './generate-card-content';
 import type { StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
 import { getIsStandardFormFn } from './standard-forms';
 
-function _generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
+export function generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
   const config = helper.getCardType(card.type, card.lang)?.configuration ?? {};
 
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
@@ -16,7 +16,9 @@ function _generateTestableCards(card: StandardCard, helper: Helper): StandardTes
 
   if (config.groupPriorities) {
     const groupPriorities = config.groupPriorities.find(
-      (e) => !e.cardMatcher || isMatch({ attrs: card.attributes || {} }, e.cardMatcher),
+      (e) =>
+        !e.cardMatcher ||
+        isMatch({ attrs: card.attributes ?? undefined, labels: card.labels ?? undefined }, e.cardMatcher),
     );
     if (groupPriorities) {
       groups.sort((a, b) => {
@@ -175,7 +177,3 @@ const sortVariants = (sortStrategy: SortBy[], variants: StandardCardVariant[]): 
 
   return variants.sort((a, b) => compare(a, b));
 };
-
-export function generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
-  return _generateTestableCards(card, helper);
-}

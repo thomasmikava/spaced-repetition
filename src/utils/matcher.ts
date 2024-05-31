@@ -14,7 +14,8 @@ type Values<T> =
   | T[]
   | { $not: T | (T | null)[] | null }
   | { $and: (T | null)[] }
-  | { $or: (T | null)[] };
+  | { $or: (T | null)[] }
+  | (T extends Array<infer R> ? R : never);
 
 export const isMatch = <T extends {}>(comparisonValue: T, matcher: Matcher<T>, selfValue?: T): boolean => {
   let rule = matcher as unknown;
@@ -26,6 +27,9 @@ export const isMatch = <T extends {}>(comparisonValue: T, matcher: Matcher<T>, s
     return comparisonValue === null || comparisonValue === undefined;
   }
   if (Array.isArray(rule)) {
+    if (Array.isArray(comparisonValue)) {
+      return comparisonValue.every((v) => rule.includes(v));
+    }
     return rule.includes(comparisonValue);
   }
   if (typeof rule === 'object' && isMatcherObject(rule)) {

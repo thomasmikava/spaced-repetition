@@ -25,6 +25,10 @@ const createIndexedObject = <T extends { value: string; uniqueValue?: string }>(
   return indexedObject;
 };
 
+export const getEveryPartOfSpeech = () => {
+  return [...verbs, ...articles, ...nouns, ...adjectives, ...pronouns, ...prepositions, ...conjunctions, ...phrases];
+};
+
 export const generateIndexedDatabase = () => {
   return {
     [CardType.VERB]: createIndexedObject(verbs),
@@ -250,17 +254,15 @@ export function logSameTranslations() {
 }
 export function logSameValues() {
   const arr: { type: CardType; value: string }[] = [];
-  const db = generateIndexedDatabase();
-  for (const key in db) {
-    const type = key as CardType;
-    const obj = db[key as keyof typeof db];
-    for (const cardValue in obj) {
-      arr.push({ type, value: cardValue });
-    }
+  const db = getEveryPartOfSpeech();
+  for (const card of db) {
+    const key = card.uniqueValue ?? card.value;
+    const type = card.type;
+    arr.push({ type, value: key });
   }
   const duplicateValues = groupArray(
     arr,
-    (v) => v.value,
+    (v) => v.type + '**' + v.value,
     (grouped) => {
       if (grouped.length === 1) return [];
       return [grouped];

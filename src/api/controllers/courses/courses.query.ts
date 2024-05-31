@@ -3,6 +3,7 @@ import { queryClient, useMutation, useQuery } from '../../../utils/queries';
 import { courseController } from './courses.controller';
 import type { ExploreCoursesReqDTO, GetMyCoursesResDTO } from './courses.schema';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { WordQueryKeys } from '../words/words.query';
 
 const prefixes = {
   getOneMinified: 'course:getMinified',
@@ -83,10 +84,12 @@ export const useUpdateCourseContent = () => {
   return useMutation({
     mutationFn: courseController.updateCourseContent,
     onSuccess: (_, args): Promise<unknown> => {
+      console.log('args', args);
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getOne(args.courseId) }),
-        queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] }), // TODO: export from lessons.query
-        queryClient.invalidateQueries({ queryKey: [`word:getCourseWords${args.courseId}`] }), // TODO: export from words.query
+        queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`], exact: false }), // TODO: export from lessons.query
+        queryClient.invalidateQueries({ queryKey: [`word:getCourseWords${args.courseId}`], exact: false }), // TODO: export from words.query
+        queryClient.invalidateQueries({ queryKey: WordQueryKeys.getMyCoursesWords(), exact: false }),
       ]);
     },
   });
