@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { KeyboardEventHandler } from 'react';
 import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, type FC } from 'react';
 import Button from '../../../ui/Button';
 import type {
@@ -129,16 +130,18 @@ const ContentForm: FC<Props> = memo(
       onSubmit(data);
     };
 
+    const handleSubmit = form.handleSubmit(handleSuccess, console.error);
+
     const formBaseInfo = useMemo(
-      (): FormBaseInfo => ({ langToLearn, isValidationStarted: isSubmitted, translationLang }),
-      [langToLearn, isSubmitted, translationLang],
+      (): FormBaseInfo => ({ langToLearn, isValidationStarted: isSubmitted, translationLang, handleSubmit }),
+      [langToLearn, isSubmitted, translationLang, handleSubmit],
     );
 
     console.log('top level re-render');
 
     return (
       <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(handleSuccess, console.error)}>
+        <form onSubmit={handleSubmit}>
           <FieldArray fieldKey='children' isCourseLevel={isCourseLevel} formBaseInfo={formBaseInfo} helper={helper} />
           <div style={{ gap: 10, display: 'flex', marginTop: 10 }}>
             <Button label='Cancel' variant='default' onClick={handleCancel} />
@@ -155,6 +158,7 @@ interface FormBaseInfo {
   langToLearn: string;
   translationLang: string;
   isValidationStarted: boolean;
+  handleSubmit: () => Promise<void>;
 }
 
 interface FieldArrayProps {
@@ -162,6 +166,7 @@ interface FieldArrayProps {
   isCourseLevel: boolean;
   formBaseInfo: FormBaseInfo;
   helper: Helper;
+  onAddNewWord?: () => void;
 }
 
 interface FieldArrayRef {
@@ -170,7 +175,7 @@ interface FieldArrayRef {
 }
 
 const FieldArray = memo(
-  forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, formBaseInfo, helper }, ref) => {
+  forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, formBaseInfo, onAddNewWord, helper }, ref) => {
     const { control } = useFormContext<FormData>();
 
     const { fields, append, remove } = useFieldArray<FormData>({
@@ -220,6 +225,7 @@ const FieldArray = memo(
     return (
       <div>
         {fields.map((field, index) => {
+          const isLastChild = index === fields.length - 1;
           if (field.type === 'lesson') {
             return (
               <LessonField
@@ -241,6 +247,8 @@ const FieldArray = memo(
               parentKey={fieldKey as 'children'}
               formBaseInfo={formBaseInfo}
               helper={helper}
+              onAddNewWord={onAddNewWord}
+              isLastChild={isLastChild}
             />
           );
           return null;
@@ -290,13 +298,7 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
           name={`${fieldKey}.title`}
           control={control}
           render={({ field, fieldState: { error } }) => (
-            <Input
-              placeholder='Lesson title'
-              fullWidth
-              {...field}
-              size='large'
-              inputProps={{ status: error ? 'error' : undefined }}
-            />
+            <Input placeholder='Lesson title' fullWidth {...field} size='large' status={error ? 'error' : undefined} />
           )}
         />
         <Dropdown
@@ -324,6 +326,7 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
           fieldKey={`${fieldKey}.children`}
           ref={fieldArrayRef}
           helper={helper}
+          onAddNewWord={handleAddNewWord}
         />
         {childrenError && childrenError.ref && (
           <p style={{ color: 'red' }}>
@@ -367,44 +370,50 @@ interface WordFieldProps {
   parentKey: `children`;
   formBaseInfo: FormBaseInfo;
   helper: Helper;
+  onAddNewWord?: () => void;
+  isLastChild: boolean;
 }
 
-const WordField: FC<WordFieldProps> = memo(({ fieldKey, parentKey, formBaseInfo, index, onRemove, helper }) => {
-  const { control, setValue, getValues, trigger, setFocus, watch } = useFormContext<LessonInfo>();
+const WordField: FC<WordFieldProps> = memo(
+  ({ fieldKey, parentKey, formBaseInfo, index, onRemove, onAddNewWord, isLastChild, helper }) => {
+    const { control, setValue, getValues, trigger, setFocus, watch } = useFormContext<LessonInfo>();
 
-  const handleSetValue: UseFormSetValue<LessonInfo> = useCallback(
-    (...args) => {
-      (setValue as CallableFunction)(...args);
-      if (formBaseInfo.isValidationStarted) {
-        trigger(parentKey);
-      }
-    },
-    [formBaseInfo.isValidationStarted, trigger, setValue, parentKey],
-  );
+    const handleSetValue: UseFormSetValue<LessonInfo> = useCallback(
+      (...args) => {
+        (setValue as CallableFunction)(...args);
+        if (formBaseInfo.isValidationStarted) {
+          trigger(parentKey);
+        }
+      },
+      [formBaseInfo.isValidationStarted, trigger, setValue, parentKey],
+    );
 
-  const subType = useWatch({ control, name: `${fieldKey}.subType` });
-  if (!subType) return null;
+    const subType = useWatch({ control, name: `${fieldKey}.subType` });
+    if (!subType) return null;
 
-  const handleRemove = () => onRemove(index);
+    const handleRemove = () => onRemove(index);
 
-  return (
-    <>
-      {subType === 'search-word' && (
-        <SearchWord
-          onRemove={handleRemove}
-          formBaseInfo={formBaseInfo}
-          control={control}
-          fieldKey={fieldKey}
-          setValue={handleSetValue}
-          setFocus={setFocus}
-          getValues={getValues}
-          helper={helper}
-          watchFn={watch}
-        />
-      )}
-    </>
-  );
-});
+    return (
+      <>
+        {subType === 'search-word' && (
+          <SearchWord
+            onRemove={handleRemove}
+            formBaseInfo={formBaseInfo}
+            control={control}
+            fieldKey={fieldKey}
+            setValue={handleSetValue}
+            setFocus={setFocus}
+            getValues={getValues}
+            helper={helper}
+            watchFn={watch}
+            onAddNewWord={onAddNewWord}
+            isLastChild={isLastChild}
+          />
+        )}
+      </>
+    );
+  },
+);
 WordField.displayName = 'WordField';
 
 const SearchWord: FC<{
@@ -417,7 +426,20 @@ const SearchWord: FC<{
   setFocus: UseFormSetFocus<LessonInfo<WordInfo>>;
   getValues: UseFormGetValues<LessonInfo<WordInfo>>;
   watchFn: UseFormWatch<LessonInfo<WordInfo>>;
-}> = ({ formBaseInfo, fieldKey, control, setValue, getValues, setFocus, onRemove, helper }) => {
+  onAddNewWord?: () => void;
+  isLastChild: boolean;
+}> = ({
+  formBaseInfo,
+  fieldKey,
+  control,
+  setValue,
+  getValues,
+  setFocus,
+  onRemove,
+  onAddNewWord,
+  isLastChild,
+  helper,
+}) => {
   const searchValue = useWatch({ control, name: `${fieldKey}.wordValue` }) as string;
   const wordDisplayType = useWatch({ control, name: `${fieldKey}.wordDisplayType` }) as number | undefined;
   const word = useWatch({ control, name: `${fieldKey}.word` }) as WordDTO | undefined;
@@ -458,6 +480,17 @@ const SearchWord: FC<{
     [fieldKey, setValue, getValues, setFocus],
   );
 
+  const handleEnterClick: KeyboardEventHandler = (e) => {
+    if (e.ctrlKey) {
+      // continue to submit the form
+      formBaseInfo.handleSubmit();
+      return;
+    }
+    e.stopPropagation();
+    e.preventDefault();
+    if (isLastChild) onAddNewWord?.();
+  };
+
   const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper) || [];
 
   return (
@@ -492,10 +525,11 @@ const SearchWord: FC<{
                       // setTimeout(() => setIsBlurred(true), 100);
                       onBlur();
                     }}
+                    onEnterClick={handleEnterClick}
                     {...rest}
+                    status={error ? 'error' : undefined}
                     size='large'
                   />
-                  {error && <p style={{ color: 'red' }}>Choose one of the options or clear the search field</p>}
                 </>
               )}
             />
@@ -510,7 +544,8 @@ const SearchWord: FC<{
                   fullWidth
                   {...field}
                   size='large'
-                  inputProps={{ status: error ? 'error' : undefined }}
+                  status={error ? 'error' : undefined}
+                  onEnterClick={handleEnterClick}
                 />
               )}
             />
@@ -571,13 +606,13 @@ const Suggestions: FC<SuggestionProps> = memo(
               {data.pages.map((page, index) => (
                 <React.Fragment key={index}>
                   {page.words.map((word) => (
-                    <div key={word.id} onClick={() => handleChoose(word)} className={styles.wordSuggestion}>
+                    <button key={word.id} onClick={() => handleChoose(word)} className={styles.wordSuggestion}>
                       <span>{word.value}</span>
                       <span>{word.translation}</span>
                       <span style={{ marginRight: 5, opacity: 0.5 }}>
                         {helper.getCardType(word.type, word.lang)?.abbr}
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </React.Fragment>
               ))}

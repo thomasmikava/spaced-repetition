@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import { forwardRef } from 'react';
 import type { ExtractRef } from './types';
 
-type SelectProps<ValueType> = Pick<AntSelectProps, 'style' | 'className' | 'size'> & {
+type SelectProps<ValueType> = Pick<AntSelectProps, 'style' | 'className' | 'size' | 'showSearch'> & {
   value?: ValueType | null;
   defaultValue?: ValueType | null;
   onChange?: (value: ValueType) => void;
@@ -16,9 +16,22 @@ type SelectProps<ValueType> = Pick<AntSelectProps, 'style' | 'className' | 'size
 type SelectFn = <ValueType>(props: SelectProps<ValueType>) => ReactElement;
 
 const Select = forwardRef<ExtractRef<typeof AntSelect>, SelectProps<unknown>>(
-  ({ value, onChange, options, ...props }, ref) => {
-    return <AntSelect value={value} options={options} onChange={onChange} {...props} ref={ref} />;
+  ({ value, onChange, options, showSearch = true, ...props }, ref) => {
+    return (
+      <AntSelect
+        value={value}
+        options={options}
+        onChange={onChange}
+        {...props}
+        showSearch={showSearch}
+        filterOption={filterFunc}
+        ref={ref}
+      />
+    );
   },
 ) as SelectFn;
+
+const filterFunc = (input: string, option: { label: string } | undefined) =>
+  !!option && option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0;
 
 export default Select;

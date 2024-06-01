@@ -32,6 +32,7 @@ interface InputProps {
   onEnterClick?: KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   inputProps?: AntInputProps;
   size?: AntInputProps['size'];
+  status?: AntInputProps['status'];
 }
 
 export const Input = forwardRef<ExtractRef<typeof AntInput>, InputProps>((props, ref) => {
@@ -81,7 +82,7 @@ export const Input = forwardRef<ExtractRef<typeof AntInput>, InputProps>((props,
         onBlur={onBlur}
         onFocus={onFocus}
         onChange={onChange}
-        onKeyUp={(e) => {
+        onKeyDown={(e) => {
           if (e.key === 'Enter') onEnterClick?.(e);
         }}
         name={name}
