@@ -40,6 +40,8 @@ export const generateIndexedDatabase = () => {
     [CardType.CONJUNCTION]: createIndexedObject(conjunctions),
     [CardType.NUMBER]: createIndexedObject([] as Verb[]),
     [CardType.PHRASE]: createIndexedObject(phrases),
+    [CardType.REAL_ADJECTIVE]: createIndexedObject([] as Verb[]),
+    [CardType.REAL_ADVERB]: createIndexedObject([] as Verb[]),
   } satisfies Record<CardType, unknown>;
 };
 
@@ -54,6 +56,8 @@ export const generateCardTypeThings = () => {
     [CardType.CONJUNCTION]: conjunctions,
     [CardType.NUMBER]: [],
     [CardType.PHRASE]: phrases,
+    [CardType.REAL_ADJECTIVE]: [],
+    [CardType.REAL_ADVERB]: [],
   } satisfies Record<CardType, unknown>;
 };
 
@@ -127,6 +131,8 @@ export const generateAllVariants = (): Record<CardType, Map<string, string>> => 
       ['hundert', 'hundert'],
     ]),
     [CardType.PHRASE]: getAllPhrasesSet(phrases),
+    [CardType.REAL_ADJECTIVE]: new Map(),
+    [CardType.REAL_ADVERB]: new Map(),
   };
 };
 

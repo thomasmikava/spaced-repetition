@@ -23,6 +23,8 @@ export const CardTypeMapper = {
   [CardType.VERB]: 3,
   [CardType.PRONOUN]: 4,
   [CardType.ADJECTIVE_ADVERB]: 5,
+  [CardType.REAL_ADJECTIVE]: 10,
+  [CardType.REAL_ADVERB]: 11,
   [CardType.PREPOSITION]: 6,
   [CardType.CONJUNCTION]: 7,
   [CardType.NUMBER]: 8,
@@ -411,7 +413,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
   },
-  [CardTypeMapper.ADJECTIVE]: {
+  [CardTypeMapper.ADJECTIVE_ADVERB]: {
     caseSensitive: true,
     tags: [
       {
@@ -737,9 +739,9 @@ export const cardTypeRecords: CardTypeRecord[] = [
   { id: CardTypeMapper.VERB, name: 'Verb', cardDisplayName: 'Verb', abbr: '' },
   { id: CardTypeMapper.PRONOUN, name: 'Pronoun', cardDisplayName: 'Pronoun', abbr: '' },
   {
-    id: CardTypeMapper.ADJECTIVE,
-    name: 'Adjective',
-    cardDisplayName: 'Adjective',
+    id: CardTypeMapper.ADJECTIVE_ADVERB,
+    name: 'Adjective/Adverb',
+    cardDisplayName: 'Adjective/Adverb',
     abbr: '',
   },
   {
@@ -751,6 +753,18 @@ export const cardTypeRecords: CardTypeRecord[] = [
   { id: CardTypeMapper.CONJUNCTION, name: 'Conjunction', cardDisplayName: 'Conjunction', abbr: '' },
   { id: CardTypeMapper.NUMBER, name: 'Number', cardDisplayName: 'Number', abbr: '' },
   { id: CardTypeMapper.ARTICLE, name: 'Article', cardDisplayName: 'Article', abbr: '' },
+  {
+    id: CardTypeMapper.REAL_ADJECTIVE,
+    name: 'Adjective',
+    cardDisplayName: 'Adjective',
+    abbr: '',
+  },
+  {
+    id: CardTypeMapper.REAL_ADVERB,
+    name: 'Adverb',
+    cardDisplayName: 'Adverb',
+    abbr: '',
+  },
 ];
 
 export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
@@ -781,11 +795,11 @@ export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
   },
   {
     lang: 'de',
-    cardTypeRecordId: CardTypeMapper.ADJECTIVE,
+    cardTypeRecordId: CardTypeMapper.ADJECTIVE_ADVERB,
     abbr: 'Adj./Adv.',
     name: 'Adjektiv / Adverb',
     cardDisplayName: 'Adj. Adv.',
-    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.ADJECTIVE],
+    configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.ADJECTIVE_ADVERB],
   },
   {
     lang: 'de',
@@ -811,4 +825,55 @@ export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
     cardDisplayName: 'Artikel',
     configuration: GermanCardTypeConfigurationMapper[CardTypeMapper.ARTICLE],
   },
+  { lang: 'en', cardTypeRecordId: CardTypeMapper.PHRASE, abbr: '', cardDisplayName: '', name: 'Phrase' },
+  {
+    lang: 'en',
+    cardTypeRecordId: CardTypeMapper.NOUN,
+    abbr: 'n.',
+    name: 'Noun',
+    cardDisplayName: 'Noun',
+  },
+  {
+    lang: 'en',
+    cardTypeRecordId: CardTypeMapper.VERB,
+    abbr: 'b.',
+    name: 'Verb',
+    cardDisplayName: 'Verb',
+  },
+  {
+    lang: 'en',
+    cardTypeRecordId: CardTypeMapper.REAL_ADJECTIVE,
+    abbr: 'adj.',
+    name: 'Adjective',
+    cardDisplayName: 'Adjective',
+  },
+  {
+    lang: 'en',
+    cardTypeRecordId: CardTypeMapper.REAL_ADVERB,
+    abbr: 'adv.',
+    name: 'Adverb',
+    cardDisplayName: 'Adverb',
+  },
+  {
+    lang: 'en',
+    cardTypeRecordId: CardTypeMapper.PRONOUN,
+    abbr: 'pron.',
+    name: 'Pronoun',
+    cardDisplayName: 'Pronoun',
+  },
+  {
+    lang: 'en',
+    cardTypeRecordId: CardTypeMapper.PREPOSITION,
+    abbr: 'pre.',
+    name: 'Preposition',
+    cardDisplayName: 'Preposition',
+  },
+  {
+    lang: 'en',
+    cardTypeRecordId: CardTypeMapper.CONJUNCTION,
+    abbr: 'conj.',
+    cardDisplayName: 'Conjunction',
+    name: 'Conjunction',
+  },
+  { lang: 'en', cardTypeRecordId: CardTypeMapper.NUMBER, abbr: 'num.', cardDisplayName: 'Number', name: 'Number' },
 ];

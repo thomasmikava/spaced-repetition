@@ -1,3 +1,3 @@
-export function as<T>(x: unknown): asserts x is T {
+export function as<T>(_x: unknown): asserts _x is T {
   //
 }

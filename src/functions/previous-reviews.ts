@@ -159,6 +159,8 @@ export class PreviousReviews {
     return this.currentSessionCards.slice(-n).reverse();
   };
 
+  getCurrentSessionCardsCount = () => this.currentSessionCards.length;
+
   isInSession(card: CardKeys, mode: CardViewMode, sessions = this.currentSessionCards) {
     return sessions.some((x) => x.card === card && x.mode === mode);
   }
@@ -279,8 +281,9 @@ const updateS = (
   if (!s && success) return initialTestS;
   else if (!s) return Math.max(minS, initialTestS * 0.5);
 
-  const probability = passedTimeInSeconds === undefined ? 0 : calculateProbability(passedTimeInSeconds, s);
-  const successDoubleCoeff = Math.max(0.1, 1 - Math.max(0, probability - 0.5) * 2);
+  const probability =
+    passedTimeInSeconds === undefined ? 0 : calculateProbability(Math.max(30, passedTimeInSeconds), s);
+  const successDoubleCoeff = Math.max(0.2, 1 - Math.max(0, probability - 0.5) * 2);
 
   const coeffS = s;
   let successMultiplier;
@@ -318,6 +321,6 @@ function getFirstNS(n: number) {
   return result;
 }
 // eslint-disable-next-line no-constant-condition
-if (1 > 2) {
+if (1 < 2) {
   console.log('zzzz', getFirstNS(15).map(formatTime));
 }

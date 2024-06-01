@@ -48,7 +48,7 @@ export const getGermanStandardFormFn = (
       return isStandardEqual(variant.value, standardForm);
     };
   }
-  if (card.type === CardTypeMapper.ADJECTIVE) {
+  if (card.type === CardTypeMapper.ADJECTIVE_ADVERB) {
     const KomparativeValue = allCardVariants.find((v) => v.category === 2)?.value ?? card.value;
     const SuperlativValue = allCardVariants.find((v) => v.category === 3)?.value ?? card.value;
     return (variant: StandardCardVariant) => {

@@ -50,8 +50,6 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
   const learnLangOptions = useLangToLearnOptions();
   const translationLangOptions = useTranslationLangOptions();
 
-  if (!wordTypeChoices) return null;
-
   const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
 
   return (
@@ -83,46 +81,50 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 5 }}>
-          <Input fullWidth placeholder='search' onChange={(e) => setInput(e.target.value)} value={input} />
-          <Select<number>
-            options={wordTypeChoices}
-            value={wordType}
-            allowClear
-            onChange={setWordType}
-            style={{ width: 200 }}
-          />
-        </div>
+        {wordTypeChoices && (
+          <>
+            <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 5 }}>
+              <Input fullWidth placeholder='search' onChange={(e) => setInput(e.target.value)} value={input} />
+              <Select<number>
+                options={wordTypeChoices}
+                value={wordType}
+                allowClear
+                onChange={setWordType}
+                style={{ width: 200 }}
+              />
+            </div>
 
-        <div style={{ width: '100%', marginTop: 5 }}>
-          {searchQuery && (
-            <div>
-              {status === 'pending' && <LoadingOutlined />}
-              {status === 'error' && <span>Error</span>}
-              {status === 'success' && data && areResultsFound && (
+            <div style={{ width: '100%', marginTop: 5 }}>
+              {searchQuery && (
                 <div>
-                  {data.pages.map((page, index) => (
-                    <Fragment key={index}>
-                      {page.words.map((word) => (
-                        <div key={word.id}>
-                          <span style={{ marginRight: 5, opacity: 0.5 }}>
-                            {helper.getCardType(word.type, word.lang)?.abbr}
-                          </span>
-                          <span>{word.value}</span>
-                          <span style={{ margin: '0 10px' }}> - </span>
-                          <span>{word.translation}</span>
-                        </div>
+                  {status === 'pending' && <LoadingOutlined />}
+                  {status === 'error' && <span>Error</span>}
+                  {status === 'success' && data && areResultsFound && (
+                    <div>
+                      {data.pages.map((page, index) => (
+                        <Fragment key={index}>
+                          {page.words.map((word) => (
+                            <div key={word.id}>
+                              <span style={{ marginRight: 5, opacity: 0.5 }}>
+                                {helper.getCardType(word.type, word.lang)?.abbr}
+                              </span>
+                              <span>{word.value}</span>
+                              <span style={{ margin: '0 10px' }}> - </span>
+                              <span>{word.translation}</span>
+                            </div>
+                          ))}
+                        </Fragment>
                       ))}
-                    </Fragment>
-                  ))}
-                  {hasNextPage && (
-                    <Button onClick={() => fetchNextPage()} label='Load more words' loading={isFetchingNextPage} />
+                      {hasNextPage && (
+                        <Button onClick={() => fetchNextPage()} label='Load more words' loading={isFetchingNextPage} />
+                      )}
+                    </div>
                   )}
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

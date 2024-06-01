@@ -76,7 +76,7 @@ const CoursePage = () => {
 
   return (
     <div className='body'>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
         <LeftOutlined onClick={goToMainPage} style={{ cursor: 'pointer' }} />
         <h3>{course.title}</h3>
         {isInMyCoursesList && (

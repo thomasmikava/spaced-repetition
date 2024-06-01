@@ -9,6 +9,7 @@ import {
   DEFAULT_REVIEW_DUE,
   LAST_CARDS_COUNT_TO_CONSIDER,
   LAST_PERIOD_TO_CONSIDER,
+  LAST_PERIOD_TO_CONSIDER_SMALL,
   MAX_NUM_OF_GROUP_VIEW_CARDS,
   MAX_NUM_OF_VIEW_CARDS,
   REVIEW_MAX_DUE,
@@ -83,7 +84,11 @@ export class Reviewer {
   };
 
   private calculateProbabilities = (currentDate = Date.now()) => {
-    const lastCards = this.prevReviews.getHistoryForLastPeriod(LAST_PERIOD_TO_CONSIDER, currentDate);
+    const askedCards = this.prevReviews.getCurrentSessionCardsCount();
+    const lastCards = this.prevReviews.getHistoryForLastPeriod(
+      askedCards <= 10 ? LAST_PERIOD_TO_CONSIDER_SMALL : LAST_PERIOD_TO_CONSIDER,
+      currentDate,
+    );
 
     const lastNCards = this.prevReviews.getLastNHistory(LAST_CARDS_COUNT_TO_CONSIDER);
 
@@ -229,11 +234,6 @@ export class Reviewer {
           lastGroupViewDate,
           willBeTested,
         }): CardWithProbability => {
-          const qOrder = this.prevReviews.getLastNHistory(Infinity).length + 1;
-          if (qOrder === 24 && record.card.value === 'groß') {
-            // debugger;
-          }
-          // if (i === 0) console.log(groupLastViewDates);
           const isTested = !!historyRecord;
           const prevKey = record.previousGroupViewKey
             ? record.previousGroupViewKey
@@ -318,7 +318,7 @@ export class Reviewer {
   };
 
   getNextCard = (currentDate = Date.now()) => {
-    const qOrder = this.prevReviews.getLastNHistory(Infinity).length + 1;
+    const qOrder = this.prevReviews.getCurrentSessionCardsCount() + 1;
     console.log('#q', qOrder);
 
     const { probabilities: sorted, removableDueDatesCardKeys } = this.calculateProbabilities(currentDate);

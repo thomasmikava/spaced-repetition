@@ -10,7 +10,7 @@ interface Props {
   lessons: LessonDTO[];
 }
 
-export const LessonBody: FC<Props> = memo(({ courseId, lessonId, lessons }) => {
+export const LessonBody: FC<Props> = memo(({ courseId, lessons }) => {
   return (
     <div className={cssModule.lessonsContainer}>
       {lessons.map((lesson) => (

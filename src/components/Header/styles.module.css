@@ -6,7 +6,7 @@
   position: sticky;
   z-index: 1;
   top: 0;
-  height: 64px;
+  height: 60px;
   box-shadow: rgba(0, 0, 0, 0.4) 0 0 12px;
   padding: 0 50px;
 }
@@ -39,7 +39,7 @@
 }
 
 .logo {
-  width: 300px;
+  width: 200px;
   max-width: 100%;
 }
 

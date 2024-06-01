@@ -354,7 +354,7 @@ export const getCardViewContent2 = (
         return {
           type: 'input',
           inputId: '1',
-          placeholder: 'tipp', // TODO: localize placeholder
+          placeholder: 'type',
           fullWidth: true,
           autoFocus: true,
           correctValues,

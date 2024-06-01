@@ -12,7 +12,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico'],
       manifest: {
         name: 'Memoriko - Space Repetition',
-        short_name: 'G SP',
+        short_name: 'Memoriko',
         theme_color: '#242424',
         icons: [
           {

@@ -59,7 +59,6 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
           </>
         )}
       </button>
-      <button onClick={() => handleReview(true)}>Endless review</button>
     </div>
   );
 };

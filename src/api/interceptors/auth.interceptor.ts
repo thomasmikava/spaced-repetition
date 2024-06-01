@@ -1,5 +1,5 @@
-import type { Axios } from 'axios';
-import { getTokenFromStorage } from '../helpers';
+import { isAxiosError, type Axios } from 'axios';
+import { destroyTokenInStorage, getTokenFromStorage } from '../helpers';
 
 export const addAuthInterceptor = (axios: Axios) => {
   axios.interceptors.request.use((config) => {
@@ -13,4 +13,17 @@ export const addAuthInterceptor = (axios: Axios) => {
 
     return config;
   });
+
+  axios.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        destroyTokenInStorage();
+        location.reload();
+      }
+      return Promise.reject(error);
+    },
+  );
 };

@@ -103,8 +103,8 @@ export const useSearchCourses = (query: Omit<ExploreCoursesReqDTO, 'skip'>) => {
     retry: false,
     enabled: query.searchValue !== '',
     initialPageParam: 0,
-    getPreviousPageParam: (firstPage, allPages, firstPageParam) => Math.max(0, firstPageParam - query.limit),
-    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+    getPreviousPageParam: (_firstPage, _allPages, firstPageParam) => Math.max(0, firstPageParam - query.limit),
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (lastPage.isLastPage) return undefined;
       if (lastPage.courses.length < query.limit) return undefined;
       return lastPageParam + query.limit;

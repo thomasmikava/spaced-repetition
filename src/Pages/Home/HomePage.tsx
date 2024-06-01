@@ -16,6 +16,7 @@ const HomePage = () => {
   return (
     <div className='body'>
       <ReviewButtons />
+      <br />
       <div className={appCssModule.courseContainer}>
         {mainCourses.map((course) => (
           <CourseBox key={course.id} course={course} />

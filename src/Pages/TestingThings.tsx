@@ -39,6 +39,7 @@ const TestingThingsPage = () => {
     }
 
     const someWords = originalWords.slice(skip, skip + limit);
+    if (someWords.length === 0) return { count: 0 };
     const wordCards = someWords.map((v) => db.getCard(cardType, v.uniqueValue ?? v.value)).filter(isNonNullable);
 
     return wordController
@@ -70,18 +71,20 @@ const TestingThingsPage = () => {
         return { count: someWords.length };
       });
   };
-  const createWordsInDB = () => {
+  const createWordsInDB = (gloablLimit = 20) => {
     const cardTypes = Object.keys(oldDb) as CardType[];
 
     (async function () {
       for (const cardType of cardTypes) {
-        const limit = 50;
         let skip = 0;
+        let limit = gloablLimit;
+        if (cardType === CardType.ADJECTIVE_ADVERB) limit = 3;
         let isOver = false;
         while (!isOver) {
           const { count } = await createWordsInDBHelper(cardType, limit, skip);
           skip += limit;
           if (count === 0) isOver = true;
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
       console.log('created all words');

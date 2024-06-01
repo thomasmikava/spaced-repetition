@@ -18,13 +18,14 @@ import LoginPage from './Pages/Login/index.tsx';
 import NewWordsPage from './Pages/NewWords.tsx';
 import RegistrationPage from './Pages/Registration/index.tsx';
 import { ReviewPageLoader } from './Pages/Review/ReviewPage.tsx';
-import TestingThingsPage from './Pages/TestingThings.tsx';
 import { PageGuard } from './routes/PageGuard.tsx';
 import { paths } from './routes/paths.ts';
 import { queryClient } from './utils/queries.ts';
 import ExploreCoursesPage from './Pages/Course/ExploreCoursesPage.tsx';
 import SearchPage from './Pages/Search/SearchPage.tsx';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+const TestingThingsPage = React.lazy(() => import('./Pages/TestingThings.tsx'));
 
 const router = createBrowserRouter(
   [

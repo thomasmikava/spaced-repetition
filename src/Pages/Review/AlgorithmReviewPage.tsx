@@ -79,7 +79,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tagLength = (question as any).content?.[0]?.content?.[0]?.content?.length || 1; // TODO: it's very fragile strategy
-      lastDate += 5000 + (tagLength - 1) * 3000;
+      lastDate += 1000 + (tagLength - 1) * 1000;
       if (question.type === CardViewMode.groupView) {
         lastDate += currentCard.record.card.type === CardTypeMapper[CardType.VERB] ? 10000 : 5000;
       }

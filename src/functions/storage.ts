@@ -1,9 +1,9 @@
 import type { PostHistoryRecordsReqDTO } from '../api/controllers/history/history.schema';
-import { getRecordUniqueKey, type AnyReviewHistory, type TestReviewHistory } from './reviews';
+import { getRecordUniqueKey, type AnyReviewHistory } from './reviews';
 
 export const getDbRecord = (record: AnyReviewHistory): PostHistoryRecordsReqDTO[number] => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { savedInDb, uniqueKey, ...rest } = record as TestReviewHistory;
+  const { savedInDb, uniqueKey, ...rest } = record;
   return {
     ...rest,
     lastS: rest.lastS ?? null,

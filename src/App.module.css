@@ -77,12 +77,16 @@
 
 .row .lessonCardType {
   padding-right: 30px;
+  opacity: 0.5;
 }
 
 .lessonCardValue {
 }
 
 .lessonCardTranslation {
+}
+.lessonCardReviewTime {
+  opacity: 0.5;
 }
 .buttonsContainer {
   margin: 20px 0;
@@ -92,10 +96,19 @@
 
 .buttonsContainer button {
   padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
+  border-radius: 33px;
   cursor: pointer;
   font-size: 20px;
+  box-shadow: #0000007d 0 0 7px 5px;
+  border: 2px solid #0a94ff;
+  color: black;
+  background: white;
+  transition: all 0.3s;
+}
+.buttonsContainer button:hover {
+  transform: scale(1.05);
+  color: white;
+  background: #0a94ff;
 }
 
 .viewCard {

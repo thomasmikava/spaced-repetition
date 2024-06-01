@@ -100,7 +100,7 @@ const LessonPage = () => {
 
   return (
     <div className='body'>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
         <LeftOutlined onClick={goToCourse} style={{ cursor: 'pointer' }} />
         <div>
           <span>{course.title}</span> - {myLesson.title}{' '}
@@ -145,7 +145,10 @@ const LessonPage = () => {
                 </td>
                 <td className={cssModule.lessonCardValue}>{word.value}</td>
                 <td className={cssModule.lessonCardTranslation}>{word.translation}</td>
-                <td className={cssModule.lessonCardTranslation}>
+                <td
+                  className={cssModule.lessonCardReviewTime}
+                  style={{ opacity: typeof closestDueDate === 'number' && closestDueDate <= 10 ? 1 : undefined }}
+                >
                   {closestDueDate === Infinity || closestDueDate === null
                     ? null
                     : closestDueDate <= 0
