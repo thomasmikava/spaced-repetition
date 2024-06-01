@@ -371,7 +371,7 @@ export class Reviewer {
     if (mode === CardViewMode.individualView || mode === CardViewMode.groupView) return false;
     if (card.skipTest) return false;
     if (!card.isStandardForm) return true;
-    if (card.isGroupStandardForm !== false) return false;
+    if (card.isGroupStandardForm || card.forcefullySkipIfStandard) return false;
     const wasTested = wasLastCorrect !== undefined && wasLastCorrect !== null;
     if (!wasTested) return true;
     return !wasLastCorrect;

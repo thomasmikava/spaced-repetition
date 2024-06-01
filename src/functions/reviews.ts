@@ -90,8 +90,9 @@ export type CardKeys = {
 export type GeneralTestableCard = CardKeys & {
   hasGroupViewMode: boolean;
   hasIndividualViewMode: boolean;
-  isStandardForm?: boolean;
-  isGroupStandardForm?: boolean;
+  isStandardForm: boolean;
+  isGroupStandardForm: boolean;
+  forcefullySkipIfStandard?: boolean;
   skipTest?: boolean;
 };
 

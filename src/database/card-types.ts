@@ -49,7 +49,7 @@ export interface CardTypeRecordLocalization {
   configuration?: CardTypeConfiguration;
 }
 
-type CategoryAttrsMatcher<T = {}> = Matcher<
+export type CategoryAttrsMatcher<T = {}> = Matcher<
   T & {
     category: IdType;
     attrs: StandardCardAttributes;
@@ -140,7 +140,7 @@ const groupTables = {
   },
 } satisfies Record<string, ViewTableLine>;
 
-export type AudioAffix = { type: 'attr'; attrId: IdType } | { type: 'text'; text: string };
+export type AudioAffix = { type: 'attr'; attrId: IdType; splitIndex?: number } | { type: 'text'; text: string };
 
 export type ViewLine =
   | { type: ViewLineType.Separator | ViewLineType.NewLine }
@@ -181,6 +181,7 @@ export interface VariantGroup {
   skipTest?: boolean | { only1variant: boolean };
   skip?: boolean;
   skipIfStandard?: boolean;
+  skipStandardVariantsMatchers?: CategoryAttrsMatcher[];
   groupViewId?: string;
   indViewId?: string;
   testViewId?: string;
@@ -250,6 +251,21 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           groupViewId: 'gr',
           testViewId: 'gr-test',
           forcefullyGroup: true,
+          ...((mood === VerbMood.Indikativ && tense === VerbTense.Präsens
+            ? {
+                skipStandardVariantsMatchers: [
+                  {
+                    attrs: {
+                      [AttributeMapper.PRONOUN.id]: [
+                        AttributeMapper.PRONOUN.records[VerbPronoun.wir],
+                        AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
+                        AttributeMapper.PRONOUN.records[VerbPronoun.sie_Sie],
+                      ],
+                    },
+                  },
+                ],
+              }
+            : {}) satisfies Partial<VariantGroup>),
         }),
       ),
       { id: 'skip', matcher: null, skip: true },
@@ -278,7 +294,10 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.Audio },
           { type: ViewLineType.AttrValue, attrs: [AttributeMapper.PRONOUN.id] },
           { type: ViewLineType.NewLine },
-          { type: ViewLineType.Input, audioPrefix: { type: 'attr', attrId: AttributeMapper.PRONOUN.id } },
+          {
+            type: ViewLineType.Input,
+            audioPrefix: { type: 'attr', attrId: AttributeMapper.PRONOUN.id, splitIndex: 0 },
+          },
           {
             type: ViewLineType.AfterAnswer,
             lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],

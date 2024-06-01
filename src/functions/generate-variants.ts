@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { CardTypeConfiguration, SortBy, VariantGroup } from '../database/card-types';
+import type { CardTypeConfiguration, CategoryAttrsMatcher, SortBy, VariantGroup } from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
 import { isMatch } from '../utils/matcher';
 import type { Helper } from './generate-card-content';
@@ -61,8 +61,7 @@ export function generateTestableCards(card: StandardCard, helper: Helper): Stand
     // }
     if (nonStandardCount === 0 && group.gr?.skipIfStandard) return;
 
-    const isGroupStandard =
-      nonStandardCount === 0 ? true : nonStandardCount <= maxAllowedNonStandardForms ? undefined : false;
+    const isGroupStandard = nonStandardCount === 0 || nonStandardCount <= maxAllowedNonStandardForms;
 
     const hasGroupViewMode = variants.length > 1 || !!group.gr?.forcefullyGroup;
     const hasIndividualViewMode = !hasGroupViewMode;
@@ -75,12 +74,14 @@ export function generateTestableCards(card: StandardCard, helper: Helper): Stand
       variants,
       gr: group.gr,
     };
-    group.variants.forEach((variant, i) => {
+    group.variants.forEach((_v, i) => {
+      const isStandardForm = standardness[i];
+      const variant = variants[i];
       testable.push({
         card: newCard,
         type: card.type,
         displayType,
-        variant: variants[i],
+        variant,
         caseSensitive: helper.getCardType(displayType, card.lang)?.configuration?.caseSensitive ?? false,
         initial: variant.category === 1,
         groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '').toLocaleLowerCase() : null,
@@ -91,8 +92,11 @@ export function generateTestableCards(card: StandardCard, helper: Helper): Stand
         groupMeta,
         groupLevel: lastGroupLevel + 1,
         previousGroupViewKey: lastGroupKey,
-        isStandardForm: standardness[i],
+        isStandardForm,
         isGroupStandardForm: isGroupStandard,
+        forcefullySkipIfStandard: isStandardForm
+          ? isOneOfTheMatchers(variant, group.gr?.skipStandardVariantsMatchers)
+          : undefined,
       });
     });
     lastGroupLevel++;
@@ -101,6 +105,15 @@ export function generateTestableCards(card: StandardCard, helper: Helper): Stand
 
   return testable;
 }
+
+const isOneOfTheMatchers = (
+  variant: StandardCardVariant,
+  matchers: CategoryAttrsMatcher[] | undefined | null,
+): boolean | undefined => {
+  if (!matchers) return undefined;
+  const variantValue: { category?: IdType | null; attrs?: StandardCardAttributes | null } = variant;
+  return matchers.some((matcher) => isMatch(variantValue, matcher));
+};
 
 const shouldSkipTest = (card: StandardCard, variantGroup: VariantGroup | null | undefined): boolean => {
   if (!variantGroup || typeof variantGroup.skipTest === 'undefined' || variantGroup.skipTest === null) return false;
@@ -127,8 +140,6 @@ const divideVariantsInGroups = (card: StandardCard, config: CardTypeConfiguratio
         }
       }
       if (matchedVariants.length && !pr.skip) {
-        // TODO: sort matchedVariants
-
         groups.push({
           matcherId: pr.id ?? null,
           groupViewId: pr.groupViewId ?? null,

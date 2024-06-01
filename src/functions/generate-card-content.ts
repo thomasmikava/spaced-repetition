@@ -216,7 +216,7 @@ const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helpe
   return tags;
 };
 
-const getAffix = (
+const getPrefix = (
   affix: AudioAffix,
   attrs: StandardCardAttributes | null | undefined,
   langToLearn: string,
@@ -227,7 +227,12 @@ const getAffix = (
   }
   const attrRecordId = attrs ? attrs[affix.attrId] : undefined;
   const attributeValueName = attrRecordId ? helper.getAttributeRecord(attrRecordId, langToLearn)?.name : undefined;
-  return attributeValueName ? attributeValueName + ' ' : '';
+  const val =
+    attributeValueName && typeof affix.splitIndex === 'number'
+      ? slashSplit(attributeValueName)[affix.splitIndex]
+      : attributeValueName;
+  if (!val) return '';
+  return val + ' ';
 };
 
 export const getCardViewContent2 = (
@@ -363,7 +368,7 @@ export const getCardViewContent2 = (
           audioProps: prepareInputAudio(
             record.card.lang,
             correctValues,
-            line.audioPrefix ? getAffix(line.audioPrefix, record.variant.attrs, record.card.lang, helper) : undefined,
+            line.audioPrefix ? getPrefix(line.audioPrefix, record.variant.attrs, record.card.lang, helper) : undefined,
           ),
         };
       case ViewLineType.AfterAnswer:
