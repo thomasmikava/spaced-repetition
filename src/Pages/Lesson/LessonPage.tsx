@@ -4,7 +4,6 @@ import Dropdown from 'antd/es/dropdown';
 import Modal from 'antd/es/modal';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import cssModule from '../../App.module.css';
 import ReviewButtons from '../../ReviewButtons';
 import { useCourseById, useMyMainCourses } from '../../api/controllers/courses/courses.query';
 import { useCourseLessons, useDeleteLesson } from '../../api/controllers/lessons/lessons.query';
@@ -20,6 +19,7 @@ import { useFilteredLessons } from './useFilteredLessons';
 import { useSignInUserData } from '../../contexts/Auth';
 import { AddToMyCoursesButton } from '../Course/AddToMyCourses';
 import LoadingPage from '../Loading/LoadingPage';
+import { Table, type TableRow } from '../../ui/Table/Table';
 
 const LessonPage = () => {
   const userData = useSignInUserData();
@@ -98,6 +98,31 @@ const LessonPage = () => {
 
   const isEmpty = !!lessons && lessons.length === 0 && lessonWords.length === 0;
 
+  const rows = lessonsInfo.map((item): TableRow => {
+    const { closestDueIn: closestDueDate, word } = item;
+    const key = word.id;
+    return {
+      key,
+      cells: [
+        {
+          cellValue: helper.getCardType(word.mainType ?? word.type, word.lang)?.abbr,
+          style: { opacity: 0.5, paddingRight: 30 },
+        },
+        word.value,
+        word.translation,
+        {
+          cellValue:
+            closestDueDate === Infinity || closestDueDate === null
+              ? null
+              : closestDueDate <= 0
+                ? 'Ready'
+                : 'In ' + formatTime(closestDueDate),
+          style: { opacity: closestDueDate <= 10 ? 1 : undefined },
+        },
+      ],
+    };
+  });
+
   return (
     <div className='body'>
       <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
@@ -133,33 +158,7 @@ const LessonPage = () => {
         <AddToMyCoursesButton courseId={courseId} />
       )}
       {lessons && lessons.length > 0 && <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} />}
-      <table className={cssModule.lessonTable}>
-        <tbody>
-          {lessonsInfo.map((item) => {
-            const { closestDueIn: closestDueDate, word } = item;
-            const key = word.id;
-            return (
-              <tr key={key} className={cssModule.row}>
-                <td className={cssModule.lessonCardType}>
-                  {helper.getCardType(word.mainType ?? word.type, word.lang)?.abbr}
-                </td>
-                <td className={cssModule.lessonCardValue}>{word.value}</td>
-                <td className={cssModule.lessonCardTranslation}>{word.translation}</td>
-                <td
-                  className={cssModule.lessonCardReviewTime}
-                  style={{ opacity: typeof closestDueDate === 'number' && closestDueDate <= 10 ? 1 : undefined }}
-                >
-                  {closestDueDate === Infinity || closestDueDate === null
-                    ? null
-                    : closestDueDate <= 0
-                      ? 'Ready'
-                      : 'In ' + formatTime(closestDueDate)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <Table rows={rows} removeEmptyColumns />
       <br />
       <Modal
         title='Modal'

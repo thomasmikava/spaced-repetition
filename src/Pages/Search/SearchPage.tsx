@@ -3,7 +3,7 @@ import { useLangToLearnOptions, useTranslationLangOptions } from '../../hooks/la
 import Select from '../../ui/Select';
 import Input from '../../ui/Input';
 import type { FC } from 'react';
-import { Fragment, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import { useSearchWords } from '../../api/controllers/words/words.query';
 import { useWordTypeChoices } from '../../hooks/cards';
@@ -15,6 +15,8 @@ import ArrowLeftOutlined from '@ant-design/icons/lib/icons/ArrowLeftOutlined';
 import { useNavigate } from 'react-router-dom';
 import { paths } from '../../routes/paths';
 import LoadingPage from '../Loading/LoadingPage';
+import type { TableRow } from '../../ui/Table/Table';
+import Table from '../../ui/Table';
 
 const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
   const navigate = useNavigate();
@@ -51,6 +53,27 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
   const translationLangOptions = useTranslationLangOptions();
 
   const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
+
+  const rows = useMemo(() => {
+    if (status === 'error' || !data || !areResultsFound) return null;
+    return data.pages
+      .map((e) => e.words)
+      .flat(1)
+      .map((word): TableRow => {
+        const key = word.id;
+        return {
+          key,
+          cells: [
+            {
+              cellValue: helper.getCardType(word.mainType ?? word.type, word.lang)?.abbr,
+              style: { opacity: 0.5, paddingRight: 5 },
+            },
+            word.value,
+            word.translation,
+          ],
+        };
+      });
+  }, [areResultsFound, data, helper, status]);
 
   return (
     <div className='body' style={{ justifyContent: 'flex-start', padding: 10 }}>
@@ -99,22 +122,9 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
                 <div>
                   {status === 'pending' && <LoadingOutlined />}
                   {status === 'error' && <span>Error</span>}
-                  {status === 'success' && data && areResultsFound && (
+                  {rows && (
                     <div>
-                      {data.pages.map((page, index) => (
-                        <Fragment key={index}>
-                          {page.words.map((word) => (
-                            <div key={word.id}>
-                              <span style={{ marginRight: 5, opacity: 0.5 }}>
-                                {helper.getCardType(word.type, word.lang)?.abbr}
-                              </span>
-                              <span>{word.value}</span>
-                              <span style={{ margin: '0 10px' }}> - </span>
-                              <span>{word.translation}</span>
-                            </div>
-                          ))}
-                        </Fragment>
-                      ))}
+                      {rows && <Table rows={rows} removeEmptyColumns fullWidth />}
                       {hasNextPage && (
                         <Button onClick={() => fetchNextPage()} label='Load more words' loading={isFetchingNextPage} />
                       )}
