@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { KeyboardEventHandler } from 'react';
-import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, type FC } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type FC } from 'react';
 import Button from '../../../ui/Button';
 import type {
   Control,
@@ -31,6 +31,8 @@ import { useValidation } from './Form.validation';
 import React from 'react';
 import type { Helper } from '../../../functions/generate-card-content';
 import { useWordTypeChoices } from '../../../hooks/cards';
+import { mergeRefs } from 'react-merge-refs';
+import type { InputRef } from 'antd/es/input';
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -166,13 +168,15 @@ interface FieldArrayProps {
   isCourseLevel: boolean;
   formBaseInfo: FormBaseInfo;
   helper: Helper;
-  onAddNewWord?: () => void;
+  onAddNewWord?: (newWords?: AddNewWordInfo[]) => void;
 }
 
 interface FieldArrayRef {
   addNewLesson: () => void;
-  addNewWord: () => void;
+  addNewWord: (newWords?: AddNewWordInfo[]) => void;
 }
+
+type AddNewWordInfo = { wordValue: string; translation: string };
 
 const FieldArray = memo(
   forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, formBaseInfo, onAddNewWord, helper }, ref) => {
@@ -201,17 +205,22 @@ const FieldArray = memo(
       append(newLesson);
     }, [append]);
 
-    const handleAddNewWord = useCallback(() => {
-      const newWord: WordInfo = {
-        type: 'word',
-        subType: 'search-word',
-        wordValue: '',
-        translation: '',
-        advancedTranslation: null,
-        fieldUniqueId: Math.random().toString(),
-      };
-      append(newWord);
-    }, [append]);
+    const handleAddNewWord = useCallback(
+      (values: AddNewWordInfo[] = [{ wordValue: '', translation: '' }]) => {
+        for (const value of values) {
+          const newWord: WordInfo = {
+            type: 'word',
+            subType: 'search-word',
+            wordValue: value.wordValue,
+            translation: value.translation,
+            advancedTranslation: null,
+            fieldUniqueId: Math.random().toString(),
+          };
+          append(newWord);
+        }
+      },
+      [append],
+    );
 
     useImperativeHandle(
       ref,
@@ -286,9 +295,9 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
     fieldArrayRef.current.addNewLesson();
   };
 
-  const handleAddNewWord = () => {
+  const handleAddNewWord = (newWords?: AddNewWordInfo[]) => {
     if (!fieldArrayRef.current) return;
-    fieldArrayRef.current.addNewWord();
+    fieldArrayRef.current.addNewWord(newWords);
   };
 
   return (
@@ -305,7 +314,7 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
           menu={{
             items: [
               { label: 'Add sub lesson', key: 'add-l', icon: <PlusOutlined />, onClick: handleAddNewLesson },
-              { label: 'Add new word', key: 'add-w', icon: <PlusOutlined />, onClick: handleAddNewWord },
+              { label: 'Add new word', key: 'add-w', icon: <PlusOutlined />, onClick: () => handleAddNewWord() },
               {
                 label: 'Delete',
                 key: 'remove',
@@ -342,7 +351,7 @@ const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index,
                 <span style={{ marginLeft: 10 }}>Add new word</span>
               </span>
             }
-            onClick={handleAddNewWord}
+            onClick={() => handleAddNewWord()}
           />
         )}
         {(!hasChildren || !areOnlyWords) && (
@@ -370,7 +379,7 @@ interface WordFieldProps {
   parentKey: `children`;
   formBaseInfo: FormBaseInfo;
   helper: Helper;
-  onAddNewWord?: () => void;
+  onAddNewWord?: (newWords?: AddNewWordInfo[]) => void;
   isLastChild: boolean;
 }
 
@@ -426,7 +435,7 @@ const SearchWord: FC<{
   setFocus: UseFormSetFocus<LessonInfo<WordInfo>>;
   getValues: UseFormGetValues<LessonInfo<WordInfo>>;
   watchFn: UseFormWatch<LessonInfo<WordInfo>>;
-  onAddNewWord?: () => void;
+  onAddNewWord?: (newWords?: AddNewWordInfo[]) => void;
   isLastChild: boolean;
 }> = ({
   formBaseInfo,
@@ -461,6 +470,8 @@ const SearchWord: FC<{
     limit: 5,
   });
 
+  const wodValueRef = useRef<InputRef>(null);
+
   const handleChoose = useCallback(
     (suggestion: WordWithTranslationDTO) => {
       // debugger;
@@ -491,6 +502,40 @@ const SearchWord: FC<{
     if (isLastChild) onAddNewWord?.();
   };
 
+  const isEmptyWordValue = !searchValue;
+
+  useEffect(() => {
+    if (isLastChild && onAddNewWord && isEmptyWordValue) {
+      const onPaste = (event: ClipboardEvent) => {
+        if (event.target !== wodValueRef.current?.input) return;
+
+        const tableData = getTableFromClipboard(event.clipboardData);
+        if (tableData) {
+          console.log('tableData', tableData);
+          const first2Cols = getFirstNNonEmptyColumns(tableData, 2, (v) => !v).filter((e) => e.some((e) => !!e));
+          if (first2Cols.length === 0) return;
+          onRemove();
+          // Log the 2D array to see the output
+          console.log(first2Cols);
+
+          onAddNewWord(
+            first2Cols.map((e) => ({
+              wordValue: e[0],
+              translation: e[1],
+            })),
+          );
+
+          // Prevent the default paste action
+          event.preventDefault();
+        }
+      };
+      document.addEventListener('paste', onPaste);
+      return () => {
+        document.removeEventListener('paste', onPaste);
+      };
+    }
+  }, [isLastChild, onAddNewWord, isEmptyWordValue, onRemove]);
+
   const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper) || [];
 
   return (
@@ -501,7 +546,7 @@ const SearchWord: FC<{
             <Controller
               name={`${fieldKey}.wordValue`}
               control={control}
-              render={({ field: { onBlur, onChange, ...rest }, fieldState: { error } }) => (
+              render={({ field: { onBlur, onChange, ref, ...rest }, fieldState: { error } }) => (
                 <>
                   <Input
                     placeholder='Word'
@@ -526,6 +571,7 @@ const SearchWord: FC<{
                       onBlur();
                     }}
                     onEnterClick={handleEnterClick}
+                    ref={mergeRefs([wodValueRef, ref])}
                     {...rest}
                     status={error ? 'error' : undefined}
                     size='large'
@@ -628,3 +674,62 @@ const Suggestions: FC<SuggestionProps> = memo(
 );
 
 export { ContentForm };
+
+const getTableFromClipboard = (clipboardData: DataTransfer | null) => {
+  try {
+    if (!clipboardData) return null;
+    const pastedData = clipboardData.getData('text/html');
+
+    // Validate if the pasted data is likely HTML
+    if (!pastedData || (!pastedData.includes('<html>') && !pastedData.includes('<table>'))) {
+      // Pasted data is not HTML or does not contain table elements
+      return null;
+    }
+
+    // Use DOMParser to parse the HTML string
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(pastedData, 'text/html');
+
+    // Find the table body
+    const tbody = doc.querySelector('tbody');
+    if (!tbody) {
+      // No table body found in the pasted HTML
+      return null;
+    }
+
+    // Initialize a 2D array to hold the table data
+    const tableArray: string[][] = [];
+
+    // Iterate over each row in the tbody
+    if (tbody) {
+      tbody.querySelectorAll('tr').forEach(function (row) {
+        const rowData: string[] = [];
+        // Iterate over each cell in the row
+        row.querySelectorAll('td').forEach(function (cell) {
+          // Extract text and push into the rowData array
+          rowData.push((cell.textContent || '').trim());
+        });
+        // Push rowData into tableArray
+        tableArray.push(rowData);
+      });
+    }
+
+    // Log the 2D array to see the output
+    return tableArray;
+  } catch (e) {
+    return null;
+  }
+};
+
+function getFirstNNonEmptyColumns<T>(tableData: T[][], n: number, isEmpty: (cellValue: T) => boolean) {
+  const result: T[][] = [];
+  for (let i = 0; i < tableData.length; i++) {
+    const row = tableData[i];
+    const newRow: T[] = [];
+    for (let j = 0; j < row.length && newRow.length < n; j++) {
+      if (!isEmpty(row[j])) newRow.push(row[j]);
+    }
+    result.push(newRow);
+  }
+  return result;
+}
