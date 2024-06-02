@@ -20,6 +20,7 @@ import Select from '../ui/Select';
 import { uniquelize } from '../utils/array';
 import LoadingPage from './Loading/LoadingPage';
 import { useHelper } from './hooks/text-helpers';
+import type { AddNewWordInfo, JSONPasteWords } from './Course/EditContent/Form';
 
 const NewWordsPage: FC<{ helper: Helper }> = () => {
   const [langToLearn, setLangToLearn] = useLocalStorage('lang-to-learn', null as null | string);
@@ -70,8 +71,30 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
   };
   const copyResults = () => {
     if (!results) return;
-    const text = JSON.stringify(results.knownTokens.map((result) => ({ id: result.word.id, word: result.word })));
-    navigator.clipboard.writeText(text);
+    const texts = results.knownTokens.map(
+      (e): AddNewWordInfo => ({
+        word: e.word,
+      }),
+    );
+    const data: JSONPasteWords = {
+      type: 'internal-paste',
+      words: texts,
+    };
+    navigator.clipboard.writeText(JSON.stringify(data));
+  };
+
+  const copyUnknowns = () => {
+    if (!results) return;
+    const texts = results.unknownWords.map(
+      (e): AddNewWordInfo => ({
+        wordValue: e,
+      }),
+    );
+    const data: JSONPasteWords = {
+      type: 'internal-paste',
+      words: texts,
+    };
+    navigator.clipboard.writeText(JSON.stringify(data));
   };
 
   if (isLoadingWordIds || isLoadingCourses) return <LoadingPage />;
@@ -117,6 +140,7 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
                   <li key={index}>{result}</li>
                 ))}
               </ul>
+              <Button label='Copy' onClick={copyUnknowns} variant='primary' />
             </div>
           )}
           {results.knownTokens.length > 0 && (
@@ -130,9 +154,7 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
                   </li>
                 ))}
               </ul>
-              <button style={{ fontSize: 20 }} onClick={copyResults}>
-                Copy
-              </button>
+              <Button label='Copy' onClick={copyResults} variant='primary' />
             </div>
           )}
         </div>

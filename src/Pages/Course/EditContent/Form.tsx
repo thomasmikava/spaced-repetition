@@ -33,6 +33,7 @@ import type { Helper } from '../../../functions/generate-card-content';
 import { useWordTypeChoices } from '../../../hooks/cards';
 import { mergeRefs } from 'react-merge-refs';
 import type { InputRef } from 'antd/es/input';
+import { as } from '../../../utils/common';
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -176,7 +177,14 @@ interface FieldArrayRef {
   addNewWord: (newWords?: AddNewWordInfo[]) => void;
 }
 
-type AddNewWordInfo = { wordValue: string; translation: string };
+export type AddNewWordInfo =
+  | { wordValue: string; translation?: string; word?: undefined }
+  | { word: WordWithTranslationDTO; customTranslation?: string };
+
+export interface JSONPasteWords {
+  type: 'internal-paste';
+  words: AddNewWordInfo[];
+}
 
 const FieldArray = memo(
   forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, formBaseInfo, onAddNewWord, helper }, ref) => {
@@ -208,14 +216,26 @@ const FieldArray = memo(
     const handleAddNewWord = useCallback(
       (values: AddNewWordInfo[] = [{ wordValue: '', translation: '' }]) => {
         for (const value of values) {
-          const newWord: WordInfo = {
-            type: 'word',
-            subType: 'search-word',
-            wordValue: value.wordValue,
-            translation: value.translation,
-            advancedTranslation: null,
-            fieldUniqueId: Math.random().toString(),
-          };
+          const newWord: WordInfo = value.word
+            ? {
+                type: 'word',
+                subType: 'search-word',
+                wordValue: value.word.value,
+                word: value.word,
+                translation: value.customTranslation ?? value.word.translation ?? '',
+                advancedTranslation: value.word.advancedTranslation ?? null,
+                wordDisplayType:
+                  value.word.mainType ?? (value.word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : value.word.type),
+                fieldUniqueId: Math.random().toString(),
+              }
+            : {
+                type: 'word',
+                subType: 'search-word',
+                wordValue: value.wordValue,
+                translation: value.translation ?? '',
+                advancedTranslation: null,
+                fieldUniqueId: Math.random().toString(),
+              };
           append(newWord);
         }
       },
@@ -509,23 +529,12 @@ const SearchWord: FC<{
       const onPaste = (event: ClipboardEvent) => {
         if (event.target !== wodValueRef.current?.input) return;
 
-        const tableData = getTableFromClipboard(event.clipboardData);
-        if (tableData) {
-          console.log('tableData', tableData);
-          const first2Cols = getFirstNNonEmptyColumns(tableData, 2, (v) => !v).filter((e) => e.some((e) => !!e));
-          if (first2Cols.length === 0) return;
+        const newWords = getWordsFromPastedData(event.clipboardData);
+
+        if (newWords) {
+          console.log('pasted words', newWords);
           onRemove();
-          // Log the 2D array to see the output
-          console.log(first2Cols);
-
-          onAddNewWord(
-            first2Cols.map((e) => ({
-              wordValue: e[0],
-              translation: e[1],
-            })),
-          );
-
-          // Prevent the default paste action
+          onAddNewWord(newWords);
           event.preventDefault();
         }
       };
@@ -675,6 +684,27 @@ const Suggestions: FC<SuggestionProps> = memo(
 
 export { ContentForm };
 
+const getWordsFromPastedData = (clipboardData: DataTransfer | null): AddNewWordInfo[] | null => {
+  const tableData = getTableFromClipboard(clipboardData);
+  if (tableData) {
+    console.log('tableData', tableData);
+    const first2Cols = getFirstNNonEmptyColumns(tableData, 2, (v) => !v).filter((e) => e.some((e) => !!e));
+    if (first2Cols.length === 0) return null;
+
+    return first2Cols.map((e) => ({
+      wordValue: e[0],
+      translation: e[1],
+    }));
+  }
+
+  const wordsData = getWordsFromClipboard(clipboardData);
+  if (wordsData) {
+    return wordsData;
+  }
+
+  return null;
+};
+
 const getTableFromClipboard = (clipboardData: DataTransfer | null) => {
   try {
     if (!clipboardData) return null;
@@ -716,6 +746,26 @@ const getTableFromClipboard = (clipboardData: DataTransfer | null) => {
 
     // Log the 2D array to see the output
     return tableArray;
+  } catch (e) {
+    return null;
+  }
+};
+
+const getWordsFromClipboard = (clipboardData: DataTransfer | null): AddNewWordInfo[] | null => {
+  try {
+    if (!clipboardData) return null;
+    const pastedData = clipboardData.getData('text');
+
+    if (!pastedData) return null;
+
+    const value = JSON.parse(pastedData);
+
+    if (value === null || typeof value !== 'object' || value.type !== 'internal-paste') return null;
+
+    if (!('words' in value) || !Array.isArray(value.words)) return null;
+
+    as<JSONPasteWords>(value);
+    return value.words;
   } catch (e) {
     return null;
   }
