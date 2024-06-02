@@ -3,12 +3,12 @@ import { AttributeMapper } from '../../../database/attributes';
 import { CardTypeMapper } from '../../../database/card-types';
 import type {
   AdjectiveInflection,
-  PronounFunction,
   StandardCard,
   StandardCardVariant,
   VerbMood,
   VerbTense,
 } from '../../../database/types';
+import { PronounFunction } from '../../../database/types';
 import { AdjectiveDegree, VerbPronoun, Case, NounGender, NounNumber } from '../../../database/types';
 import { getAttrEnumValue, isStandardEqual } from '../utils';
 import {
@@ -133,6 +133,10 @@ export const getGermanStandardFormFn = (
       const { value: gender } = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER) ?? null;
       const { value: number } = getAttrEnumValue<number>(variant.attrs, AttributeMapper.NUMBER);
       const { value: caseValue } = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
+
+      if (function_ === PronounFunction.Declanation && caseValue === Case.Nominativ && number === NounNumber.singular) {
+        return true;
+      }
 
       if (function_ === undefined || number === undefined || caseValue === undefined) {
         return false;

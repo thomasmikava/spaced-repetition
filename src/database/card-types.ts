@@ -214,7 +214,7 @@ export interface CardTypeConfiguration {
   maxAllowedNonStandardForms?: number;
 }
 
-const nounSortBy: SortBy = {
+const caseSortBy: SortBy = {
   attrId: AttributeMapper.CASE.id,
   attrRecords: [
     AttributeMapper.CASE.records[Case.Nominativ],
@@ -364,7 +364,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         },
         groupViewId: 'gr-view',
         testViewId: 'gr-test',
-        sortBy: [nounSortBy],
+        sortBy: [caseSortBy],
       },
       {
         id: 'pl',
@@ -374,7 +374,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         },
         groupViewId: 'gr-view',
         testViewId: 'gr-test',
-        sortBy: [nounSortBy],
+        sortBy: [caseSortBy],
       },
       { id: 'skip', matcher: null, skip: true },
     ],
@@ -431,6 +431,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         ],
       },
     ],
+    maxAllowedNonStandardForms: 4,
   },
   [CardTypeMapper.ADJECTIVE_ADVERB]: {
     caseSensitive: true,
@@ -471,7 +472,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         [AdjectiveInflection.Weak, AdjectiveInflection.Strong, AdjectiveInflection.Mixed],
         [NounGender.Maskulinum, NounGender.Femininum, NounGender.Neutrum, NounGender.Plural],
       ).map(([degree, inflection, gender]) => ({
-        id: 'rest',
+        id: `d${AttributeMapper.DEGREE.records[degree]}-i${AttributeMapper.INFLECTION.records[inflection]}-g${AttributeMapper.GENDER.records[gender]}`,
         matcher: {
           category: null,
           attrs: {
@@ -517,6 +518,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         ],
       },
     ],
+    maxAllowedNonStandardForms: 4,
   },
   [CardTypeMapper.ARTICLE]: {
     tags: [
@@ -641,6 +643,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           testViewId: 'gr-test',
           forcefullyGroup: true,
           skipIfStandard: true,
+          sortBy: [caseSortBy],
         }),
       ),
       ...cartesianProduct(
@@ -668,6 +671,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           testViewId: 'gr-test',
           forcefullyGroup: true,
           skipIfStandard: true,
+          sortBy: [caseSortBy],
         }),
       ),
       { id: 'rest', matcher: { category: null }, skip: true },
@@ -696,6 +700,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         ],
       },
     ],
+    maxAllowedNonStandardForms: 4,
   },
   [CardTypeMapper.PREPOSITION]: {
     variantGroups: [{ id: 'init', matcher: { category: 1 }, indViewId: 'init', testViewId: 'init-test' }],
