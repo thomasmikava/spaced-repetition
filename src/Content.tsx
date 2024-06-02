@@ -135,15 +135,17 @@ const Input = ({
   autoFocus,
   isSubmit,
   audioProps,
+  advancedAnswerChecker,
 }: ContentInput) => {
   const { mode, useOnCheck } = useTestContext();
   const ref = useRef<HTMLInputElement>(null);
   const lastResult = useOnCheck(inputId, () => {
     const value = (ref.current?.value ?? '').trim();
-    const isCorrect = !!correctValues?.some((correctValue) => {
-      if (caseInsensitive) return correctValue.toLocaleLowerCase() === value.toLocaleLowerCase();
-      return correctValue === value;
-    });
+    const isCorrect =
+      !!correctValues?.some((correctValue) => {
+        if (caseInsensitive) return correctValue.toLocaleLowerCase() === value.toLocaleLowerCase();
+        return correctValue === value;
+      }) || !!advancedAnswerChecker?.(value, { caseInsensitive });
     return { isCorrect, value };
   });
 

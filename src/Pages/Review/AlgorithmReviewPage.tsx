@@ -24,6 +24,8 @@ interface ReviewPageProps {
   helper: NonNullable<ReturnType<typeof useHelper>>;
 }
 
+const FAST_REVIEW = false;
+
 const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
   const [mainKey, setMainKey] = useState(0);
   const [maxCards, setMaxCards] = useState(400);
@@ -79,7 +81,9 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tagLength = (question as any).content?.[0]?.content?.[0]?.content?.length || 1; // TODO: it's very fragile strategy
-      lastDate += 1000 + (tagLength - 1) * 1000;
+      if (FAST_REVIEW) lastDate += 1000 + (tagLength - 1) * 1000;
+      else lastDate += 5000 + (tagLength - 1) * 3000;
+
       if (question.type === CardViewMode.groupView) {
         lastDate += currentCard.record.card.type === CardTypeMapper[CardType.VERB] ? 10000 : 5000;
       }
@@ -133,6 +137,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
     () =>
       entries.questions.map((question, index) => {
         const isView = question.type === CardViewMode.groupView || question.type === CardViewMode.individualView;
+        const record = entries.cards[index];
         return (
           <form
             onSubmit={withNoEventAction(handleResult(index))}
@@ -145,16 +150,11 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
             >
               <div style={{ display: 'flex', marginBottom: 5 }}>
                 <span style={{ flex: 1 }}>#{index + 1}</span>
-                {entries.cards[index].historyRecord && (
-                  <span>prob: {Math.floor(entries.cards[index].probability * 1000) / 10}%; </span>
-                )}
-                <span>due: {formatTime(entries.cards[index].reviewDue)}; </span>
-                {entries.cards[index].historyRecord && (
+                {record.historyRecord && <span>prob: {Math.floor(record.probability * 1000) / 10}%; </span>}
+                <span>due: {formatTime(record.reviewDue)}</span>
+                {record.historyRecord && (
                   <span>
-                    Half:{' '}
-                    {formatTime(
-                      secondsUntilProbabilityIsHalf(entries.cards[index].historyRecord!.lastS ?? initialTestS),
-                    )}
+                    Half: {formatTime(secondsUntilProbabilityIsHalf(record.historyRecord!.lastS ?? initialTestS))}
                   </span>
                 )}
                 {!isView && (

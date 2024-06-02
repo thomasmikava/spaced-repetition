@@ -281,28 +281,53 @@ const updateS = (
   if (!s && success) return initialTestS;
   else if (!s) return Math.max(minS, initialTestS * 0.5);
 
-  const probability =
-    passedTimeInSeconds === undefined ? 0 : calculateProbability(Math.max(30, passedTimeInSeconds), s);
-  const successDoubleCoeff = Math.max(0.2, 1 - Math.max(0, probability - 0.5) * 2);
-
   const coeffS = s;
   let successMultiplier;
-  if (coeffS < calculateHalfLifeCoefficient(60 * 3)) {
-    successMultiplier = isGroup ? calcMultiplier(coeffS, 60 * 3) : calcMultiplier(coeffS, 60 * 2);
-  } else if (coeffS < calculateHalfLifeCoefficient(60 * 6)) {
-    successMultiplier = isGroup ? calcMultiplier(coeffS, 60 * 4) : calcMultiplier(coeffS, 60 * 3);
+
+  const probability =
+    passedTimeInSeconds === undefined ? 0 : calculateProbability(Math.max(30, passedTimeInSeconds), s);
+  let minDoubleCoeff = 0.05;
+
+  if (coeffS >= calculateHalfLifeCoefficient(60 * 20) && coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) {
+    minDoubleCoeff = 0.02;
+  }
+
+  let successDoubleCoeff = Math.max(minDoubleCoeff, 1 - Math.max(0, probability - 0.5) * 2);
+
+  if (coeffS < calculateHalfLifeCoefficient(60 * 6)) {
+    successMultiplier = isGroup ? calcMultiplierToAdd(coeffS, 60 * 4) : calcMultiplierToAdd(coeffS, 60 * 3); // add minutes to the half-life
   } else if (coeffS < calculateHalfLifeCoefficient(60 * 20)) successMultiplier = isGroup ? 3 : 2.5;
-  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 9 : 6;
+  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 6 : 4;
   else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 24)) successMultiplier = isGroup ? 5 : 3;
   else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 24 * 2)) successMultiplier = isGroup ? 3 : 2;
   else successMultiplier = isGroup ? 1.8 : 1.5;
 
-  successMultiplier = (successMultiplier - 1) * successDoubleCoeff + 1;
+  if (coeffS < calculateHalfLifeCoefficient(60 * 20)) {
+    successDoubleCoeff = Math.max(0.8, successDoubleCoeff);
+  }
 
-  return Math.min(maxS, Math.max(minS, success ? coeffS * successMultiplier : coeffS * 0.5));
+  const finalMultiplier = (successMultiplier - 1) * successDoubleCoeff + 1;
+
+  // console.log(
+  //   'probability',
+  //   probability,
+  //   'successDoubleCoeff',
+  //   successDoubleCoeff,
+  //   'successMultiplier',
+  //   successMultiplier,
+  //   'finalMultiplier',
+  //   finalMultiplier,
+  //   formatTime(secondsUntilProbabilityIsHalf(coeffS)),
+  //   '-->',
+  //   formatTime(
+  //     secondsUntilProbabilityIsHalf(Math.min(maxS, Math.max(minS, success ? coeffS * finalMultiplier : coeffS * 0.5))),
+  //   ),
+  // );
+
+  return Math.min(maxS, Math.max(minS, success ? coeffS * finalMultiplier : coeffS * 0.5));
 };
 
-const calcMultiplier = (s: number, addedHalfTimeSeconds: number) => {
+const calcMultiplierToAdd = (s: number, addedHalfTimeSeconds: number) => {
   const currentHalfLife = secondsUntilProbabilityIsHalf(s);
   const newHalfLife = currentHalfLife + addedHalfTimeSeconds;
   const newS = calculateHalfLifeCoefficient(newHalfLife);
@@ -320,7 +345,23 @@ function getFirstNS(n: number) {
   }
   return result;
 }
-// eslint-disable-next-line no-constant-condition
-if (1 < 2) {
-  console.log('zzzz', getFirstNS(15).map(formatTime));
+
+function getFirstNSFast(n: number) {
+  let currentS = initialTestS;
+  let passedTimeInSeconds = 5;
+  const result = [secondsUntilProbabilityIsHalf(currentS)];
+  for (let i = 1; i < n; i++) {
+    // console.log('passedTimeInSeconds', formatTime(passedTimeInSeconds));
+    currentS = updateS(true, false, currentS, passedTimeInSeconds);
+    passedTimeInSeconds *= 2;
+    passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24);
+    result.push(secondsUntilProbabilityIsHalf(currentS));
+  }
+  return result;
 }
+// eslint-disable-next-line no-constant-condition
+if (1 > 2) {
+  console.log('zzzz', getFirstNS(15).map(formatTime));
+  console.log('zzzz fast', getFirstNSFast(20).map(formatTime));
+}
+// (window as any).formatTime = formatTime;

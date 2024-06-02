@@ -62,6 +62,8 @@ export interface ContentBeforeAnswer {
   content: (AnyContent | null | undefined)[] | InnerContent;
 }
 
+export type AdvancedAnswerCheckerOptions = { caseInsensitive?: boolean };
+
 export interface ContentInput {
   type: 'input';
   inputId?: string;
@@ -74,6 +76,7 @@ export interface ContentInput {
   audioProps?: Omit<ContentVoice, 'type'>;
   style?: React.CSSProperties;
   containerStyle?: React.CSSProperties;
+  advancedAnswerChecker?: (value: string, options: AdvancedAnswerCheckerOptions) => boolean;
 }
 
 export interface ContentExpandable {

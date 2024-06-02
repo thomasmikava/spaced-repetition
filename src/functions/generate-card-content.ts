@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { AnyContent, ContentTag, ContentVoice } from '../content-types';
+import type { AdvancedAnswerCheckerOptions, AnyContent, ContentTag, ContentVoice } from '../content-types';
 import { AttributeMapper } from '../database/attributes';
 import type { AudioAffix, ViewLine } from '../database/card-types';
 import { ViewLineType, type CardTypeRecord } from '../database/card-types';
@@ -355,7 +355,7 @@ export const getCardViewContent2 = (
         return { type: 'text', content: attrValues.join(line.separator ?? ', '), style: textStyle };
       case ViewLineType.Input:
         const displayValue2 = withArticle(record.variant.value, record.variant.attrs, line);
-        const correctValues = slashSplit(displayValue2); // TODO: implement articles
+        const correctValues = slashSplit(displayValue2);
         return {
           type: 'input',
           inputId: '1',
@@ -364,6 +364,7 @@ export const getCardViewContent2 = (
           autoFocus: true,
           correctValues,
           caseInsensitive: record.caseSensitive,
+          advancedAnswerChecker: getAnswerChecker(displayValue2),
           style: { textAlign: 'center' },
           audioProps: prepareInputAudio(
             record.card.lang,
@@ -483,6 +484,15 @@ const getColumnsFromRow = (row: (string | null)[], metaKeys: string[]) => {
     }
   }
   return values.filter(isNonNullable);
+};
+
+const getAnswerChecker = (correctValue: string) => (value: string, options: AdvancedAnswerCheckerOptions) => {
+  if (correctValue === value) return true;
+  if (options.caseInsensitive && correctValue.toLocaleLowerCase() === value.toLocaleLowerCase()) return true;
+  const sanitizedValue = value.replace(/\(\)/g, '').trim();
+  if (sanitizedValue === correctValue) return false; // it was unchanged
+  if (options.caseInsensitive && sanitizedValue.toLocaleLowerCase() === value.toLocaleLowerCase()) return true;
+  return sanitizedValue === value;
 };
 
 const prepareTextForAudio = (text: string) => slashSplit(text).join('. ');

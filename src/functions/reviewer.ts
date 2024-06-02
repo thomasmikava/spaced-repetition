@@ -86,15 +86,16 @@ export class Reviewer {
   private calculateProbabilities = (currentDate = Date.now()) => {
     const askedCards = this.prevReviews.getCurrentSessionCardsCount();
     const lastCards = this.prevReviews.getHistoryForLastPeriod(
-      askedCards <= 10 ? LAST_PERIOD_TO_CONSIDER_SMALL : LAST_PERIOD_TO_CONSIDER,
+      askedCards <= 15 ? LAST_PERIOD_TO_CONSIDER_SMALL : LAST_PERIOD_TO_CONSIDER,
       currentDate,
     );
 
     const lastNCards = this.prevReviews.getLastNHistory(LAST_CARDS_COUNT_TO_CONSIDER);
 
-    const numOfViewedCard = lastCards.filter(
-      (e) => e.mode === CardViewMode.groupView || e.mode === CardViewMode.individualView,
-    ).length;
+    const numOfViewedCard = Math.max(
+      lastCards.filter((e) => e.mode === CardViewMode.groupView || e.mode === CardViewMode.individualView).length,
+      lastNCards.filter((e) => e.mode === CardViewMode.groupView || e.mode === CardViewMode.individualView).length,
+    );
     const numOfGroupViewedCard = Math.max(
       lastCards.filter((e) => e.mode === CardViewMode.groupView).length,
       lastNCards.filter((e) => e.mode === CardViewMode.groupView).length,
@@ -287,15 +288,19 @@ export class Reviewer {
         let isTestNotRecommended = false;
         let isViewNotRecommended = false;
         if (
-          (viewMode !== CardViewMode.test && numOfViewedCard >= MAX_NUM_OF_VIEW_CARDS) ||
-          (viewMode === CardViewMode.groupView && numOfGroupViewedCard >= MAX_NUM_OF_GROUP_VIEW_CARDS)
+          viewMode !== CardViewMode.test &&
+          (numOfViewedCard >= MAX_NUM_OF_VIEW_CARDS ||
+            (viewMode === CardViewMode.groupView && numOfGroupViewedCard >= MAX_NUM_OF_GROUP_VIEW_CARDS))
         ) {
+          // already viewed too much cards
           isViewNotRecommended = true;
           isTestNotRecommended = true;
         } else if (
-          this.prevReviews.isInSession(a.record, viewMode, lastNCards) ||
-          this.prevReviews.isInSession(a.record, CardViewMode.individualView, lastNCards)
+          viewMode === CardViewMode.test &&
+          (this.prevReviews.isInSession(a.record, CardViewMode.test, lastNCards) ||
+            this.prevReviews.isInSession(a.record, CardViewMode.individualView, lastNCards))
         ) {
+          // I was just tested in it or I have just seen it, so there's no point it being tested again
           isTestNotRecommended = true;
         }
         return { ...a, isViewNotRecommended, isTestNotRecommended, viewMode };
