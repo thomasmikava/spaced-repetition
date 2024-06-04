@@ -1,5 +1,5 @@
-import { DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
-import Button from 'antd/es/button';
+import { BookOutlined, DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
+import AntButton from 'antd/es/button';
 import Dropdown from 'antd/es/dropdown';
 import Modal from 'antd/es/modal';
 import { useMemo, useState } from 'react';
@@ -20,6 +20,8 @@ import { useSignInUserData } from '../../contexts/Auth';
 import { AddToMyCoursesButton } from '../Course/AddToMyCourses';
 import LoadingPage from '../Loading/LoadingPage';
 import { Table, type TableRow } from '../../ui/Table/Table';
+import Button from '../../ui/Button';
+import DictionaryModal from '../../components/DictionaryModal';
 
 const LessonPage = () => {
   const userData = useSignInUserData();
@@ -72,6 +74,8 @@ const LessonPage = () => {
     );
   };
 
+  const [displayedWordId, setDisplayedWordId] = useState<number | null>(null);
+
   if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || !helper) {
     return <LoadingPage />;
   }
@@ -117,7 +121,11 @@ const LessonPage = () => {
               : closestDueDate <= 0
                 ? 'Ready'
                 : 'In ' + formatTime(closestDueDate),
-          style: { opacity: closestDueDate <= 10 ? 1 : undefined },
+          style: { opacity: closestDueDate <= 10 ? 1 : undefined, textAlign: 'right' },
+        },
+        {
+          cellValue: <Button label={<BookOutlined />} variant='text' onClick={() => setDisplayedWordId(word.id)} />,
+          style: { width: '46px' },
         },
       ],
     };
@@ -146,9 +154,9 @@ const LessonPage = () => {
             }}
             placement='bottom'
           >
-            <Button>
+            <AntButton>
               <SettingFilled />
-            </Button>
+            </AntButton>
           </Dropdown>
         )}
       </div>
@@ -160,6 +168,15 @@ const LessonPage = () => {
       {lessons && lessons.length > 0 && <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} />}
       <Table rows={rows} removeEmptyColumns />
       <br />
+
+      {displayedWordId && !!course.translationLang && (
+        <DictionaryModal
+          wordId={displayedWordId}
+          helper={helper}
+          onClose={() => setDisplayedWordId(null)}
+          translationLang={course.translationLang}
+        />
+      )}
       <Modal
         title='Modal'
         open={isDeleteModalVisible}

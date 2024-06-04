@@ -1,8 +1,9 @@
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Content from '../../Content';
 import { TestContextProvider } from '../../contexts/testContext';
 import type { StandardCard } from '../../database/types';
+import type { Helper } from '../../functions/generate-card-content';
 import { getCardViewContent } from '../../functions/generate-card-content';
 import { Reviewer } from '../../functions/reviewer';
 import { CardViewMode } from '../../functions/reviews';
@@ -11,6 +12,8 @@ import cssModule from '../../App.module.css';
 import { useHelper } from '../hooks/text-helpers';
 import { useWords } from './useWords';
 import LoadingPage from '../Loading/LoadingPage';
+import { BookOutlined } from '@ant-design/icons/lib/icons';
+import { DictionaryLoadedModal } from '../../components/DictionaryModal';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless';
@@ -95,14 +98,19 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }
     return <div className='body'>No question...</div>;
   }
 
+  const testMode = !isInAnswerReviewMode && !isView ? 'edit' : 'readonly';
+
   return (
     <div className='body' style={{ paddingTop: 10, paddingBottom: 10 }}>
-      <TestContextProvider
-        key={questionNumber}
-        mode={!isInAnswerReviewMode && !isView ? 'edit' : 'readonly'}
-        onResult={handleResult}
-      >
-        <WithNextButton onClick={onSubmit}>
+      <TestContextProvider key={questionNumber} mode={testMode} onResult={handleResult}>
+        <WithNextButton
+          onClick={onSubmit}
+          rest={
+            testMode === 'readonly' && currentCard && currentCard.record.card.variants.length > 1 ? (
+              <DictionaryIcon card={currentCard.record.card} helper={helper} />
+            ) : null
+          }
+        >
           <ViewCard>
             <form onSubmit={withNoEventAction(onSubmit)}>
               <Content content={question.content} />
@@ -140,7 +148,15 @@ export const ReviewPageLoader = () => {
   );
 };
 
-const WithNextButton = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => {
+const WithNextButton = ({
+  children,
+  onClick,
+  rest,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  rest?: ReactNode;
+}) => {
   return (
     <div className={cssModule.withNextButton}>
       {children}
@@ -148,8 +164,25 @@ const WithNextButton = ({ children, onClick }: { children: React.ReactNode; onCl
         <button onClick={onClick} className={cssModule.nextButton}>
           <span>›</span>
         </button>
+        {rest}
       </div>
     </div>
+  );
+};
+
+const DictionaryIcon = ({ card, helper }: { card: StandardCard; helper: Helper }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const handleOpen = () => setIsOpen(true);
+  const handleClose = () => setIsOpen(false);
+  return (
+    <>
+      <button onClick={handleOpen} className={cssModule.bigDictionaryButton}>
+        <span>
+          <BookOutlined />
+        </span>
+      </button>
+      {isOpen && <DictionaryLoadedModal word={null} card={card} helper={helper} onClose={handleClose} />}
+    </>
   );
 };
 

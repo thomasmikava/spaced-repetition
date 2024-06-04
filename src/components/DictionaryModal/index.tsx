@@ -8,6 +8,7 @@ import { generateTestableCards } from '../../functions/generate-variants';
 import Content from '../../Content';
 import { ViewLineType, type ViewLine } from '../../database/card-types';
 import { transformToStandardCard } from '../../Pages/Review/useWords';
+import type { StandardCard } from '../../database/types';
 
 const DictionaryModal: FC<{ helper: Helper; wordId: number; onClose: () => void; translationLang: string }> = ({
   helper,
@@ -16,30 +17,38 @@ const DictionaryModal: FC<{ helper: Helper; wordId: number; onClose: () => void;
   translationLang,
 }) => {
   const { data: word } = useOneWord({ id: wordId, translationLang, onlyOfficialTranslation: false });
-  return <LoadedModal onClose={onClose} word={word ?? null} helper={helper} />;
+  return <DictionaryLoadedModal onClose={onClose} word={word ?? null} helper={helper} />;
 };
 
 type LoadedModalProps = {
   word: WordWithTranslationVariantsDTO | null;
+  card?: StandardCard;
   helper: Helper;
   onClose: () => void;
 };
 
-const LoadedModal: FC<LoadedModalProps> = ({ onClose, word, helper }) => {
-  const isLoaded = !!word;
+export const DictionaryLoadedModal: FC<LoadedModalProps> = ({ onClose, word, card, helper }) => {
+  const isLoaded = !!word || !!card;
 
   const content = useMemo(() => {
-    if (!word) return null;
-    const config = helper.getCardType(word.type, word.lang)?.configuration ?? {};
-    const card = transformToStandardCard(word);
-    const variants = generateTestableCards(card, helper);
+    if (!word && !card) return null;
+    const finalCard = card ?? transformToStandardCard(word!);
+    const config = helper.getCardType(finalCard.type, finalCard.lang)?.configuration ?? {};
+    const variants = generateTestableCards(finalCard, helper);
     const viewLines = config.dictionaryView || DEFAULT_DICTIONARY_VIEW;
     return viewLinesToContentLines(viewLines, helper, variants[0]).lineContents;
-  }, [word, helper]);
-  console.log('content', content);
+  }, [word, helper, card]);
 
   return (
-    <Modal title={'Details'} open={true} onOk={() => {}} onCancel={onClose} footer={null} width={1200}>
+    <Modal
+      title={'Details'}
+      open={true}
+      onOk={() => {}}
+      onCancel={onClose}
+      footer={null}
+      width={1200}
+      style={{ maxWidth: 'calc(100% - 84px)' }}
+    >
       {!isLoaded ? <Skeleton active /> : !content ? null : <Content content={content} />}
     </Modal>
   );
