@@ -50,6 +50,26 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
           })}
         </div>
       );
+    case 'section':
+      return (
+        <div
+          className={content.size === 'big' ? cssModule.bigSectionContainer : cssModule.sectionContainer}
+          style={content.style}
+        >
+          <div className={cssModule.sectionTitle}>
+            {typeof content.title === 'string'
+              ? content.title
+              : content.title.map((item, index) => {
+                  return item === undefined || item === null ? null : <Content key={index} content={item} />;
+                })}
+          </div>
+          <div className={cssModule.sectionBody}>
+            {content.content.map((item, index) => {
+              return item === undefined || item === null ? null : <Content key={index} content={item} />;
+            })}
+          </div>
+        </div>
+      );
     case 'tag':
       return (
         <div className={cssModule.contentTagsContainer}>

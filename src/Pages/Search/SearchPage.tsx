@@ -17,6 +17,8 @@ import { paths } from '../../routes/paths';
 import LoadingPage from '../Loading/LoadingPage';
 import type { TableRow } from '../../ui/Table/Table';
 import Table from '../../ui/Table';
+import { BookOutlined } from '@ant-design/icons';
+import DictionaryModal from '../../components/DictionaryModal';
 
 const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
   const navigate = useNavigate();
@@ -52,6 +54,8 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
   const learnLangOptions = useLangToLearnOptions();
   const translationLangOptions = useTranslationLangOptions();
 
+  const [displayedWordId, setDisplayedWordId] = useState<number | null>(null);
+
   const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
 
   const rows = useMemo(() => {
@@ -70,6 +74,10 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
             },
             word.value,
             word.translation,
+            {
+              cellValue: <Button label={<BookOutlined />} variant='text' onClick={() => setDisplayedWordId(word.id)} />,
+              style: { width: '46px' },
+            },
           ],
         };
       });
@@ -134,6 +142,15 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
               )}
             </div>
           </>
+        )}
+
+        {displayedWordId && !!translationLang && (
+          <DictionaryModal
+            wordId={displayedWordId}
+            helper={helper}
+            onClose={() => setDisplayedWordId(null)}
+            translationLang={translationLang}
+          />
         )}
       </div>
     </div>

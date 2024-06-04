@@ -6,6 +6,8 @@ import type {
   GetLanguageDictionaryReqDTO,
   GetLanguageDictionaryResDTO,
   GetMyCoursesWordsResDTO,
+  GetOneWordReqDTO,
+  GetOneWordResDTO,
   GetWordIdsReqDTO,
   GetWordIdsResDTO,
   GetWordsReqDTO,
@@ -31,6 +33,10 @@ class WordController {
 
   getWordIds = async (query: GetWordIdsReqDTO): Promise<GetWordIdsResDTO> => {
     return this.request.get('/word-ids', query);
+  };
+
+  getOne = async (query: GetOneWordReqDTO): Promise<GetOneWordResDTO> => {
+    return this.request.get('/words/:id', query);
   };
 
   createManyWords = async (query: CreateManyWordsDTO): Promise<void> => {

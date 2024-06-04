@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Content from '../../Content';
 import { TestContextProvider } from '../../contexts/testContext';
 import type { StandardCard } from '../../database/types';
-import { getCardViewContent2 } from '../../functions/generate-card-content';
+import { getCardViewContent } from '../../functions/generate-card-content';
 import { Reviewer } from '../../functions/reviewer';
 import { CardViewMode } from '../../functions/reviews';
 import { withNoEventAction } from '../../utils/event';
@@ -31,7 +31,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }
     if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
         type: CardViewMode.groupView,
-        content: getCardViewContent2(currentCard.record, CardViewMode.groupView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper),
       };
     } else if (
       !currentCard.hasGroupViewMode &&
@@ -40,12 +40,12 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }
     ) {
       return {
         type: CardViewMode.individualView,
-        content: getCardViewContent2(currentCard.record, CardViewMode.individualView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper),
       };
     }
     return {
       type: CardViewMode.test,
-      content: getCardViewContent2(currentCard.record, CardViewMode.test, helper),
+      content: getCardViewContent(currentCard.record, CardViewMode.test, helper),
     };
   }, [currentCard, helper]);
 

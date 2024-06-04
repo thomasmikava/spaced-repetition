@@ -15,3 +15,5 @@ type Propertic<T> = T extends PropertyKey ? T : never;
 export type SwapKeysAndValues<T extends Record<string, unknown>> = {
   [key in keyof T as Propertic<T[key]>]: key;
 };
+
+export type OptionalKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

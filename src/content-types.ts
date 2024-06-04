@@ -86,6 +86,14 @@ export interface ContentExpandable {
   childContent: AnyContent | AnyContent[];
 }
 
+export interface ContentSection {
+  type: 'section';
+  title: string | (AnyContent | null | undefined)[];
+  size?: 'medium' | 'big';
+  content: (AnyContent | null | undefined)[];
+  style?: React.CSSProperties;
+}
+
 export type AnyContent =
   | ContentHeader
   | ContentParagraph
@@ -98,5 +106,6 @@ export type AnyContent =
   | ContentInput
   | ContentAfterAnswer
   | ContentBeforeAnswer
-  | ContentExpandable;
+  | ContentExpandable
+  | ContentSection;
 type InnerContent = string | number | AnyContent;

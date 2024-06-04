@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { OptionalKeys } from '../../../utils/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const StandardCardAttributesSchema = z.record(z.number());
@@ -44,7 +45,7 @@ export interface WordVariantDTO extends BaseWordVariantDTO {
   isOfficial: boolean;
 }
 
-interface TranslationDTO {
+export interface TranslationDTO {
   id: number;
   lang: string;
   wordId: number;
@@ -68,10 +69,10 @@ export type WordWithTranslationAndLessonsDTO = WordWithTranslationDTO & {
 };
 
 export type WordWithTranslationAndLessonsAndVariantsDTO = WordWithTranslationAndLessonsDTO & {
-  variants?: BaseWordVariantDTO[];
+  variants: BaseWordVariantDTO[];
 };
 export type WordWithTranslationVariantsDTO = WordWithTranslationDTO & {
-  variants?: BaseWordVariantDTO[];
+  variants: BaseWordVariantDTO[];
 };
 
 ///
@@ -82,7 +83,7 @@ export interface GetWordsReqDTO {
   includeVariants?: boolean;
 }
 
-export type GetWordsResDTO = WordWithTranslationAndLessonsAndVariantsDTO[];
+export type GetWordsResDTO = OptionalKeys<WordWithTranslationAndLessonsAndVariantsDTO, 'variants'>[];
 
 ///
 
@@ -93,6 +94,15 @@ export interface GetLanguageDictionaryReqDTO {
   lang: string;
 }
 export type GetLanguageDictionaryResDTO = WordWithTranslationVariantsDTO[];
+
+///
+
+export interface GetOneWordReqDTO {
+  id: number;
+  translationLang?: string | null;
+  onlyOfficialTranslation?: boolean;
+}
+export type GetOneWordResDTO = WordWithTranslationVariantsDTO;
 
 ///
 

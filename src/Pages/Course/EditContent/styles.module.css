@@ -51,12 +51,16 @@
   width: 100%;
   text-align: left;
   background: unset;
+  align-items: center;
 }
 .suggestedWords .wordSuggestion:last-of-type {
   border-bottom: none;
 }
 .wordSuggestion:hover {
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+.wordSuggestion span {
 }
 
 .wordSuggestion span:nth-of-type(1) {

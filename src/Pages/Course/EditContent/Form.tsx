@@ -1,6 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { KeyboardEventHandler } from 'react';
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type FC } from 'react';
+import {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type FC,
+} from 'react';
 import Button from '../../../ui/Button';
 import type {
   Control,
@@ -22,7 +32,14 @@ import {
 import styles from './styles.module.css';
 import Input from '../../../ui/Input';
 import Dropdown from 'antd/es/dropdown';
-import { DeleteOutlined, LoadingOutlined, MinusOutlined, PlusOutlined, SettingFilled } from '@ant-design/icons';
+import {
+  BookOutlined,
+  DeleteOutlined,
+  LoadingOutlined,
+  MinusOutlined,
+  PlusOutlined,
+  SettingFilled,
+} from '@ant-design/icons';
 import type { WordDTO, WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
 import { useSearchWords } from '../../../api/controllers/words/words.query';
 import { useDebounce } from 'use-debounce';
@@ -34,6 +51,7 @@ import { useWordTypeChoices } from '../../../hooks/cards';
 import { mergeRefs } from 'react-merge-refs';
 import type { InputRef } from 'antd/es/input';
 import { as } from '../../../utils/common';
+import DictionaryModal from '../../../components/DictionaryModal';
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -633,6 +651,7 @@ const SearchWord: FC<{
           isFetchingNextPage={isFetchingNextPage}
           handleChoose={handleChoose}
           helper={helper}
+          translationLang={formBaseInfo.translationLang}
         />
       )}
     </div>
@@ -645,11 +664,14 @@ type SuggestionProps = Pick<
 > & {
   handleChoose: (word: WordWithTranslationDTO) => void;
   helper: Helper;
+  translationLang: string;
 };
 
 const Suggestions: FC<SuggestionProps> = memo(
-  ({ data, status, handleChoose, hasNextPage, fetchNextPage, isFetchingNextPage, helper }) => {
+  ({ data, status, handleChoose, hasNextPage, fetchNextPage, isFetchingNextPage, translationLang, helper }) => {
     const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
+
+    const [displayedWordId, setDisplayedWordId] = useState<number | null>(null);
 
     return (
       <div>
@@ -667,6 +689,9 @@ const Suggestions: FC<SuggestionProps> = memo(
                       <span style={{ marginRight: 5, opacity: 0.5 }}>
                         {helper.getCardType(word.type, word.lang)?.abbr}
                       </span>
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <Button label={<BookOutlined />} variant='text' onClick={() => setDisplayedWordId(word.id)} />
+                      </span>
                     </button>
                   ))}
                 </React.Fragment>
@@ -676,6 +701,15 @@ const Suggestions: FC<SuggestionProps> = memo(
               <Button onClick={() => fetchNextPage()} label='Load more words' loading={isFetchingNextPage} />
             )}
           </div>
+        )}
+
+        {displayedWordId && !!translationLang && (
+          <DictionaryModal
+            wordId={displayedWordId}
+            helper={helper}
+            onClose={() => setDisplayedWordId(null)}
+            translationLang={translationLang}
+          />
         )}
       </div>
     );

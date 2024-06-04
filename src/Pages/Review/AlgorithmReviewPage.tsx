@@ -5,7 +5,7 @@ import Content from '../../Content';
 import { TestContextProvider } from '../../contexts/testContext';
 import type { StandardCard } from '../../database/types';
 import { CardType } from '../../database/types';
-import { getCardViewContent2 } from '../../functions/generate-card-content';
+import { getCardViewContent } from '../../functions/generate-card-content';
 import type { CardWithProbability } from '../../functions/reviewer';
 import { Reviewer } from '../../functions/reviewer';
 import { CardViewMode, initialTestS, secondsUntilProbabilityIsHalf } from '../../functions/reviews';
@@ -37,7 +37,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
     if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
         type: CardViewMode.groupView,
-        content: getCardViewContent2(currentCard.record, CardViewMode.groupView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper),
         record: currentCard.record,
       };
     } else if (
@@ -47,13 +47,13 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
     ) {
       return {
         type: CardViewMode.individualView,
-        content: getCardViewContent2(currentCard.record, CardViewMode.individualView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper),
         record: currentCard.record,
       };
     }
     return {
       type: CardViewMode.test,
-      content: getCardViewContent2(currentCard.record, CardViewMode.test, helper),
+      content: getCardViewContent(currentCard.record, CardViewMode.test, helper),
       record: currentCard.record,
     };
   });

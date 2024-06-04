@@ -64,7 +64,7 @@ export enum ViewLineType {
   CardValue,
   CustomCardValue,
   VariantValue,
-  AttrValue,
+  AttrRecordValues,
   Translation,
   TranslationVariants,
   Table,
@@ -72,6 +72,8 @@ export enum ViewLineType {
   Audio,
   AfterAnswer,
   AfterAnswerDropdown,
+  Dropdown,
+  Section,
 }
 
 type ViewTableLine = {
@@ -79,9 +81,11 @@ type ViewTableLine = {
   columns: (
     | { type: 'value' }
     | { type: 'article' }
-    | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[] }
+    | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[]; hidden?: boolean }
     | { type: 'audio'; values: string[] }
   )[];
+  matcher?: CategoryAttrsMatcher;
+  useAllVariants?: boolean;
 };
 
 const groupTables = {
@@ -102,7 +106,7 @@ const groupTables = {
       { type: 'audio', values: ['1'] },
     ],
   },
-  VERB: {
+  VERB: (mood: VerbMood): ViewTableLine => ({
     type: ViewLineType.Table,
     columns: [
       {
@@ -119,9 +123,9 @@ const groupTables = {
         ],
       },
       { type: 'value' },
-      { type: 'audio', values: ['0.0', '1'] },
+      mood === VerbMood.Imperativ ? { type: 'audio', values: ['1'] } : { type: 'audio', values: ['0.0', '1'] },
     ],
-  },
+  }),
   PRONOUN: {
     type: ViewLineType.Table,
     columns: [
@@ -138,29 +142,39 @@ const groupTables = {
       { type: 'audio', values: ['1'] },
     ],
   },
-} satisfies Record<string, ViewTableLine>;
+} satisfies Record<string, ViewTableLine | ((...args: any[]) => ViewTableLine)>;
 
 export type AudioAffix = { type: 'attr'; attrId: IdType; splitIndex?: number } | { type: 'text'; text: string };
 
-export type ViewLine =
-  | { type: ViewLineType.Separator | ViewLineType.NewLine }
-  | {
-      type: ViewLineType.CardValue | ViewLineType.VariantValue | ViewLineType.CustomCardValue;
-      matcher?: CategoryAttrsMatcher; // required in case of ViewLineType.CustomCardValue
-      bigText?: boolean;
-      useForMainAudio?: boolean;
-      paragraph?: boolean;
-      includeArticleSymbol?: boolean;
-      useArticleAsPrefix?: boolean;
-    }
+type ViewLineCardValueLike = {
+  type: ViewLineType.CardValue | ViewLineType.VariantValue | ViewLineType.CustomCardValue;
+  matcher?: CategoryAttrsMatcher; // required in case of ViewLineType.CustomCardValue
+  bigText?: boolean;
+  useForMainAudio?: boolean;
+  paragraph?: boolean;
+  includeArticleSymbol?: boolean;
+  useArticleAsPrefix?: boolean;
+};
+
+type ViewLineCardTranslationLike =
   | {
       type: ViewLineType.Translation;
       /** Include the text that it's a translation */
       includeLegend?: boolean;
       includeArticleSymbol?: boolean;
     }
-  | { type: ViewLineType.TranslationVariants; partiallyHiddenBeforeAnswer?: boolean }
-  | { type: ViewLineType.AttrValue; attrs: IdType[]; separator?: string }
+  | { type: ViewLineType.TranslationVariants; partiallyHiddenBeforeAnswer?: boolean };
+
+export type ViewLine =
+  | { type: ViewLineType.Separator | ViewLineType.NewLine }
+  | ViewLineCardValueLike
+  | ViewLineCardTranslationLike
+  | {
+      type: ViewLineType.AttrRecordValues;
+      attrs: IdType[];
+      separator?: string;
+      customAttrRecords?: StandardCardAttributes;
+    }
   | ViewTableLine
   | {
       type: ViewLineType.Input;
@@ -172,7 +186,9 @@ export type ViewLine =
       useArticleAsPrefix?: boolean;
     }
   | { type: ViewLineType.AfterAnswer; lines: ViewLine[] }
-  | { type: ViewLineType.AfterAnswerDropdown; lines: ViewLine[] };
+  | { type: ViewLineType.AfterAnswerDropdown; lines: ViewLine[]; showMoreText?: string; showLessText?: string }
+  | { type: ViewLineType.Dropdown; lines: ViewLine[]; showMoreText?: string; showLessText?: string }
+  | { type: ViewLineType.Section; title: string | ViewLine[]; lines: ViewLine[]; size?: 'big' | 'medium' };
 
 export type SortBy = { attrId: number; attrRecords: number[] };
 export interface VariantGroup {
@@ -202,6 +218,7 @@ export interface CardTypeConfiguration {
     id: string;
     lines: ViewLine[];
   }[];
+  dictionaryView?: ViewLine[];
   maxNumOfGroups?: number;
   groupPriorities?: {
     cardMatcher: Matcher<{
@@ -279,12 +296,12 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.CardValue, useForMainAudio: true },
           { type: ViewLineType.Separator },
           {
-            type: ViewLineType.AttrValue,
+            type: ViewLineType.AttrRecordValues,
             attrs: [AttributeMapper.MOOD.id, AttributeMapper.TENSE.id],
             separator: ' - ',
           },
           { type: ViewLineType.Separator },
-          groupTables.VERB,
+          groupTables.VERB(VerbMood.Indikativ), // TODO: fix it
         ],
       },
       {
@@ -292,7 +309,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         lines: [
           { type: ViewLineType.CardValue, paragraph: true, useForMainAudio: true },
           { type: ViewLineType.Audio },
-          { type: ViewLineType.AttrValue, attrs: [AttributeMapper.PRONOUN.id] },
+          { type: ViewLineType.AttrRecordValues, attrs: [AttributeMapper.PRONOUN.id] },
           { type: ViewLineType.NewLine },
           {
             type: ViewLineType.Input,
@@ -304,7 +321,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           },
           {
             type: ViewLineType.AfterAnswerDropdown,
-            lines: [groupTables.VERB],
+            lines: [groupTables.VERB(VerbMood.Indikativ) /* TODO: fix it */],
           },
           {
             type: ViewLineType.AfterAnswer,
@@ -326,6 +343,77 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           `m${AttributeMapper.MOOD.records[VerbMood.Indikativ]}-t${AttributeMapper.TENSE.records[VerbTense.Präteritum]}`,
         ],
       },
+    ],
+    dictionaryView: [
+      { type: ViewLineType.CardValue, bigText: true },
+      {
+        type: ViewLineType.Dropdown,
+        showMoreText: 'Show translations',
+        showLessText: 'Hide translations',
+        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+      },
+      { type: ViewLineType.NewLine },
+      ...[VerbMood.Indikativ, VerbMood.Konjunktiv, VerbMood.Imperativ]
+        .map(
+          (mood): ViewLine => ({
+            type: ViewLineType.Section,
+            size: 'big',
+            title: [
+              {
+                type: ViewLineType.AttrRecordValues,
+                attrs: [AttributeMapper.MOOD.id],
+                customAttrRecords: { [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood] },
+              },
+            ],
+            lines:
+              mood !== VerbMood.Imperativ
+                ? [
+                    VerbTense.Präsens,
+                    VerbTense.Perfekt,
+                    VerbTense.Präteritum,
+                    VerbTense.Plusquamperfekt,
+                    VerbTense.Futur1,
+                    VerbTense.Futur2,
+                  ].map(
+                    (tense): ViewLine => ({
+                      type: ViewLineType.Section,
+                      title: [
+                        {
+                          type: ViewLineType.AttrRecordValues,
+                          attrs: [AttributeMapper.TENSE.id],
+                          customAttrRecords: { [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense] },
+                        },
+                      ],
+                      lines: [
+                        {
+                          ...groupTables.VERB(mood),
+                          useAllVariants: true,
+                          matcher: {
+                            attrs: {
+                              [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
+                              [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense],
+                            },
+                          },
+                        },
+                      ],
+                    }),
+                  )
+                : [
+                    {
+                      ...groupTables.VERB(mood),
+                      useAllVariants: true,
+                      matcher: {
+                        attrs: {
+                          [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
+                          [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[VerbTense.Präsens],
+                        },
+                      },
+                    },
+                  ],
+          }),
+        )
+        .map((el, ind, arr) => (ind < arr.length - 1 ? [el, { type: ViewLineType.NewLine } as ViewLine] : [el]))
+        .flat(1),
     ],
     maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,
@@ -405,7 +493,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.CardValue, useForMainAudio: true },
           { type: ViewLineType.Separator },
           {
-            type: ViewLineType.AttrValue,
+            type: ViewLineType.AttrRecordValues,
             attrs: [AttributeMapper.NUMBER.id],
           },
           { type: ViewLineType.Separator },

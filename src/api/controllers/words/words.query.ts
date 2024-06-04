@@ -3,6 +3,7 @@ import { queryClient, useQuery } from '../../../utils/queries';
 import { wordController } from './words.controller';
 import type {
   GetLanguageDictionaryReqDTO,
+  GetOneWordReqDTO,
   GetWordIdsReqDTO,
   GetWordIdsResDTO,
   GetWordsReqDTO,
@@ -24,6 +25,7 @@ export const WordQueryKeys = {
     { courseId: query.courseId ?? null, lessonId: query.lessonId ?? null },
   ],
   getDictionary: (query: GetLanguageDictionaryReqDTO) => [`word:lang`, query],
+  getOne: (query: GetOneWordReqDTO) => [`word:getOne`, `word:getOne:${query.id}`, query],
 };
 
 export const useCourseWords = (query: GetWordsReqDTO, avoid = false) => {
@@ -106,5 +108,12 @@ export const useSearchWords = (query?: Omit<SearchWordReqDTO, 'skip'>) => {
       if (lastPage.words.length < query!.limit) return undefined;
       return lastPageParam + query!.limit;
     },
+  });
+};
+
+export const useOneWord = (query: GetOneWordReqDTO) => {
+  return useQuery({
+    queryFn: () => wordController.getOne(query),
+    queryKey: WordQueryKeys.getOne(query),
   });
 };

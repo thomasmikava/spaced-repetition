@@ -280,3 +280,34 @@
 .authLink:hover {
   color: white;
 }
+
+.sectionContainer {
+}
+
+.sectionTitle {
+  text-align: center;
+  background-color: #074d7e;
+  color: white;
+  padding: 5px 10px;
+  font-size: 18px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+.sectionBody {
+  border: 1px solid #074d7e;
+  padding: 5px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+.bigSectionContainer > .sectionBody {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-around;
+}
+
+.bigSectionContainer > .sectionTitle {
+  font-size: 20px;
+}
