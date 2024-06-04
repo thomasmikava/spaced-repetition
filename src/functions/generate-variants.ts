@@ -73,6 +73,7 @@ export function generateTestableCards(card: StandardCard, helper: Helper): Stand
       testViewId: group.testViewId,
       variants,
       gr: group.gr,
+      groupMetaArgs: group.groupMetaArgs,
     };
     group.variants.forEach((_v, i) => {
       const isStandardForm = standardness[i];
@@ -147,6 +148,7 @@ const divideVariantsInGroups = (card: StandardCard, config: CardTypeConfiguratio
           testViewId: pr.testViewId ?? null,
           variants: pr.sortBy ? sortVariants(pr.sortBy, matchedVariants) : matchedVariants,
           gr: pr,
+          groupMetaArgs: pr.groupMetaArgs,
         });
       }
     }

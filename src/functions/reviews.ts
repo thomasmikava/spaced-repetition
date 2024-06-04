@@ -180,6 +180,7 @@ export interface StandardTestableCardGroupMeta {
   indViewId: string | null;
   testViewId: string | null;
   variants: StandardCardVariant[];
+  groupMetaArgs?: Record<string, unknown>;
   gr: VariantGroup | null;
 }
 

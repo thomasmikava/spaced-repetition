@@ -8,7 +8,7 @@ import type { Attribute, AttributeRecord, IdType, StandardCardAttributes, Transl
 import { isNonNullable } from '../utils/array';
 import { pickKeys } from '../utils/object';
 import { slashSplit } from '../utils/split';
-import { isMatch } from '../utils/matcher';
+import { getConditionalOrRawValue, isMatch } from '../utils/matcher';
 import type { StandardTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
 import { getArticle, getWithSymbolArticle } from './texts';
@@ -272,7 +272,7 @@ export const getCardViewContent = (
   const audio = viewLines.find((e) => e.type === ViewLineType.Audio);
   if (!audioText && audio && audio.type === ViewLineType.Audio) {
     const rawValue = record.variant.value;
-    audioText = withArticle(rawValue, record.card.lang, record.variant.attrs, audio, true);
+    audioText = withArticle(rawValue, record.card.lang, helper, record.variant.attrs, audio, true);
   }
 
   const tags = getTags(record, mode, helper);
@@ -282,14 +282,32 @@ export const getCardViewContent = (
 const withArticle = (
   word: string,
   lang: string,
+  helper: Helper,
   attributes: StandardCardAttributes | null | undefined,
-  options: { includeArticleSymbol?: boolean; useArticleAsPrefix?: boolean; includeLegend?: boolean },
+  options: {
+    includeArticleSymbol?: boolean;
+    useArticleAsPrefix?: boolean;
+    includeLegend?: boolean;
+    hashReplacer?: { attrId: IdType };
+  },
   forAudio = false,
 ) => {
-  if ((!options.includeArticleSymbol && !options.useArticleAsPrefix && !options.includeLegend) || !attributes) {
+  if (
+    (!options.includeArticleSymbol && !options.useArticleAsPrefix && !options.includeLegend && !options.hashReplacer) ||
+    !attributes
+  ) {
     return word;
   }
   let newWord = options.useArticleAsPrefix ? getArticle(lang, attributes, true) + ' ' + word : word;
+  if (options.hashReplacer && attributes && hasHash(word)) {
+    const recordId = attributes[options.hashReplacer.attrId];
+    if (recordId !== undefined) {
+      const attrRecord = helper.getAttributeRecord(recordId, lang);
+      if (attrRecord) {
+        newWord = normalizeDisplayValue(newWord, attrRecord.name);
+      }
+    }
+  }
   if (!forAudio && options.includeArticleSymbol && AttributeMapper.GENDER.id in attributes) {
     newWord = getWithSymbolArticle(lang, newWord, attributes[AttributeMapper.GENDER.id]);
   }
@@ -319,9 +337,9 @@ export const viewLinesToContentLines = (
       case ViewLineType.CardValue:
       case ViewLineType.VariantValue: {
         const rawValue = line.type === ViewLineType.CardValue ? record.card.value : record.variant.value;
-        const displayValue = withArticle(rawValue, record.card.lang, record.variant.attrs, line);
+        const displayValue = withArticle(rawValue, record.card.lang, helper, record.variant.attrs, line);
         if (line.useForMainAudio)
-          mainAudioText = withArticle(rawValue, record.card.lang, record.variant.attrs, line, true);
+          mainAudioText = withArticle(rawValue, record.card.lang, helper, record.variant.attrs, line, true);
         if (line.bigText) {
           return { type: 'header', variant: 'h1', content: displayValue, style: { textAlign: 'center' } };
         }
@@ -337,16 +355,16 @@ export const viewLinesToContentLines = (
           ),
         );
         if (!cardVariant) return null;
-        const displayValue = withArticle(cardVariant.value, record.card.lang, cardVariant.attrs, line);
+        const displayValue = withArticle(cardVariant.value, record.card.lang, helper, cardVariant.attrs, line);
         if (line.useForMainAudio)
-          mainAudioText = withArticle(cardVariant.value, record.card.lang, cardVariant.attrs, line, true);
+          mainAudioText = withArticle(cardVariant.value, record.card.lang, helper, cardVariant.attrs, line, true);
         if (line.bigText) {
           return { type: 'header', variant: 'h1', content: displayValue, style: { textAlign: 'center' } };
         }
         return { type: line.paragraph ? 'paragraph' : 'text', content: displayValue, style: textStyle };
       }
       case ViewLineType.Translation:
-        const displayValue = withArticle(record.card.translation, record.card.lang, record.variant.attrs, line); // TODO: check if we need to pass card lang or translation lang
+        const displayValue = withArticle(record.card.translation, record.card.lang, helper, record.variant.attrs, line); // TODO: check if we need to pass card lang or translation lang
         return { type: 'paragraph', content: displayValue, style: textStyle };
       case ViewLineType.TranslationVariants:
         if (!record.card.advancedTranslation || record.card.advancedTranslation.length < 1) return null;
@@ -375,8 +393,9 @@ export const viewLinesToContentLines = (
           .filter(isNonNullable);
         return { type: 'text', content: attrValues.join(line.separator ?? ', '), style: textStyle };
       case ViewLineType.Input:
-        const displayValue2 = withArticle(record.variant.value, record.card.value, record.variant.attrs, line);
+        const displayValue2 = withArticle(record.variant.value, record.card.lang, helper, record.variant.attrs, line);
         const correctValues = slashSplit(displayValue2);
+        const audioPrefixObj = getConditionalOrRawValue(line.audioPrefix, record.variant);
         return {
           type: 'input',
           inputId: '1',
@@ -390,7 +409,7 @@ export const viewLinesToContentLines = (
           audioProps: prepareInputAudio(
             record.card.lang,
             correctValues,
-            line.audioPrefix ? getPrefix(line.audioPrefix, record.variant.attrs, record.card.lang, helper) : undefined,
+            audioPrefixObj ? getPrefix(audioPrefixObj, record.variant.attrs, record.card.lang, helper) : undefined,
           ),
         };
       case ViewLineType.AfterAnswer:
@@ -415,6 +434,7 @@ export const viewLinesToContentLines = (
         const attrId = mainAttr.type === 'attr' ? mainAttr.attr : 0;
         const attr = helper.getAttribute(attrId, record.card.lang);
         if (!attr) return undefined;
+        const groupMetaArgs = line.customGroupMetaArgs ?? record.groupMeta.groupMetaArgs;
         const anyVariants = line.useAllVariants ? record.card.allStandardizedVariants : record.groupMeta.variants;
         const variants = line.matcher
           ? anyVariants.filter((someVariant) =>
@@ -447,7 +467,8 @@ export const viewLinesToContentLines = (
           .map(({ variant, attrValue }, index): string[] => {
             const row: (string | null)[] = [];
             let audioValueMeta = null as string[] | null;
-            for (const column of line.columns) {
+            for (const rawColumn of line.columns) {
+              const column = getConditionalOrRawValue(rawColumn, { groupMetaArgs });
               if (column.type === 'value') {
                 row.push(variant && variant.value ? normalizeDisplayValue(variant.value, attrValue.name) : '-');
               } else if (column.type === 'attr') {
@@ -586,3 +607,5 @@ const normalizeDisplayValue = (value: string, mainAttrValue: string) => {
   if (hashtagIndex === -1) return value;
   return value.replace(/#/g, mainAttrValue);
 };
+
+const hasHash = (value: string) => value.includes('#');

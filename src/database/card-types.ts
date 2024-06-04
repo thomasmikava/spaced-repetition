@@ -1,5 +1,5 @@
 import { CardViewMode } from '../functions/reviews';
-import { Matcher, SELF_REF } from '../utils/matcher';
+import { IfThenStatement, Matcher, SELF_REF } from '../utils/matcher';
 import { AttributeMapper } from './attributes';
 import { LabelMapper } from './labels';
 import {
@@ -76,16 +76,21 @@ export enum ViewLineType {
   Section,
 }
 
+type ColumnBasicType =
+  | { type: 'value' }
+  | { type: 'article' }
+  | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[]; hidden?: boolean }
+  | { type: 'audio'; values: string[] };
+
+export type ColumnMatcherArg = { groupMetaArgs?: Record<string, unknown> };
+type ColumnConditionalType = IfThenStatement<ColumnMatcherArg, ColumnBasicType> & { type?: undefined };
+
 type ViewTableLine = {
   type: ViewLineType.Table;
-  columns: (
-    | { type: 'value' }
-    | { type: 'article' }
-    | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[]; hidden?: boolean }
-    | { type: 'audio'; values: string[] }
-  )[];
+  columns: (ColumnBasicType | ColumnConditionalType)[];
   matcher?: CategoryAttrsMatcher;
   useAllVariants?: boolean;
+  customGroupMetaArgs?: ColumnMatcherArg['groupMetaArgs'];
 };
 
 const groupTables = {
@@ -106,7 +111,7 @@ const groupTables = {
       { type: 'audio', values: ['1'] },
     ],
   },
-  VERB: (mood: VerbMood): ViewTableLine => ({
+  VERB: {
     type: ViewLineType.Table,
     columns: [
       {
@@ -123,9 +128,13 @@ const groupTables = {
         ],
       },
       { type: 'value' },
-      mood === VerbMood.Imperativ ? { type: 'audio', values: ['1'] } : { type: 'audio', values: ['0.0', '1'] },
+      {
+        $if: { groupMetaArgs: { mood: AttributeMapper.MOOD.records[VerbMood.Imperativ] } },
+        then: { type: 'audio', values: ['1.0'] },
+        else: { type: 'audio', values: ['0.0', '1'] },
+      },
     ],
-  }),
+  },
   PRONOUN: {
     type: ViewLineType.Table,
     columns: [
@@ -142,7 +151,7 @@ const groupTables = {
       { type: 'audio', values: ['1'] },
     ],
   },
-} satisfies Record<string, ViewTableLine | ((...args: any[]) => ViewTableLine)>;
+} satisfies Record<string, ViewTableLine>;
 
 export type AudioAffix = { type: 'attr'; attrId: IdType; splitIndex?: number } | { type: 'text'; text: string };
 
@@ -179,7 +188,8 @@ export type ViewLine =
   | {
       type: ViewLineType.Input;
       useArticleAsPrefix?: boolean;
-      audioPrefix?: AudioAffix;
+      audioPrefix?: IfThenStatement<CategoryAttrsMatcher, AudioAffix | null> | AudioAffix | null;
+      hashReplacer?: { attrId: IdType };
     }
   | {
       type: ViewLineType.Audio;
@@ -201,6 +211,7 @@ export interface VariantGroup {
   groupViewId?: string;
   indViewId?: string;
   testViewId?: string;
+  groupMetaArgs?: Record<string, unknown>;
   forcefullyGroup?: boolean;
   sortBy?: SortBy[];
 }
@@ -265,6 +276,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
               [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense],
             },
           },
+          groupMetaArgs: { mood: AttributeMapper.MOOD.records[mood], tense: AttributeMapper.TENSE.records[tense] },
           groupViewId: 'gr',
           testViewId: 'gr-test',
           forcefullyGroup: true,
@@ -301,7 +313,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
             separator: ' - ',
           },
           { type: ViewLineType.Separator },
-          groupTables.VERB(VerbMood.Indikativ), // TODO: fix it
+          groupTables.VERB,
         ],
       },
       {
@@ -313,7 +325,12 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.NewLine },
           {
             type: ViewLineType.Input,
-            audioPrefix: { type: 'attr', attrId: AttributeMapper.PRONOUN.id, splitIndex: 0 },
+            audioPrefix: {
+              $if: { attrs: { [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[VerbMood.Imperativ] } },
+              then: null,
+              else: { type: 'attr', attrId: AttributeMapper.PRONOUN.id, splitIndex: 0 },
+            },
+            hashReplacer: { attrId: AttributeMapper.PRONOUN.id },
           },
           {
             type: ViewLineType.AfterAnswer,
@@ -321,7 +338,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           },
           {
             type: ViewLineType.AfterAnswerDropdown,
-            lines: [groupTables.VERB(VerbMood.Indikativ) /* TODO: fix it */],
+            lines: [groupTables.VERB],
           },
           {
             type: ViewLineType.AfterAnswer,
@@ -386,7 +403,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
                       ],
                       lines: [
                         {
-                          ...groupTables.VERB(mood),
+                          ...groupTables.VERB,
                           useAllVariants: true,
                           matcher: {
                             attrs: {
@@ -394,19 +411,27 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
                               [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense],
                             },
                           },
+                          customGroupMetaArgs: {
+                            mood: AttributeMapper.MOOD.records[mood],
+                            tense: AttributeMapper.TENSE.records[VerbTense.Präsens],
+                          },
                         },
                       ],
                     }),
                   )
                 : [
                     {
-                      ...groupTables.VERB(mood),
+                      ...groupTables.VERB,
                       useAllVariants: true,
                       matcher: {
                         attrs: {
                           [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
                           [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[VerbTense.Präsens],
                         },
+                      },
+                      customGroupMetaArgs: {
+                        mood: AttributeMapper.MOOD.records[mood],
+                        tense: AttributeMapper.TENSE.records[VerbTense.Präsens],
                       },
                     },
                   ],

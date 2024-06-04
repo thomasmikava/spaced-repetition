@@ -57,3 +57,38 @@ const isMatcherObject = (obj: unknown): obj is Matcher<any> => {
   const keys = Object.keys(obj);
   return keys.length === 1 && keys[0].startsWith('$');
 };
+
+export type IfThenStatement<T extends {}, V> = {
+  $if: Matcher<T>;
+  then: V | IfThenStatement<T, V>;
+  else: V | IfThenStatement<T, V>;
+};
+
+export const getConditionalValue = <T extends {}, V>(object: IfThenStatement<T, V>, condition: Matcher<T>): V => {
+  const ifStatement = object.$if;
+  if (isMatch(condition, ifStatement)) {
+    if (isConditionalObject<T, V>(object.then)) {
+      return getConditionalValue(object.then, condition);
+    }
+    return object.then;
+  } else {
+    if (isConditionalObject<T, V>(object.else)) {
+      return getConditionalValue(object.else, condition);
+    }
+    return object.else;
+  }
+};
+
+export const isConditionalObject = <T extends {}, V>(value: unknown): value is IfThenStatement<T, V> => {
+  return value !== null && typeof value === 'object' && '$if' in value;
+};
+
+export const getConditionalOrRawValue = <T extends {}, V>(
+  object: IfThenStatement<T, V> | V,
+  condition: Matcher<T>,
+): V => {
+  if (isConditionalObject<T, V>(object)) {
+    return getConditionalValue(object, condition);
+  }
+  return object;
+};
