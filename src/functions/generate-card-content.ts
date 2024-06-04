@@ -486,13 +486,18 @@ const getColumnsFromRow = (row: (string | null)[], metaKeys: string[]) => {
   return values.filter(isNonNullable);
 };
 
-const getAnswerChecker = (correctValue: string) => (value: string, options: AdvancedAnswerCheckerOptions) => {
-  if (correctValue === value) return true;
-  if (options.caseInsensitive && correctValue.toLocaleLowerCase() === value.toLocaleLowerCase()) return true;
-  const sanitizedValue = value.replace(/\(\)/g, '').trim();
-  if (sanitizedValue === correctValue) return false; // it was unchanged
-  if (options.caseInsensitive && sanitizedValue.toLocaleLowerCase() === value.toLocaleLowerCase()) return true;
-  return sanitizedValue === value;
+const getAnswerChecker = (correctValue: string) => (userInput: string, options: AdvancedAnswerCheckerOptions) => {
+  if (correctValue === userInput) return true;
+  if (options.caseInsensitive && correctValue.toLocaleLowerCase() === userInput.toLocaleLowerCase()) return true;
+  const sanitizedCorrectValue = correctValue
+    .replace(/\(.+?\)/g, '')
+    .replace(/(\s){2,}/g, '$1')
+    .trim();
+  if (sanitizedCorrectValue === correctValue) return false; // it was unchanged
+  if (options.caseInsensitive && sanitizedCorrectValue.toLocaleLowerCase() === userInput.toLocaleLowerCase()) {
+    return true;
+  }
+  return sanitizedCorrectValue === userInput;
 };
 
 const prepareTextForAudio = (text: string) => slashSplit(text).join('. ');
