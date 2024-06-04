@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 import { useMyCoursesWords, useCourseWords } from '../../api/controllers/words/words.query';
-import type { WordWithTranslationAndLessonsAndVariantsDTO } from '../../api/controllers/words/words.schema';
+import type {
+  WordWithTranslationAndLessonsAndVariantsDTO,
+  WordWithTranslationVariantsDTO,
+} from '../../api/controllers/words/words.schema';
 import type { StandardCard, TranslationVariant } from '../../database/types';
 
 export const useWords = ({ courseId, lessonId }: { courseId: number | undefined; lessonId: number | undefined }) => {
@@ -11,13 +14,13 @@ export const useWords = ({ courseId, lessonId }: { courseId: number | undefined;
 
   const data = useMemo((): StandardCard[] | undefined => {
     if (!result.data) return undefined;
-    return result.data.map(transformToStandardCard); // TODO: sort by course id then by lesson id
+    return (result.data as WordWithTranslationAndLessonsAndVariantsDTO[]).map(transformToStandardCard); // TODO: sort by course id then by lesson id
   }, [result.data]);
 
   return { ...result, data };
 };
 
-const transformToStandardCard = (word: WordWithTranslationAndLessonsAndVariantsDTO): StandardCard => {
+export const transformToStandardCard = (word: WordWithTranslationVariantsDTO): StandardCard => {
   return {
     id: word.id,
     lang: word.lang,

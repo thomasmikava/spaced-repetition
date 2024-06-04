@@ -7,6 +7,7 @@ import { viewLinesToContentLines, type Helper } from '../../functions/generate-c
 import { generateTestableCards } from '../../functions/generate-variants';
 import Content from '../../Content';
 import { ViewLineType, type ViewLine } from '../../database/card-types';
+import { transformToStandardCard } from '../../Pages/Review/useWords';
 
 const DictionaryModal: FC<{ helper: Helper; wordId: number; onClose: () => void; translationLang: string }> = ({
   helper,
@@ -30,7 +31,8 @@ const LoadedModal: FC<LoadedModalProps> = ({ onClose, word, helper }) => {
   const content = useMemo(() => {
     if (!word) return null;
     const config = helper.getCardType(word.type, word.lang)?.configuration ?? {};
-    const variants = generateTestableCards({ ...word, translation: word.translation ?? '' }, helper);
+    const card = transformToStandardCard(word);
+    const variants = generateTestableCards(card, helper);
     const viewLines = config.dictionaryView || DEFAULT_DICTIONARY_VIEW;
     return viewLinesToContentLines(viewLines, helper, variants[0]).lineContents;
   }, [word, helper]);

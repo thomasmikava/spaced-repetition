@@ -4,7 +4,14 @@ import type { AdvancedAnswerCheckerOptions, AnyContent, ContentTag, ContentVoice
 import { AttributeMapper } from '../database/attributes';
 import type { AudioAffix, ViewLine } from '../database/card-types';
 import { ViewLineType, type CardTypeRecord } from '../database/card-types';
-import type { Attribute, AttributeRecord, IdType, StandardCardAttributes, TranslationVariant } from '../database/types';
+import type {
+  Attribute,
+  AttributeRecord,
+  IdType,
+  StandardCardAttributes,
+  StandardCardVariant,
+  TranslationVariant,
+} from '../database/types';
 import { isNonNullable } from '../utils/array';
 import { pickKeys } from '../utils/object';
 import { slashSplit } from '../utils/split';
@@ -32,53 +39,24 @@ const getTopRow = (lang: string, tags: ContentTag[], word: string): AnyContent =
   };
 };
 
-const generateColumnedTable = <Row extends string[]>(
+const generateColumnedTable = <Row extends (string | AnyContent)[]>(
   rows: Row[],
-  getVoiceText: (row: Row, index: number) => string,
-  lang: string,
   mainValueIndex: number = 1,
 ): AnyContent[] => {
   return [
     {
       type: 'table',
       style: { fontSize: 20, margin: '0 auto' },
-      content: rows.map((row, index): AnyContent[] => {
-        return [
-          ...row.slice(0, row.length - 1).map((value, ind): AnyContent => {
-            return {
-              type: 'div',
-              content: [{ type: 'text', content: value }],
-              style: { textAlign: ind === 0 ? 'right' : 'center' },
-            };
-          }),
-          {
-            type: 'div',
-            content: [
-              {
+      content: rows.map((row): AnyContent[] => {
+        return row.map((value, ind): AnyContent => {
+          return typeof value === 'string'
+            ? {
                 type: 'div',
-                content: [{ type: 'text', content: row[row.length - 1] }],
-                style: {
-                  flex: 1,
-                  padding: '0 10px 0 5px',
-                },
-              },
-              {
-                type: 'div',
-                content: [
-                  {
-                    type: 'voice',
-                    language: lang,
-                    text: getVoiceText(row, index),
-                    autoplay: false,
-                    size: 'mini',
-                  },
-                ],
-                style: { display: row[mainValueIndex] === '-' ? 'none' : undefined },
-              },
-            ],
-            style: { display: 'flex' },
-          },
-        ];
+                content: [{ type: 'text', content: value }],
+                style: { textAlign: ind === 0 ? 'right' : 'center' },
+              }
+            : value;
+        });
       }),
       getCellStyles: (rowIndex, columnIndex) => {
         const isFaded = rows[rowIndex][mainValueIndex] === '-';
@@ -289,11 +267,16 @@ const withArticle = (
     useArticleAsPrefix?: boolean;
     includeLegend?: boolean;
     hashReplacer?: { attrId: IdType };
+    prefix?: { type: 'text'; text: string };
   },
   forAudio = false,
 ) => {
   if (
-    (!options.includeArticleSymbol && !options.useArticleAsPrefix && !options.includeLegend && !options.hashReplacer) ||
+    (!options.includeArticleSymbol &&
+      !options.useArticleAsPrefix &&
+      !options.includeLegend &&
+      !options.hashReplacer &&
+      !options.prefix) ||
     !attributes
   ) {
     return word;
@@ -310,6 +293,9 @@ const withArticle = (
   }
   if (!forAudio && options.includeArticleSymbol && AttributeMapper.GENDER.id in attributes) {
     newWord = getWithSymbolArticle(lang, newWord, attributes[AttributeMapper.GENDER.id]);
+  }
+  if (options.prefix) {
+    newWord = options.prefix.text + newWord;
   }
   if (!forAudio && options.includeLegend) {
     newWord = 'Translation: ' + newWord; // TODO: translate according to locale
@@ -456,20 +442,27 @@ export const viewLinesToContentLines = (
                 })
                 .filter(isNonNullable)
             : helper.getAttributeRecordsByAttributeId(attrId, record.card.lang);
-        const audioInfo: string[] = [];
         const hiddenColumnIndices = line.columns
           .map((e, indx) => (e.type === 'attr' && e.hidden ? indx : null))
           .filter(isNonNullable);
+
+        let mainValueIndex = line.columns.findIndex((e) => e.type === 'value');
+        if (mainValueIndex === -1) mainValueIndex = 0;
         const rows = myAttrObjects
           .map((attrValue) => {
-            return { variant: variants.find((e) => e.attrs?.[attrId] === attrValue.id), attrValue };
+            const matchedVariants = variants.filter((e) => e.attrs?.[attrId] === attrValue.id);
+            return { variants: matchedVariants, attrValue };
           })
-          .map(({ variant, attrValue }, index): string[] => {
-            const row: (string | null)[] = [];
-            let audioValueMeta = null as string[] | null;
-            for (const rawColumn of line.columns) {
+          .map(({ variants, attrValue }): (string | AnyContent | null)[] => {
+            const row: (string | AnyContent | null)[] = [];
+            const iterateColumn = (rawColumn: (typeof line.columns)[0], variant: StandardCardVariant | undefined) => {
               const column = getConditionalOrRawValue(rawColumn, { groupMetaArgs });
-              if (column.type === 'value') {
+              if (column.type === 'variantMatcher') {
+                const matched = variants.find((e) =>
+                  isMatch<{ category?: IdType | null; attrs?: StandardCardAttributes | null }>(e, column.matcher),
+                );
+                column.children.forEach((e) => iterateColumn(e, matched));
+              } else if (column.type === 'value') {
                 row.push(variant && variant.value ? normalizeDisplayValue(variant.value, attrValue.name) : '-');
               } else if (column.type === 'attr') {
                 const attrId = column.attr;
@@ -496,20 +489,48 @@ export const viewLinesToContentLines = (
                     ) ?? '',
                   );
               } else if (column.type === 'audio') {
+                const prevColValue = row[row.length - 1];
+                const content: AnyContent = {
+                  type: 'div',
+                  content: [
+                    {
+                      type: 'div',
+                      content:
+                        typeof prevColValue === 'string' ? [{ type: 'text', content: prevColValue }] : [prevColValue],
+                      style: {
+                        flex: 1,
+                        padding: '0 10px 0 5px',
+                      },
+                    },
+                    {
+                      type: 'div',
+                      content: [
+                        {
+                          type: 'voice',
+                          language: record.card.lang,
+                          text: getColumnsFromRow(row as string[], column.values).join(' '),
+                          autoplay: false,
+                          size: 'mini',
+                        },
+                      ],
+                      style: { display: row[mainValueIndex] === '-' ? 'none' : undefined },
+                    },
+                  ],
+                  style: { display: 'flex' },
+                };
+                row[row.length - 1] = content;
                 row.push(null);
-                audioValueMeta = column.values;
               } else row.push(null);
+            };
+            for (const rawColumn of line.columns) {
+              iterateColumn(rawColumn, variants[0]);
             }
-            if (audioValueMeta) {
-              audioInfo[index] = getColumnsFromRow(row, audioValueMeta).join(' ');
-            }
+            return row;
+          })
+          .map((row) => {
             return row.filter((_, i) => !hiddenColumnIndices.includes(i)).filter(isNonNullable);
           });
-        return generateColumnedTable(
-          rows,
-          (_row, index) => prepareTextForAudio(audioInfo[index] || ''),
-          record.card.lang,
-        );
+        return generateColumnedTable(rows, mainValueIndex);
       //
       default:
         return undefined;
@@ -529,7 +550,7 @@ const getColumnsFromRow = (row: (string | null)[], metaKeys: string[]) => {
     } else {
       const [rowIndex, slashVariantIndex] = meta.split('.');
       const rowValue = row[parseInt(rowIndex, 10)];
-      if (!rowValue) values.push(null);
+      if (typeof rowValue !== 'string' || !rowValue) values.push(null);
       else {
         const slashValues = slashSplit(rowValue);
         values.push(slashValues[parseInt(slashVariantIndex, 10)]);

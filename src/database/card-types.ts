@@ -77,6 +77,7 @@ export enum ViewLineType {
 }
 
 type ColumnBasicType =
+  | { type: 'variantMatcher'; matcher: CategoryAttrsMatcher; children: (ColumnBasicType | ColumnConditionalType)[] }
   | { type: 'value' }
   | { type: 'article' }
   | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[]; hidden?: boolean }
@@ -158,6 +159,7 @@ export type AudioAffix = { type: 'attr'; attrId: IdType; splitIndex?: number } |
 type ViewLineCardValueLike = {
   type: ViewLineType.CardValue | ViewLineType.VariantValue | ViewLineType.CustomCardValue;
   matcher?: CategoryAttrsMatcher; // required in case of ViewLineType.CustomCardValue
+  prefix?: { type: 'text'; text: string };
   bigText?: boolean;
   useForMainAudio?: boolean;
   paragraph?: boolean;
@@ -544,6 +546,44 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         ],
       },
     ],
+    dictionaryView: [
+      { type: ViewLineType.CardValue, bigText: true },
+      {
+        type: ViewLineType.Dropdown,
+        showMoreText: 'Show translations',
+        showLessText: 'Hide translations',
+        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+      },
+      { type: ViewLineType.NewLine },
+
+      {
+        type: ViewLineType.Section,
+        title: 'Cases',
+        lines: [
+          {
+            type: ViewLineType.Table,
+            columns: [
+              { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
+              {
+                type: 'variantMatcher',
+                matcher: {
+                  attrs: { [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.singular] },
+                },
+                children: [{ type: 'article' }, { type: 'value' }, { type: 'audio', values: ['1.0', '2'] }],
+              },
+              {
+                type: 'variantMatcher',
+                matcher: {
+                  attrs: { [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural] },
+                },
+                children: [{ type: 'article' }, { type: 'value' }, { type: 'audio', values: ['4.0', '5'] }],
+              },
+            ],
+            useAllVariants: true,
+          },
+        ],
+      },
+    ],
     maxAllowedNonStandardForms: 4,
   },
   [CardTypeMapper.ADJECTIVE_ADVERB]: {
@@ -629,6 +669,28 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           },
           { type: ViewLineType.AfterAnswerDropdown, lines: [groupTables.ADJECTIVE] },
         ],
+      },
+    ],
+
+    dictionaryView: [
+      { type: ViewLineType.CardValue, bigText: true },
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: { category: 2 },
+        prefix: { type: 'text', text: 'Komparativ: ' },
+        bigText: true,
+      },
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: { category: 3 },
+        prefix: { type: 'text', text: 'Superlativ: ' },
+        bigText: true,
+      },
+      {
+        type: ViewLineType.Dropdown,
+        showMoreText: 'Show translations',
+        showLessText: 'Hide translations',
+        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
       },
     ],
     maxAllowedNonStandardForms: 4,
