@@ -18,10 +18,12 @@ import { paths } from '../../../routes/paths';
 import { isNonNullable } from '../../../utils/array';
 import { useHelper } from '../../hooks/text-helpers';
 import LoadingPage from '../../Loading/LoadingPage';
+import { useSignInUserData } from '../../../contexts/Auth';
 
 const EditContentPage = () => {
   const params = useParams();
   const navigate = useNavigate();
+  const userData = useSignInUserData();
   const searchParams = new URL(window.location.href).searchParams;
   const courseId = +(params.courseId as string);
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
@@ -73,6 +75,8 @@ const EditContentPage = () => {
     }
   };
 
+  const canManageOfficialWords = !!userData.adminLangs?.includes(course.langToLearn);
+
   return (
     <div className='body' style={{ justifyContent: 'flex-start' }}>
       <h1>Edit Content Page</h1>
@@ -86,6 +90,7 @@ const EditContentPage = () => {
           onSubmit={handleSubmit}
           helper={helper}
           onCancel={gotoCourseLesson}
+          canManageOfficialWords={canManageOfficialWords}
         />
       </div>
     </div>

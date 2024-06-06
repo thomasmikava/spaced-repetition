@@ -1,8 +1,6 @@
 import { DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
 import Button from 'antd/es/button/button';
 import Dropdown from 'antd/es/dropdown';
-import Modal from 'antd/es/modal';
-import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReviewButtons from '../../ReviewButtons';
 import { useCourseById, useDeleteCourse, useMyMainCourses } from '../../api/controllers/courses/courses.query';
@@ -14,6 +12,7 @@ import { useFilteredLessons } from '../Lesson/useFilteredLessons';
 import { useSignInUserData } from '../../contexts/Auth';
 import { AddToMyCoursesButton } from './AddToMyCourses';
 import LoadingPage from '../Loading/LoadingPage';
+import { useConfirmationModal } from '../../ui/ConfirmationModal';
 
 const CoursePage = () => {
   const userData = useSignInUserData();
@@ -42,24 +41,30 @@ const CoursePage = () => {
     navigate(paths.app.course.editContent(courseId));
   };
 
-  const { mutate: deleteCourse, isPending: isDeleting } = useDeleteCourse();
-  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState<'deleteForAll' | 'removeForMe' | 'closed'>('closed');
-  const showDeleteModal = () => {
-    setIsDeleteModalVisible('deleteForAll');
-  };
-  const showRemoveModal = () => {
-    setIsDeleteModalVisible('removeForMe');
-  };
-  const hideDeleteModal = () => {
-    setIsDeleteModalVisible('closed');
-  };
-  const handleDelete = () => {
-    deleteCourse(
-      { id: courseId, removeForEveryone: isDeleteModalVisible === 'deleteForAll' },
+  const { confirmationModalElement, openConfirmationModal } = useConfirmationModal();
+
+  const { mutateAsync: deleteCourse } = useDeleteCourse();
+
+  const handleDelete = (removeForEveryone: boolean): Promise<void> => {
+    return deleteCourse(
+      { id: courseId, removeForEveryone },
       {
         onSuccess: goToMainPage,
       },
     );
+  };
+
+  const showDeleteModal = () => {
+    openConfirmationModal({
+      text: 'Are you sure that you want to delete the course?',
+      onApprove: () => handleDelete(true),
+    });
+  };
+  const showRemoveModal = () => {
+    openConfirmationModal({
+      text: 'Are you sure you want to remove this course from your progress?',
+      onApprove: () => handleDelete(false),
+    });
   };
 
   if (isLessonLoading || isCourseLoading || isMyMainCourseLoading) return <LoadingPage />;
@@ -116,21 +121,7 @@ const CoursePage = () => {
       )}
       <LessonBody courseId={courseId} lessonId={null} lessons={lessons} />
       <br />
-      <Modal
-        title='Modal'
-        open={isDeleteModalVisible !== 'closed'}
-        onOk={handleDelete}
-        onCancel={hideDeleteModal}
-        confirmLoading={isDeleting}
-        okText={isDeleteModalVisible === 'deleteForAll' ? 'Delete' : 'Remove'}
-        cancelText='Cancel'
-      >
-        {isDeleteModalVisible === 'deleteForAll' ? (
-          <p>Are you sure that you want to delete the course?</p>
-        ) : (
-          <p>Are you sure you want to remove this course from your progress?</p>
-        )}
-      </Modal>
+      {confirmationModalElement}
     </div>
   );
 };

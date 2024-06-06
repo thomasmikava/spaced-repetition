@@ -35,6 +35,7 @@ import Dropdown from 'antd/es/dropdown';
 import {
   BookOutlined,
   DeleteOutlined,
+  EditOutlined,
   LoadingOutlined,
   MinusOutlined,
   PlusOutlined,
@@ -52,6 +53,10 @@ import { mergeRefs } from 'react-merge-refs';
 import type { InputRef } from 'antd/es/input';
 import { as } from '../../../utils/common';
 import DictionaryModal from '../../../components/DictionaryModal';
+import type { ItemType } from 'antd/es/menu/interface';
+import { isNonNullable } from '../../../utils/array';
+import { pickKeys } from '../../../utils/object';
+import OfficialWordFormModal from '../../../components/OfficialWordFormModal';
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -91,6 +96,7 @@ interface Props {
   onSubmit: (data: FormData) => void;
   onCancel: () => void;
   helper: Helper;
+  canManageOfficialWords: boolean;
 }
 
 // const emptyWord: WordInfo = { type: 'word', subType: 'search-word', wordValue: '', fieldUniqueId: '2' };
@@ -118,6 +124,7 @@ const ContentForm: FC<Props> = memo(
     onCancel,
     translationLang,
     helper,
+    canManageOfficialWords,
   }) => {
     const { resolver } = useValidation();
     const form = useForm({
@@ -154,8 +161,14 @@ const ContentForm: FC<Props> = memo(
     const handleSubmit = form.handleSubmit(handleSuccess, console.error);
 
     const formBaseInfo = useMemo(
-      (): FormBaseInfo => ({ langToLearn, isValidationStarted: isSubmitted, translationLang, handleSubmit }),
-      [langToLearn, isSubmitted, translationLang, handleSubmit],
+      (): FormBaseInfo => ({
+        langToLearn,
+        isValidationStarted: isSubmitted,
+        translationLang,
+        handleSubmit,
+        canManageOfficialWords,
+      }),
+      [langToLearn, isSubmitted, translationLang, handleSubmit, canManageOfficialWords],
     );
 
     console.log('top level re-render');
@@ -179,6 +192,7 @@ interface FormBaseInfo {
   langToLearn: string;
   translationLang: string;
   isValidationStarted: boolean;
+  canManageOfficialWords: boolean;
   handleSubmit: () => Promise<void>;
 }
 
@@ -640,6 +654,13 @@ const SearchWord: FC<{
             />
           </div>
         </div>
+        <WordAdvancedActions
+          formBaseInfo={formBaseInfo}
+          word={word}
+          fieldKey={fieldKey}
+          key={word ? word.id : 'unknown'}
+          helper={helper}
+        />
         <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
       </div>
       {finalSearchValue && (
@@ -655,6 +676,78 @@ const SearchWord: FC<{
         />
       )}
     </div>
+  );
+};
+
+interface WordAdvancedActionsProps {
+  formBaseInfo: FormBaseInfo;
+  word: WordWithTranslationDTO | undefined;
+  fieldKey: `children.${number}`;
+  helper: Helper;
+}
+
+type A = SearchWordInfo & {
+  customTranslations: Pick<WordWithTranslationDTO, 'translation' | 'advancedTranslation'> | null;
+};
+
+const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({ formBaseInfo, word, fieldKey, helper }) => {
+  const [isWordFormsModalOpen, setIsWordFormsModalOpen] = useState(false);
+  const [userWordData, setUserWordData] = useState<A>();
+  const { getValues } = useFormContext<LessonInfo>();
+  const handleOfficialWordOpen = () => {
+    const data = getValues(fieldKey);
+    if (data.type !== 'word') return;
+    const areTranslationsIdentical =
+      !!word &&
+      data.translation === word.translation &&
+      JSON.stringify(word.advancedTranslation) === JSON.stringify(data.advancedTranslation);
+    setUserWordData({
+      ...data,
+      customTranslations: areTranslationsIdentical ? null : pickKeys(data, 'translation', 'advancedTranslation'),
+    });
+    setIsWordFormsModalOpen(true);
+  };
+  const handleClose = () => {
+    setIsWordFormsModalOpen(false);
+    setUserWordData(undefined);
+  };
+  const items: ItemType[] = [
+    formBaseInfo.canManageOfficialWords
+      ? {
+          label: word ? 'Edit official form' : 'Create official word',
+          key: 'add-l',
+          icon: word ? <EditOutlined /> : <PlusOutlined />,
+          onClick: handleOfficialWordOpen,
+        }
+      : null,
+    // TODO: add possibility to hide words for non-admins as well,
+  ];
+  const filteredItems = items.filter(isNonNullable);
+  if (filteredItems.length === 0) return null;
+
+  return (
+    <>
+      <Dropdown
+        menu={{
+          items: filteredItems,
+        }}
+        placement='bottom'
+      >
+        <Button label={<SettingFilled />} size='large' />
+      </Dropdown>
+      {isWordFormsModalOpen && (
+        <OfficialWordFormModal
+          defaultTranslationLang={formBaseInfo.translationLang}
+          wordId={word?.id}
+          customTranslations={userWordData?.customTranslations ?? undefined}
+          onClose={handleClose}
+          defaultType={userWordData?.wordDisplayType}
+          learningLang={formBaseInfo.langToLearn}
+          defaultValue={userWordData?.wordValue}
+          helper={helper}
+        />
+      )}
+    </>
   );
 };
 

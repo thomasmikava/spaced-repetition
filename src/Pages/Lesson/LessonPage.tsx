@@ -1,7 +1,6 @@
 import { BookOutlined, DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
 import AntButton from 'antd/es/button';
 import Dropdown from 'antd/es/dropdown';
-import Modal from 'antd/es/modal';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReviewButtons from '../../ReviewButtons';
@@ -22,6 +21,7 @@ import LoadingPage from '../Loading/LoadingPage';
 import { Table, type TableRow } from '../../ui/Table/Table';
 import Button from '../../ui/Button';
 import DictionaryModal from '../../components/DictionaryModal';
+import { useConfirmationModal } from '../../ui/ConfirmationModal';
 
 const LessonPage = () => {
   const userData = useSignInUserData();
@@ -57,16 +57,15 @@ const LessonPage = () => {
     navigate(paths.app.course.editContent(courseId, lessonId));
   };
 
-  const { mutate: deleteLesson, isPending: isDeleting } = useDeleteLesson();
-  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const { mutateAsync: deleteLesson } = useDeleteLesson();
+
+  const { confirmationModalElement, openConfirmationModal } = useConfirmationModal();
+
   const showDeleteModal = () => {
-    setIsDeleteModalVisible(true);
+    openConfirmationModal({ text: 'Are you sure that you want to delete the lesson?', onApprove: handleDelete });
   };
-  const hideDeleteModal = () => {
-    setIsDeleteModalVisible(false);
-  };
-  const handleDelete = () => {
-    deleteLesson(
+  const handleDelete = (): Promise<void> => {
+    return deleteLesson(
       { courseId, lessonId },
       {
         onSuccess: goToCourse,
@@ -177,17 +176,7 @@ const LessonPage = () => {
           translationLang={course.translationLang}
         />
       )}
-      <Modal
-        title='Modal'
-        open={isDeleteModalVisible}
-        onOk={handleDelete}
-        onCancel={hideDeleteModal}
-        confirmLoading={isDeleting}
-        okText={'Delete'}
-        cancelText='Cancel'
-      >
-        <p>Are you sure that you want to delete the lesson?</p>
-      </Modal>
+      {confirmationModalElement}
     </div>
   );
 };

@@ -4,7 +4,10 @@ import type { ReactElement } from 'react';
 import { forwardRef } from 'react';
 import type { ExtractRef } from './types';
 
-type SelectProps<ValueType> = Pick<AntSelectProps, 'style' | 'className' | 'size' | 'showSearch'> & {
+type SelectProps<ValueType> = Pick<
+  AntSelectProps,
+  'style' | 'className' | 'size' | 'showSearch' | 'disabled' | 'mode'
+> & {
   value?: ValueType | null;
   defaultValue?: ValueType | null;
   onChange?: (value: ValueType) => void;

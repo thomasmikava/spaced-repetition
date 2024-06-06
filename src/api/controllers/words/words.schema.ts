@@ -101,8 +101,11 @@ export interface GetOneWordReqDTO {
   id: number;
   translationLang?: string | null;
   onlyOfficialTranslation?: boolean;
+  includeAllOfficialTranslations?: boolean;
 }
-export type GetOneWordResDTO = WordWithTranslationVariantsDTO;
+export type GetOneWordResDTO = WordWithTranslationVariantsDTO & {
+  officialTranslations?: TranslationDTO[];
+};
 
 ///
 

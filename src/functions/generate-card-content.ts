@@ -7,7 +7,9 @@ import { ViewLineType, type CardTypeRecord } from '../database/card-types';
 import type {
   Attribute,
   AttributeRecord,
+  Category,
   IdType,
+  Label,
   StandardCardAttributes,
   StandardCardVariant,
   TranslationVariant,
@@ -144,6 +146,8 @@ export interface Helper {
   getAttribute: (attributeId: number | string, lang: string) => Attribute | undefined;
   getAttributeRecord: (attrRecordId: number | string, lang: string) => AttributeRecord | undefined;
   getAttributeRecordsByAttributeId: (attributeId: number | string, lang: string) => AttributeRecord[];
+  getLabels: (lang: string) => Label[];
+  getCategories: (lang: string) => Category[];
 }
 
 const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helper) => {

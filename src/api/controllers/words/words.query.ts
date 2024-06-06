@@ -111,9 +111,10 @@ export const useSearchWords = (query?: Omit<SearchWordReqDTO, 'skip'>) => {
   });
 };
 
-export const useOneWord = (query: GetOneWordReqDTO) => {
+export const useOneWord = (query: GetOneWordReqDTO | undefined | null) => {
   return useQuery({
-    queryFn: () => wordController.getOne(query),
-    queryKey: WordQueryKeys.getOne(query),
+    queryFn: () => wordController.getOne(query!),
+    queryKey: WordQueryKeys.getOne(query || { id: 0 }),
+    enabled: !!query,
   });
 };

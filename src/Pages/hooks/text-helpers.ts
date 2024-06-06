@@ -11,7 +11,9 @@ import { cardTypeRecordLocalizations, cardTypeRecords } from '../../database/car
 import type { Helper } from '../../functions/generate-card-content';
 import { arrayToObject, isNonNullable } from '../../utils/array';
 import { objectMap } from '../../utils/object';
-import type { Attribute, AttributeRecord } from '../../database/types';
+import type { Attribute, AttributeRecord, Category, Label } from '../../database/types';
+import { labelsLocalized } from '../../database/labels';
+import { categoriesLocalized } from '../../database/categories';
 
 export const useHelper = (): Helper | null => {
   const cardTypeRecordByIds = useMemo(() => arrayToObject(cardTypeRecords, 'id'), []);
@@ -90,12 +92,32 @@ export const useHelper = (): Helper | null => {
     });
   };
 
+  const getLabels = (lang: string): Label[] => {
+    return labelsLocalized
+      .filter((e) => e.lang === lang)
+      .map((loc) => ({
+        id: loc.labelId,
+        name: loc.name,
+      }));
+  };
+
+  const getCategories = (lang: string): Category[] => {
+    return categoriesLocalized
+      .filter((e) => e.lang === lang)
+      .map((loc) => ({
+        id: loc.categoryId,
+        name: loc.name,
+      }));
+  };
+
   const helper: Helper = {
     getAttribute,
     getAttributeRecord,
     getAttributeRecordsByAttributeId,
     getSupportedCardTypes,
     getCardType,
+    getLabels,
+    getCategories,
   };
   return helper;
 };
