@@ -9,6 +9,7 @@ export const replaceEmptyObjects = (data: FormData): FormData => {
     mainType: data.mainType === wordType ? null : data.mainType,
     type: wordType,
     attributes: handleEmptyObject(data.attributes),
+    isOfficial: data.isOfficial,
     translations: data.translations.map((translation): FormTranslation => {
       return {
         id: translation.id,

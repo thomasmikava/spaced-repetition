@@ -226,6 +226,7 @@ export interface UpdateWordReqDTO {
     value?: string;
     attributes?: StandardCardAttributes | null;
     labels?: CardLabelsDTO | null;
+    isOfficial?: boolean;
   };
   variants?: CRUDWordStandardCardVariantDTO[];
   translations?: CRUDWordTranslationsDTO[];

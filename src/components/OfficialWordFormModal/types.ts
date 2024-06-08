@@ -21,7 +21,8 @@ export interface FormTranslation extends DefaultTranslation {
 
 export type FormVariant = OptionalKeys<BaseWordVariantDTO, 'id'> & { fieldUniqueId: string };
 
-export interface FormData extends Pick<WordDTO, 'attributes' | 'labels' | 'type' | 'mainType' | 'lang' | 'value'> {
+export interface FormData
+  extends Pick<WordDTO, 'attributes' | 'labels' | 'type' | 'mainType' | 'lang' | 'value' | 'isOfficial'> {
   translations: FormTranslation[];
   variants: FormVariant[];
 }

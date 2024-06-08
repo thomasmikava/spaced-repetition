@@ -24,6 +24,7 @@ export type LessonUpdateActionDTO =
       displayType?: number | null;
       value: string;
       translation: { translation: string; translationVariants: any[] | null };
+      official?: boolean;
     }
   | {
       type: 'update-lesson';

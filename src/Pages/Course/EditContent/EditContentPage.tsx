@@ -64,6 +64,10 @@ const EditContentPage = () => {
   const handleSubmit = (newData: FormData) => {
     console.log('newData', newData);
     const convertedData = convertLessonUpdates(parentLessonId, newData.children, initialData.children);
+    // if (1 < 2) {
+    //   console.log('convertedData', convertedData);
+    //   return;
+    // }
     if (convertedData.length === 0) gotoCourseLesson();
     else {
       updateCourseContent(
@@ -149,6 +153,7 @@ const getCustomTranslation = ({
   translation,
 }: WordInfo): { translation: string; translationVariants: any[] | null } | undefined => {
   if (!word) return undefined;
+  // TODO: check advancedTranslation equality as well
   if (translation === word.translation || translation.trim() === word.translation?.trim()) return undefined;
   return { translation, translationVariants: word.advancedTranslation ?? null };
 };
@@ -178,6 +183,7 @@ const convertLessonUpdates = (
       value: word.wordValue,
       displayType: word.wordDisplayType === DEFAULT_WORD_DISPLAY_TYPE ? null : word.wordDisplayType,
       translation: getTranslation(word),
+      official: !word.word && word.makeOfficial,
     };
   }
 

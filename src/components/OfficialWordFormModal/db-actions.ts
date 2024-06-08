@@ -36,6 +36,7 @@ const getWordUpdates = (oldWord: FormData, newData: FormData): UpdateWordReqDTO[
     mainType: true,
     type: true,
     value: true,
+    isOfficial: true,
   });
   return getUpdatedValues(oldWord, newData, keys);
 };

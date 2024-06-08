@@ -32,6 +32,30 @@
   align-items: flex-start;
 }
 
+.globeWorld {
+  font-size: 24px;
+}
+.notOfficialWord {
+  opacity: 0.5;
+  cursor: pointer;
+}
+.notOfficialWordAlreadyCreated {
+  color: black;
+}
+.notOfficialWordAlreadyCreated svg {
+  cursor: default;
+}
+.unChangedOfficialWord {
+  color: #14c710;
+}
+.changedOfficialWord {
+  color: #0a94ff;
+}
+.willBecomeOfficialWord {
+  color: #efff0a;
+  cursor: pointer;
+}
+
 .clickableIcon {
   cursor: pointer;
   height: 31.6px;

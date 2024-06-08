@@ -15,6 +15,7 @@ export const useValidation = () => {
       wordValue: z.string().trim(),
       wordDisplayType: z.number().optional(),
       word: WordWithTranslationSchema.optional(),
+      makeOfficial: z.boolean().optional(),
       translation: z.string().trim(),
       advancedTranslation: z.array(z.any()).nullish(),
     })

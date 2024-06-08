@@ -36,6 +36,7 @@ import {
   BookOutlined,
   DeleteOutlined,
   EditOutlined,
+  GlobalOutlined,
   LoadingOutlined,
   MinusOutlined,
   PlusOutlined,
@@ -58,6 +59,7 @@ import { isNonNullable } from '../../../utils/array';
 import { pickKeys } from '../../../utils/object';
 import type { WordModalCloseArg } from '../../../components/OfficialWordFormModal/types';
 import OfficialWordFormModal from '../../../components/OfficialWordFormModal';
+import { Tooltip } from 'antd';
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -65,6 +67,7 @@ interface SearchWordInfo {
   subType: 'search-word';
   wordValue: string;
   wordDisplayType?: number;
+  makeOfficial?: boolean;
   word?: WordWithTranslationDTO;
   translation: string;
   advancedTranslation: WordWithTranslationDTO['advancedTranslation'];
@@ -663,6 +666,7 @@ const SearchWord: FC<{
           helper={helper}
           handleOfficialWordChoose={handleChoose}
         />
+        {formBaseInfo.canManageOfficialWords && <OfficialityIcon control={control} fieldKey={fieldKey} />}
         <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
       </div>
       {finalSearchValue && (
@@ -709,7 +713,7 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
     const areTranslationsIdentical =
       !!word &&
       data.translation === word.translation &&
-      JSON.stringify(word.advancedTranslation) === JSON.stringify(data.advancedTranslation);
+      JSON.stringify(word.advancedTranslation ?? null) === JSON.stringify(data.advancedTranslation ?? null);
     setUserWordData({
       ...data,
       customTranslations: areTranslationsIdentical ? null : pickKeys(data, 'translation', 'advancedTranslation'),
@@ -726,7 +730,7 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
   const items: ItemType[] = [
     formBaseInfo.canManageOfficialWords
       ? {
-          label: word ? 'Edit official form' : 'Create official word',
+          label: word ? 'Edit forms' : 'Create official word',
           key: 'add-l',
           icon: word ? <EditOutlined /> : <PlusOutlined />,
           onClick: handleOfficialWordOpen,
@@ -762,6 +766,74 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
     </>
   );
 };
+
+const OfficialityIcon: FC<{
+  fieldKey: `children.${number}`;
+  control: Control<LessonInfo, any>;
+}> = memo(({ control, fieldKey }) => {
+  const { setValue } = useFormContext<LessonInfo>();
+  const word = useWatch({ control, name: `${fieldKey}.word` });
+  const translation = useWatch({ control, name: `${fieldKey}.translation` });
+  const advancedTranslation = useWatch({ control, name: `${fieldKey}.advancedTranslation` });
+  const makeOfficial = useWatch({ control, name: `${fieldKey}.makeOfficial` });
+
+  const status = (() => {
+    if (!word && makeOfficial) return 'will-become-official';
+    if (!word || !word.isOfficial) return 'not-official';
+    if (
+      translation === word.translation &&
+      JSON.stringify(advancedTranslation ?? null) === JSON.stringify(word.advancedTranslation ?? null)
+      // TODO: check word type as well
+    ) {
+      return 'unchanged-official';
+    }
+    return 'changed-official';
+  })();
+
+  const isAlreadyCreated = !!word;
+
+  // eslint-disable-next-line sonarjs/cognitive-complexity
+  return useMemo(() => {
+    const handleClick = () => {
+      if (status === 'will-become-official') {
+        setValue(`${fieldKey}.makeOfficial`, undefined);
+      } else if (status === 'not-official') {
+        setValue(`${fieldKey}.makeOfficial`, true);
+      }
+    };
+    return (
+      <Tooltip
+        title={
+          status === 'will-become-official'
+            ? 'Word will become official after lesson creation; Click to disable it'
+            : status === 'not-official'
+              ? `Word is not official${isAlreadyCreated ? "; Click settings icon, then 'Edit forms' and modify 'Official' checkbox" : '; Click to create official form once lesson is created'}`
+              : status === 'unchanged-official'
+                ? 'Word is official'
+                : 'Word is official, but you have changed translation'
+        }
+      >
+        <div
+          className={
+            styles.globeWorld +
+            ' ' +
+            (status === 'will-become-official'
+              ? styles.willBecomeOfficialWord
+              : status === 'not-official'
+                ? isAlreadyCreated
+                  ? styles.notOfficialWordAlreadyCreated
+                  : styles.notOfficialWord
+                : status === 'unchanged-official'
+                  ? styles.unChangedOfficialWord
+                  : styles.changedOfficialWord)
+          }
+        >
+          <GlobalOutlined onClick={handleClick} />
+        </div>
+      </Tooltip>
+    );
+  }, [status, setValue, fieldKey, isAlreadyCreated]);
+});
 
 type SuggestionProps = Pick<
   ReturnType<typeof useSearchWords>,

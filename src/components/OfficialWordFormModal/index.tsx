@@ -22,6 +22,7 @@ import type {
   WordModalCloseArg,
 } from './types';
 import { replaceEmptyObjects } from './utils';
+import { Checkbox } from '../../ui/Checkbox/Checkbox';
 
 interface OfficialWordFormModalProps {
   defaultTranslationLang: string;
@@ -66,6 +67,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
       variants: [
         { fieldUniqueId: Math.random().toString(), attrs: null, categoryId: 1, value: defaultWordValue ?? '' },
       ],
+      isOfficial: true,
       value: defaultWordValue ?? '',
       translations: customTranslations
         ? [
@@ -194,7 +196,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
 
   return (
     <Modal
-      title={'Edit official word'}
+      title={'Edit forms'}
       open={true}
       onOk={() => {}}
       onCancel={handleClose}
@@ -235,6 +237,11 @@ const TitleEditor: FC<{ helper: Helper; lang: string }> = ({ helper, lang }) => 
   const { control, getValues } = useFormContext<FormData>();
   return (
     <div>
+      <Controller
+        name='isOfficial'
+        control={control}
+        render={({ field: { value, ...field } }) => <Checkbox label='Official' checked={value} {...field} />}
+      />
       <Controller
         name={`value`}
         control={control}
