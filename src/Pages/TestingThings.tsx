@@ -59,11 +59,13 @@ const TestingThingsPage = () => {
               attrs: variant.attrs,
               category: variant.category,
             })),
-            translation: {
-              lang: 'en',
-              translation: card.translation,
-              advancedTranslation: card.advancedTranslation,
-            },
+            translations: [
+              {
+                lang: 'en',
+                translation: card.translation,
+                advancedTranslation: card.advancedTranslation,
+              },
+            ],
           };
         }),
       )

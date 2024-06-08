@@ -2,7 +2,9 @@ import { getModifiedSearchValue } from '../../../functions/texts';
 import { apiRequest } from '../../api';
 import type { IRequest } from '../../request';
 import type {
-  CreateManyWordsDTO,
+  CreateManyWordsReqDTO,
+  CreateOneWordsReqDTO,
+  CreateOneWordsResDTO,
   GetLanguageDictionaryReqDTO,
   GetLanguageDictionaryResDTO,
   GetMyCoursesWordsResDTO,
@@ -39,7 +41,11 @@ class WordController {
     return this.request.get('/words/:id', query);
   };
 
-  createManyWords = async (query: CreateManyWordsDTO): Promise<void> => {
+  createManyWords = async (query: CreateManyWordsReqDTO): Promise<void> => {
+    return this.request.post('/words', query);
+  };
+
+  createOneWord = async (query: CreateOneWordsReqDTO): Promise<CreateOneWordsResDTO> => {
     return this.request.post('/words', query);
   };
 

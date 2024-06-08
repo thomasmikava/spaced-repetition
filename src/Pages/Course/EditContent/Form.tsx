@@ -56,6 +56,7 @@ import DictionaryModal from '../../../components/DictionaryModal';
 import type { ItemType } from 'antd/es/menu/interface';
 import { isNonNullable } from '../../../utils/array';
 import { pickKeys } from '../../../utils/object';
+import type { WordModalCloseArg } from '../../../components/OfficialWordFormModal/types';
 import OfficialWordFormModal from '../../../components/OfficialWordFormModal';
 
 interface SearchWordInfo {
@@ -660,6 +661,7 @@ const SearchWord: FC<{
           fieldKey={fieldKey}
           key={word ? word.id : 'unknown'}
           helper={helper}
+          handleOfficialWordChoose={handleChoose}
         />
         <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
       </div>
@@ -684,13 +686,20 @@ interface WordAdvancedActionsProps {
   word: WordWithTranslationDTO | undefined;
   fieldKey: `children.${number}`;
   helper: Helper;
+  handleOfficialWordChoose: (word: WordWithTranslationDTO) => void;
 }
 
 type A = SearchWordInfo & {
   customTranslations: Pick<WordWithTranslationDTO, 'translation' | 'advancedTranslation'> | null;
 };
 
-const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({ formBaseInfo, word, fieldKey, helper }) => {
+const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
+  formBaseInfo,
+  word,
+  fieldKey,
+  helper,
+  handleOfficialWordChoose,
+}) => {
   const [isWordFormsModalOpen, setIsWordFormsModalOpen] = useState(false);
   const [userWordData, setUserWordData] = useState<A>();
   const { getValues } = useFormContext<LessonInfo>();
@@ -707,9 +716,12 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({ formBaseInfo, word,
     });
     setIsWordFormsModalOpen(true);
   };
-  const handleClose = () => {
+  const handleClose = (arg: WordModalCloseArg) => {
     setIsWordFormsModalOpen(false);
     setUserWordData(undefined);
+    if (!arg.justClosed) {
+      handleOfficialWordChoose(arg.word);
+    }
   };
   const items: ItemType[] = [
     formBaseInfo.canManageOfficialWords

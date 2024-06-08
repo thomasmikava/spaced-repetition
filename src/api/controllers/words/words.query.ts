@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, useQuery } from '../../../utils/queries';
 import { wordController } from './words.controller';
 import type {
@@ -116,5 +116,19 @@ export const useOneWord = (query: GetOneWordReqDTO | undefined | null) => {
     queryFn: () => wordController.getOne(query!),
     queryKey: WordQueryKeys.getOne(query || { id: 0 }),
     enabled: !!query,
+  });
+};
+
+export const useCreateManyNewWords = () => {
+  return useMutation({
+    mutationFn: wordController.createManyWords,
+    mutationKey: ['words:create-many'],
+  });
+};
+
+export const useCreateNewWord = () => {
+  return useMutation({
+    mutationFn: wordController.createOneWord,
+    mutationKey: ['words:create-one'],
   });
 };

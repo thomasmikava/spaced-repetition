@@ -144,7 +144,7 @@ type CreateStandardCardVariantDTO = {
   value: string;
 };
 
-interface CreateWordDTO {
+export interface CreateWordDTO {
   lang: string;
   type: number;
   mainType?: number | null;
@@ -154,11 +154,16 @@ interface CreateWordDTO {
   isOfficial: boolean;
   variants: CreateStandardCardVariantDTO[];
   variantsIncludeTopCard: boolean;
-  translation: {
+  translations: {
     lang: string;
     translation: string;
     advancedTranslation?: any[] | null;
-  };
+  }[];
 }
 
-export type CreateManyWordsDTO = CreateWordDTO[];
+export type CreateOneWordsReqDTO = CreateWordDTO;
+export type CreateOneWordsResDTO = WordDTO;
+
+export type CreateManyWordsReqDTO = CreateWordDTO[];
+
+export type CreateWordReqDTO = CreateOneWordsReqDTO | CreateManyWordsReqDTO;
