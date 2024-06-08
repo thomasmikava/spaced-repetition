@@ -16,6 +16,8 @@ import type {
   GetWordsResDTO,
   SearchWordReqDTO,
   SearchWordResDTO,
+  UpdateWordReqDTO,
+  UpdateWordResDTO,
 } from './words.schema';
 
 class WordController {
@@ -39,6 +41,10 @@ class WordController {
 
   getOne = async (query: GetOneWordReqDTO): Promise<GetOneWordResDTO> => {
     return this.request.get('/words/:id', query);
+  };
+
+  updateOne = async (query: UpdateWordReqDTO): Promise<UpdateWordResDTO> => {
+    return this.request.patch('/words/:id', query);
   };
 
   createManyWords = async (query: CreateManyWordsReqDTO): Promise<void> => {

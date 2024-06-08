@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef } from 'react';
 import { wordController } from '../api/controllers/words/words.controller';
-import type { CreateManyWordsDTO, WordWithTranslationDTO } from '../api/controllers/words/words.schema';
+import type { CreateManyWordsReqDTO, WordWithTranslationDTO } from '../api/controllers/words/words.schema';
 import type { Phrase } from '../database/types';
 import { CardType } from '../database/types';
 import {
@@ -44,7 +44,7 @@ const TestingThingsPage = () => {
 
     return wordController
       .createManyWords(
-        wordCards.map((card): CreateManyWordsDTO[number] => {
+        wordCards.map((card): CreateManyWordsReqDTO[number] => {
           return {
             lang: card.lang,
             type: card.type,
@@ -57,7 +57,7 @@ const TestingThingsPage = () => {
             variants: card.variants.map((variant) => ({
               value: variant.value,
               attrs: variant.attrs,
-              category: variant.category,
+              categoryId: variant.category,
             })),
             translations: [
               {

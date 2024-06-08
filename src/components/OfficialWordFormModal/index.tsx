@@ -3,7 +3,7 @@ import { Modal, Skeleton } from 'antd';
 import { useEffect, useMemo, useRef, useState, type FC } from 'react';
 import type { Control } from 'react-hook-form';
 import { Controller, FormProvider, useController, useFieldArray, useForm, useFormContext } from 'react-hook-form';
-import { useCreateNewWord, useOneWord } from '../../api/controllers/words/words.query';
+import { useCreateNewWord, useOneWord, useUpdateWord } from '../../api/controllers/words/words.query';
 import type { WordWithTranslationDTO } from '../../api/controllers/words/words.schema';
 import type { TranslationVariant } from '../../database/types';
 import type { Helper } from '../../functions/generate-card-content';
@@ -47,10 +47,14 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
   defaultValue: defaultWordValue,
   helper,
 }) => {
-  const { data } = useOneWord(
-    wordId ? { id: wordId, onlyOfficialTranslation: true, includeAllOfficialTranslations: true } : null,
+  const [wordLoadedOnce, setWordLoadedOnce] = useState(false);
+  const { data: oneWordInitialData, isFetching } = useOneWord(
+    !wordLoadedOnce && wordId
+      ? { id: wordId, onlyOfficialTranslation: true, includeAllOfficialTranslations: true }
+      : null,
   );
-  const isLoaded = !wordId ? true : !!data;
+  const data = isFetching ? null : oneWordInitialData;
+  const isLoaded = !wordId ? true : wordLoadedOnce || !!data;
   const doneOnce = useRef(false);
 
   const defaultValues = useMemo((): FormData => {
@@ -78,7 +82,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
     return replaceEmptyObjects(def);
   }, [customTranslations, defaultTranslationLang, defaultType, defaultWordValue, learningLang]);
 
-  const defaultValuesRef = useRef({ isNew: true, data: defaultValues });
+  const defaultValuesRef = useRef({ isNew: true, data: defaultValues, wordId: undefined as undefined | number });
 
   const form = useForm<FormData>({
     defaultValues,
@@ -118,13 +122,15 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
       ],
     };
     const newDefaultValues = replaceEmptyObjects(newForm);
-    defaultValuesRef.current = { isNew: false, data: newDefaultValues };
+    defaultValuesRef.current = { isNew: false, data: newDefaultValues, wordId: data.id };
     reset(newDefaultValues);
+    setWordLoadedOnce(true);
     doneOnce.current = true;
   });
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
   const { mutate: createWord } = useCreateNewWord();
+  const { mutate: updateWord } = useUpdateWord();
 
   const { confirmationModalElement, openConfirmationModal } = useConfirmationModal();
 
@@ -144,6 +150,10 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
       translation: officialTranslation?.translation ?? undefined,
       advancedTranslation: officialTranslation?.advancedTranslation ?? undefined,
     };
+    const onError = (error: unknown) => {
+      setIsSubmitLoading(false);
+      alert(typeof error === 'object' && error && 'message' in error && error.message ? error.message : 'Error');
+    };
     if (defaultValuesRef.current.isNew) {
       const createDTO = getCreateWordDTO(sanitized);
       setIsSubmitLoading(true);
@@ -156,14 +166,25 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
           };
           onClose({ justClosed: false, created: true, wordId: newWordId, word: wordWithTranslation });
         },
-        onError: (error) => {
-          setIsSubmitLoading(false);
-          alert(error?.message ?? 'Error');
+        onError,
+      });
+    } else {
+      const wordId = defaultValuesRef.current.wordId as number;
+      const dbWordUpdateActions = getWordUpdateActions(wordId, defaultValuesRef.current.data, sanitized);
+      if (!dbWordUpdateActions) {
+        return onClose({ justClosed: true });
+      }
+      updateWord(dbWordUpdateActions, {
+        onSuccess: (word) => {
+          const wordWithTranslation: WordWithTranslationDTO = {
+            ...word,
+            ...translationObj,
+          };
+          onClose({ justClosed: false, created: false, wordId, word: wordWithTranslation });
         },
+        onError,
       });
     }
-    const dbWordUpdateActions = getWordUpdateActions(defaultValuesRef.current.data, sanitized);
-    console.log(dbWordUpdateActions);
   };
   const handleSubmit = form.handleSubmit(handleSuccess, console.error);
 

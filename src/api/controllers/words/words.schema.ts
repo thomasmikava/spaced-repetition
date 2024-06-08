@@ -45,19 +45,31 @@ export interface WordVariantDTO extends BaseWordVariantDTO {
   isOfficial: boolean;
 }
 
+type AdvancedTranslationDTO = {
+  schema?: string;
+  attrs?: Record<string, number | number[]>;
+  translation: string;
+};
+
 export interface TranslationDTO {
   id: number;
   lang: string;
   wordId: number;
   translation: string;
-  advancedTranslation: any[] | null;
+  advancedTranslation: AdvancedTranslationDTO[] | null;
   userId: number | null;
   isMain: boolean;
 }
 
+const AdvancedTranslation = z.object({
+  schema: z.string().optional(),
+  attrs: z.record(z.union([z.number(), z.array(z.number())])).optional(),
+  translation: z.string(),
+});
+
 export const WordWithTranslationSchema = WordSchema.extend({
   translation: z.string().optional().nullable(),
-  advancedTranslation: z.array(z.any()).optional().nullable(),
+  advancedTranslation: z.array(AdvancedTranslation).optional().nullable(),
 });
 export type WordWithTranslationDTO = WordDTO & {
   translation?: TranslationDTO['translation'] | null;
@@ -138,10 +150,15 @@ export interface SearchWordResDTO {
 }
 
 ///
-type CreateStandardCardVariantDTO = {
+export type CreateWordStandardCardVariantDTO = {
   attrs?: StandardCardAttributes | null;
-  category?: number | null;
+  categoryId?: number | null;
   value: string;
+};
+export type CreateWordTranslationDTO = {
+  lang: string;
+  translation: string;
+  advancedTranslation?: AdvancedTranslationDTO[] | null;
 };
 
 export interface CreateWordDTO {
@@ -152,13 +169,9 @@ export interface CreateWordDTO {
   attributes?: StandardCardAttributes | null;
   labels?: CardLabelsDTO | null;
   isOfficial: boolean;
-  variants: CreateStandardCardVariantDTO[];
+  variants: CreateWordStandardCardVariantDTO[];
   variantsIncludeTopCard: boolean;
-  translations: {
-    lang: string;
-    translation: string;
-    advancedTranslation?: any[] | null;
-  }[];
+  translations: CreateWordTranslationDTO[];
 }
 
 export type CreateOneWordsReqDTO = CreateWordDTO;
@@ -167,3 +180,55 @@ export type CreateOneWordsResDTO = WordDTO;
 export type CreateManyWordsReqDTO = CreateWordDTO[];
 
 export type CreateWordReqDTO = CreateOneWordsReqDTO | CreateManyWordsReqDTO;
+
+///
+
+export type DeleteStandardCardVariantDTO = {
+  type: 'delete';
+  id: number;
+};
+
+export interface CreateInsideWordStandardCardVariantDTO extends CreateWordStandardCardVariantDTO {
+  type: 'create';
+}
+
+export type UpdateStandardCardVariantDTO = Partial<CreateWordStandardCardVariantDTO> & {
+  type: 'update';
+  id: number;
+};
+
+export type CRUDWordStandardCardVariantDTO =
+  | DeleteStandardCardVariantDTO
+  | CreateInsideWordStandardCardVariantDTO
+  | UpdateStandardCardVariantDTO;
+
+export type DeleteTranslationDTO = {
+  type: 'delete';
+  id: number;
+};
+
+export interface CreateInsideWordTranslationDTO extends CreateWordTranslationDTO {
+  type: 'create';
+}
+
+export type UpdateTranslationDTO = Partial<CreateWordTranslationDTO> & {
+  type: 'update';
+  id: number;
+};
+
+export type CRUDWordTranslationsDTO = DeleteTranslationDTO | CreateInsideWordTranslationDTO | UpdateTranslationDTO;
+
+export interface UpdateWordReqDTO {
+  id: number;
+  wordUpdates?: {
+    type?: number;
+    mainType?: number | null;
+    value?: string;
+    attributes?: StandardCardAttributes | null;
+    labels?: CardLabelsDTO | null;
+  };
+  variants?: CRUDWordStandardCardVariantDTO[];
+  translations?: CRUDWordTranslationsDTO[];
+}
+
+export type UpdateWordResDTO = WordDTO;

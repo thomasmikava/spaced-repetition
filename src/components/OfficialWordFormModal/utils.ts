@@ -45,8 +45,8 @@ export const replaceEmptyObjects = (data: FormData): FormData => {
 const handleEmptyObject = <T extends Record<string, unknown>>(obj: T | null | undefined): T | null => {
   if (!obj || typeof obj !== 'object') return null;
   const withoutUndefined = removeUndefinedValues(obj);
-  if (!Object.keys(withoutUndefined)) return null;
-  return obj;
+  if (!Object.keys(withoutUndefined).length) return null;
+  return withoutUndefined;
 };
 
 const handleNullArray = <T>(arr: T[] | null | undefined): T[] | null => {

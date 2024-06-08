@@ -132,3 +132,12 @@ export const useCreateNewWord = () => {
     mutationKey: ['words:create-one'],
   });
 };
+
+export const useUpdateWord = () => {
+  return useMutation({
+    mutationFn: wordController.updateOne,
+    onSuccess: (_, args): Promise<unknown> => {
+      return queryClient.invalidateQueries({ queryKey: [`word:getOne`, `word:getOne:${args.id}`], exact: false });
+    },
+  });
+};
