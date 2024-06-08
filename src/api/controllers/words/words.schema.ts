@@ -45,7 +45,7 @@ export interface WordVariantDTO extends BaseWordVariantDTO {
   isOfficial: boolean;
 }
 
-type AdvancedTranslationDTO = {
+export type AdvancedTranslationDTO = {
   schema?: string;
   attrs?: Record<string, number | number[]>;
   translation: string;

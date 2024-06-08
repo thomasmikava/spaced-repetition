@@ -223,7 +223,7 @@ const FieldArray = memo(
   forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, formBaseInfo, onAddNewWord, helper }, ref) => {
     const { control } = useFormContext<FormData>();
 
-    const { fields, append, remove } = useFieldArray<FormData>({
+    const { fields, append, remove } = useFieldArray({
       control,
       name: fieldKey,
     });

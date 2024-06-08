@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FC } from 'react';
 import type { Control } from 'react-hook-form';
 import { Controller, FormProvider, useController, useFieldArray, useForm, useFormContext } from 'react-hook-form';
 import { useCreateNewWord, useOneWord, useUpdateWord } from '../../api/controllers/words/words.query';
-import type { WordWithTranslationDTO } from '../../api/controllers/words/words.schema';
+import type { AdvancedTranslationDTO, WordWithTranslationDTO } from '../../api/controllers/words/words.schema';
 import type { TranslationVariant } from '../../database/types';
 import type { Helper } from '../../functions/generate-card-content';
 import { useTranslationLangOptions } from '../../hooks/langs';
@@ -31,7 +31,7 @@ interface OfficialWordFormModalProps {
   wordId: number | undefined;
   customTranslations?: {
     translation?: DefaultTranslation['translation'] | null;
-    advancedTranslation?: DefaultTranslation['advancedTranslation'] | null;
+    advancedTranslation?: AdvancedTranslationDTO[] | null;
   };
   onClose: (info: WordModalCloseArg) => void;
   helper: Helper;
@@ -72,7 +72,11 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
             {
               ...customTranslations,
               lang: defaultTranslationLang,
-              advancedTranslation: customTranslations.advancedTranslation ?? null,
+              advancedTranslation:
+                customTranslations.advancedTranslation?.map((adv) => ({
+                  ...adv,
+                  fieldUniqueId: Math.random().toString(),
+                })) ?? null,
               translation: customTranslations.translation ?? '',
               fieldUniqueId: 'default',
             },
