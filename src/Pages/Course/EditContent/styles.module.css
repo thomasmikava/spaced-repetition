@@ -42,7 +42,9 @@
 .notOfficialWordAlreadyCreated {
   color: black;
 }
-.notOfficialWordAlreadyCreated svg {
+.notOfficialWordAlreadyCreated svg,
+.unChangedOfficialWord svg,
+.changedOfficialWord svg {
   cursor: default;
 }
 .unChangedOfficialWord {

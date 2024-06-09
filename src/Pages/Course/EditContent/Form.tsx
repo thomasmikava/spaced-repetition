@@ -42,7 +42,7 @@ import {
   PlusOutlined,
   SettingFilled,
 } from '@ant-design/icons';
-import type { WordDTO, WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
+import type { WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
 import { useSearchWords } from '../../../api/controllers/words/words.query';
 import { useDebounce } from 'use-debounce';
 import Select from '../../../ui/Select';
@@ -60,6 +60,7 @@ import { pickKeys } from '../../../utils/object';
 import type { WordModalCloseArg } from '../../../components/OfficialWordFormModal/types';
 import OfficialWordFormModal from '../../../components/OfficialWordFormModal';
 import { Tooltip } from 'antd';
+import { useConfirmationModal } from '../../../ui/ConfirmationModal';
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -72,6 +73,7 @@ interface SearchWordInfo {
   translation: string;
   advancedTranslation: WordWithTranslationDTO['advancedTranslation'];
   changed?: boolean;
+  askedForChangeConfirmation?: boolean;
 }
 
 export const DEFAULT_WORD_DISPLAY_TYPE = 1;
@@ -506,9 +508,10 @@ const SearchWord: FC<{
   helper,
 }) => {
   const searchValue = useWatch({ control, name: `${fieldKey}.wordValue` }) as string;
-  const wordDisplayType = useWatch({ control, name: `${fieldKey}.wordDisplayType` }) as number | undefined;
-  const word = useWatch({ control, name: `${fieldKey}.word` }) as WordDTO | undefined;
-  const isChanged = useWatch({ control, name: `${fieldKey}.changed` }) as WordDTO | undefined;
+  const wordDisplayType = useWatch({ control, name: `${fieldKey}.wordDisplayType` });
+  const word = useWatch({ control, name: `${fieldKey}.word` });
+  const isChanged = useWatch({ control, name: `${fieldKey}.changed` });
+  const askedForChangeConfirmation = useWatch({ control, name: `${fieldKey}.askedForChangeConfirmation` });
 
   // const [isBlurred, setIsBlurred] = useState(true);
 
@@ -556,6 +559,25 @@ const SearchWord: FC<{
     e.stopPropagation();
     e.preventDefault();
     if (isLastChild) onAddNewWord?.();
+  };
+
+  const { confirmationModalElement, openConfirmationModal } = useConfirmationModal();
+
+  const shouldAskForConfirmationWhenChanging =
+    !askedForChangeConfirmation && formBaseInfo.canManageOfficialWords && !!word && word.isOfficial;
+
+  const notifyIfNecessary = (fn: () => void, key: string) => {
+    openConfirmationModal({
+      text: 'This will only change the translation for you and will not affect the official word. If you wish to change official translation, click settings icon and then "Edit forms" and modify the translation there',
+      approveTitle: 'Change translation only for me',
+      onApprove: () => {
+        fn();
+        setFocus(key as never);
+        setValue(`${fieldKey}.askedForChangeConfirmation`, true);
+      },
+      rejectTitle: 'Cancel',
+      displayRejectButtonAsPrimary: true,
+    });
   };
 
   const isEmptyWordValue = !searchValue;
@@ -634,6 +656,14 @@ const SearchWord: FC<{
                   placeholder='translation'
                   fullWidth
                   {...field}
+                  onChange={
+                    !shouldAskForConfirmationWhenChanging
+                      ? field.onChange
+                      : (e) => {
+                          const newValue = e.target.value;
+                          notifyIfNecessary(() => field.onChange(newValue), `${fieldKey}.translation`);
+                        }
+                  }
                   size='large'
                   status={error ? 'error' : undefined}
                   onEnterClick={handleEnterClick}
@@ -681,6 +711,7 @@ const SearchWord: FC<{
           translationLang={formBaseInfo.translationLang}
         />
       )}
+      {confirmationModalElement}
     </div>
   );
 };
