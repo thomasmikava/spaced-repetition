@@ -1,4 +1,5 @@
 import { MinusOutlined } from '@ant-design/icons';
+import type { InputRef } from 'antd';
 import { Modal, Skeleton } from 'antd';
 import { useEffect, useMemo, useRef, useState, type FC } from 'react';
 import type { Control } from 'react-hook-form';
@@ -21,8 +22,9 @@ import type {
   FormVariant,
   WordModalCloseArg,
 } from './types';
-import { replaceEmptyObjects } from './utils';
+import { getWholeWordFromPastedData, replaceEmptyObjects } from './utils';
 import { Checkbox } from '../../ui/Checkbox/Checkbox';
+import { mergeRefs } from 'react-merge-refs';
 
 interface OfficialWordFormModalProps {
   defaultTranslationLang: string;
@@ -214,7 +216,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
       ) : (
         <FormProvider {...form}>
           <form onSubmit={handleSubmit}>
-            <ActualForm helper={helper} lang={form.getValues('lang')} />
+            <ActualForm helper={helper} lang={form.getValues('lang')} defaultTranslationLang={defaultTranslationLang} />
           </form>
         </FormProvider>
       )}
@@ -223,18 +225,58 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
   );
 };
 
-const ActualForm: FC<{ helper: Helper; lang: string }> = ({ helper, lang }) => {
+const ActualForm: FC<{ helper: Helper; lang: string; defaultTranslationLang: string }> = ({
+  helper,
+  lang,
+  defaultTranslationLang,
+}) => {
   return (
     <div>
-      <TitleEditor helper={helper} lang={lang} />
+      <TitleEditor helper={helper} lang={lang} defaultTranslationLang={defaultTranslationLang} />
       <TranslationsEditor helper={helper} wordLang={lang} />
       <VariantsEditor lang={lang} helper={helper} />
     </div>
   );
 };
 
-const TitleEditor: FC<{ helper: Helper; lang: string }> = ({ helper, lang }) => {
-  const { control, getValues } = useFormContext<FormData>();
+const TitleEditor: FC<{ helper: Helper; lang: string; defaultTranslationLang: string }> = ({
+  helper,
+  lang,
+  defaultTranslationLang,
+}) => {
+  const { control, getValues, reset } = useFormContext<FormData>();
+
+  const wordValueRef = useRef<InputRef>(null);
+
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      if (event.target !== wordValueRef.current?.input) return;
+      let newFormData = getWholeWordFromPastedData(event.clipboardData);
+      if (newFormData) {
+        if (!newFormData.translations.some((lang) => lang.lang === defaultTranslationLang)) {
+          newFormData = {
+            ...newFormData,
+            translations: newFormData.translations.concat([
+              {
+                lang: defaultTranslationLang,
+                translation: '',
+                advancedTranslation: null,
+                fieldUniqueId: Math.random().toString(),
+              },
+            ]),
+          };
+        }
+        reset(newFormData);
+
+        event.preventDefault();
+      }
+    };
+    document.addEventListener('paste', onPaste);
+    return () => {
+      document.removeEventListener('paste', onPaste);
+    };
+  }, [reset]);
+
   return (
     <div>
       <Controller
@@ -246,7 +288,14 @@ const TitleEditor: FC<{ helper: Helper; lang: string }> = ({ helper, lang }) => 
         name={`value`}
         control={control}
         render={({ field, fieldState: { error } }) => (
-          <Input placeholder='Word value' fullWidth {...field} size='large' status={error ? 'error' : undefined} />
+          <Input
+            placeholder='Word value'
+            fullWidth
+            {...field}
+            ref={mergeRefs([wordValueRef, field.ref])}
+            size='large'
+            status={error ? 'error' : undefined}
+          />
         )}
       />
       <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 10 }}>
@@ -446,7 +495,7 @@ const AttributesSelector: FC<{
         if (!attribute) return null;
         const value = attributes?.[attrId];
         return (
-          <div>
+          <div key={attrId}>
             <label style={{ marginRight: 10 }}>{attribute.name}:</label>
             <Select
               mode={isMulti ? 'multiple' : undefined}
@@ -482,7 +531,9 @@ const VariantsEditor: FC<{ lang: string; helper: Helper }> = ({ lang, helper }) 
   };
   return (
     <div>
-      <h2 onClick={toggleVisibility}>Variants{areShown ? '▼' : '▶'}</h2>
+      <h2 onClick={toggleVisibility} style={{ cursor: 'pointer' }}>
+        Variants{areShown ? '▼' : '▶'}
+      </h2>
       {areShown && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {(fields as FormTranslation[]).map((field, index) => (

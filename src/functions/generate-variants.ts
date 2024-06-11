@@ -118,7 +118,7 @@ const isOneOfTheMatchers = (
 
 const shouldSkipTest = (card: StandardCard, variantGroup: VariantGroup | null | undefined): boolean => {
   if (!variantGroup || typeof variantGroup.skipTest === 'undefined' || variantGroup.skipTest === null) return false;
-  if (typeof variantGroup.skipTest === 'boolean') return true;
+  if (typeof variantGroup.skipTest === 'boolean') return variantGroup.skipTest;
   const is1Variant = card.variants.length === 1;
   return variantGroup.skipTest.only1variant === is1Variant;
 };

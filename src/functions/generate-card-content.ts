@@ -419,12 +419,15 @@ export const viewLinesToContentLines = (
           content: line.lines.map(mapLine).flat(1),
         };
       case ViewLineType.Table:
-        const mainAttr = line.columns.find((e) => e.type === 'attr' && e.main);
-        if (!mainAttr) return undefined;
-        const attrId = mainAttr.type === 'attr' ? mainAttr.attr : 0;
-        const attr = helper.getAttribute(attrId, record.card.lang);
-        if (!attr) return undefined;
         const groupMetaArgs = line.customGroupMetaArgs ?? record.groupMeta.groupMetaArgs;
+        const columns = line.columns.map((column) => {
+          return getConditionalOrRawValue(column, { groupMetaArgs });
+        });
+        const mainColumn = columns.find((e) => (e.type === 'attr' || e.type === 'matchers') && e.main);
+        if (!mainColumn) return undefined;
+        const attrId = mainColumn.type === 'attr' ? mainColumn.attr : 0;
+        const attr = helper.getAttribute(attrId, record.card.lang);
+        if (mainColumn.type === 'attr' && !attr) return undefined;
         const anyVariants = line.useAllVariants ? record.card.allStandardizedVariants : record.groupMeta.variants;
         const variants = line.matcher
           ? anyVariants.filter((someVariant) =>
@@ -435,8 +438,8 @@ export const viewLinesToContentLines = (
             )
           : anyVariants;
         const myAttrObjects =
-          mainAttr.type === 'attr' && mainAttr.attrRecordValues
-            ? mainAttr.attrRecordValues
+          mainColumn.type === 'attr' && mainColumn.attrRecordValues
+            ? mainColumn.attrRecordValues
                 .map((id) => {
                   if (Array.isArray(id)) {
                     const firstRecord = id.find((realId) => variants.some((e) => e.attrs?.[attrId] === realId));
@@ -445,18 +448,29 @@ export const viewLinesToContentLines = (
                   return helper.getAttributeRecord(id, record.card.lang);
                 })
                 .filter(isNonNullable)
-            : helper.getAttributeRecordsByAttributeId(attrId, record.card.lang);
-        const hiddenColumnIndices = line.columns
-          .map((e, indx) => (e.type === 'attr' && e.hidden ? indx : null))
+            : mainColumn.type === 'attr'
+              ? helper.getAttributeRecordsByAttributeId(attrId, record.card.lang)
+              : null;
+        const hiddenColumnIndices = columns
+          .map((e, indx) => ((e as { hidden?: boolean }).hidden ? indx : null))
           .filter(isNonNullable);
 
         let mainValueIndex = line.columns.findIndex((e) => e.type === 'value');
         if (mainValueIndex === -1) mainValueIndex = 0;
-        const rows = myAttrObjects
-          .map((attrValue) => {
-            const matchedVariants = variants.filter((e) => e.attrs?.[attrId] === attrValue.id);
-            return { variants: matchedVariants, attrValue };
-          })
+        const mainColumnRows = myAttrObjects
+          ? myAttrObjects.map((attrValue) => {
+              const matchedVariants = variants.filter((e) => e.attrs?.[attrId] === attrValue.id);
+              return { variants: matchedVariants, attrValue };
+            })
+          : mainColumn.type === 'matchers'
+            ? mainColumn.matchers.map((matcher) => {
+                const matchedVariants = variants.filter((e) =>
+                  isMatch<{ category?: IdType | null; attrs?: StandardCardAttributes | null }>(e, matcher),
+                );
+                return { variants: matchedVariants, attrValue: undefined };
+              })
+            : [];
+        const rows = mainColumnRows
           .map(({ variants, attrValue }): (string | AnyContent | null)[] => {
             const row: (string | AnyContent | null)[] = [];
             const iterateColumn = (rawColumn: (typeof line.columns)[0], variant: StandardCardVariant | undefined) => {
@@ -467,12 +481,12 @@ export const viewLinesToContentLines = (
                 );
                 column.children.forEach((e) => iterateColumn(e, matched));
               } else if (column.type === 'value') {
-                row.push(variant && variant.value ? normalizeDisplayValue(variant.value, attrValue.name) : '-');
+                row.push(variant && variant.value ? normalizeDisplayValue(variant.value, attrValue?.name) : '-');
               } else if (column.type === 'attr') {
                 const attrId = column.attr;
                 const valueId = variant?.attrs?.[attrId];
                 const valueRecord =
-                  attrValue.attributeId === attrId
+                  attrValue?.attributeId === attrId
                     ? attrValue
                     : valueId
                       ? helper.getAttributeRecord(valueId, record.card.lang)
@@ -523,6 +537,8 @@ export const viewLinesToContentLines = (
                   style: { display: 'flex' },
                 };
                 row[row.length - 1] = content;
+                row.push(null);
+              } else if (column.type === 'matchers') {
                 row.push(null);
               } else row.push(null);
             };
@@ -627,7 +643,8 @@ const getDropdown = (
   ];
 };
 
-const normalizeDisplayValue = (value: string, mainAttrValue: string) => {
+const normalizeDisplayValue = (value: string, mainAttrValue?: string) => {
+  if (!mainAttrValue) return value;
   const hashtagIndex = value.indexOf('#');
   if (hashtagIndex === -1) return value;
   return value.replace(/#/g, mainAttrValue);

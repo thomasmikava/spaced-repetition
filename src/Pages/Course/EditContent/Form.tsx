@@ -529,7 +529,7 @@ const SearchWord: FC<{
     limit: 5,
   });
 
-  const wodValueRef = useRef<InputRef>(null);
+  const wordValueRef = useRef<InputRef>(null);
 
   const handleChoose = useCallback(
     (suggestion: WordWithTranslationDTO) => {
@@ -585,7 +585,7 @@ const SearchWord: FC<{
   useEffect(() => {
     if (isLastChild && onAddNewWord && isEmptyWordValue) {
       const onPaste = (event: ClipboardEvent) => {
-        if (event.target !== wodValueRef.current?.input) return;
+        if (event.target !== wordValueRef.current?.input) return;
 
         const newWords = getWordsFromPastedData(event.clipboardData);
 
@@ -638,7 +638,7 @@ const SearchWord: FC<{
                       onBlur();
                     }}
                     onEnterClick={handleEnterClick}
-                    ref={mergeRefs([wodValueRef, ref])}
+                    ref={mergeRefs([wordValueRef, ref])}
                     {...rest}
                     status={error ? 'error' : undefined}
                     size='large'

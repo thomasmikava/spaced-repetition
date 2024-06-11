@@ -8,10 +8,12 @@ import {
   CardType,
   Case,
   IdType,
+  ImperativePronoun,
   NounGender,
   NounNumber,
   PronounFunction,
   StandardCardAttributes,
+  VerbForm,
   VerbMood,
   VerbPronoun,
   VerbTense,
@@ -81,6 +83,7 @@ type ColumnBasicType =
   | { type: 'value' }
   | { type: 'article' }
   | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[]; hidden?: boolean }
+  | { type: 'matchers'; main: true; hidden: true; matchers: CategoryAttrsMatcher[] }
   | { type: 'audio'; values: string[] };
 
 export type ColumnMatcherArg = { groupMetaArgs?: Record<string, unknown> };
@@ -94,7 +97,7 @@ type ViewTableLine = {
   customGroupMetaArgs?: ColumnMatcherArg['groupMetaArgs'];
 };
 
-const groupTables = {
+const GermanGroupTables = {
   NOUN: {
     type: ViewLineType.Table,
     columns: [
@@ -150,6 +153,90 @@ const groupTables = {
       { type: 'attr', main: true, attr: AttributeMapper.CASE.id },
       { type: 'value' },
       { type: 'audio', values: ['1'] },
+    ],
+  },
+} satisfies Record<string, ViewTableLine>;
+
+const FrenchGroupTables = {
+  VERB: {
+    type: ViewLineType.Table,
+    columns: [
+      {
+        $if: { groupMetaArgs: { mood: AttributeMapper.MOOD.records[VerbMood.Imperativ] } },
+        then: {
+          type: 'attr',
+          main: true,
+          attr: AttributeMapper.IMPERATIVE_PRONOUN.id,
+          attrRecordValues: [
+            AttributeMapper.IMPERATIVE_PRONOUN.records[ImperativePronoun.Pers2Sing],
+            AttributeMapper.IMPERATIVE_PRONOUN.records[ImperativePronoun.Pers1Plr],
+            AttributeMapper.IMPERATIVE_PRONOUN.records[ImperativePronoun.Pers2Plr],
+          ],
+          hidden: false,
+        },
+        else: {
+          type: 'attr',
+          main: true,
+          attr: AttributeMapper.PRONOUN.id,
+          attrRecordValues: [
+            AttributeMapper.PRONOUN.records[VerbPronoun.ich],
+            AttributeMapper.PRONOUN.records[VerbPronoun.du],
+            AttributeMapper.PRONOUN.records[VerbPronoun.er_sie_es],
+            AttributeMapper.PRONOUN.records[VerbPronoun.wir],
+            AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
+            AttributeMapper.PRONOUN.records[VerbPronoun.they],
+          ],
+          hidden: true,
+        },
+      },
+      { type: 'value' },
+      { type: 'audio', values: ['1.0'] },
+    ],
+  },
+  VERB_PARTICIPLE_PAST: {
+    type: ViewLineType.Table,
+    columns: [
+      {
+        type: 'matchers',
+        main: true,
+        hidden: true,
+        matchers: [
+          {
+            attrs: {
+              [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[NounGender.Maskulinum],
+              [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.singular],
+            },
+          },
+          {
+            attrs: {
+              [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[NounGender.Femininum],
+              [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.singular],
+            },
+          },
+          {
+            attrs: {
+              [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[NounGender.Maskulinum],
+              [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural],
+            },
+          },
+          {
+            attrs: {
+              [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[NounGender.Femininum],
+              [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural],
+            },
+          },
+        ],
+      },
+      {
+        type: 'attr',
+        attr: AttributeMapper.NUMBER.id,
+      },
+      {
+        type: 'attr',
+        attr: AttributeMapper.GENDER.id,
+      },
+      { type: 'value' },
+      { type: 'audio', values: ['3'] },
     ],
   },
 } satisfies Record<string, ViewTableLine>;
@@ -315,7 +402,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
             separator: ' - ',
           },
           { type: ViewLineType.Separator },
-          groupTables.VERB,
+          GermanGroupTables.VERB,
         ],
       },
       {
@@ -340,7 +427,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           },
           {
             type: ViewLineType.AfterAnswerDropdown,
-            lines: [groupTables.VERB],
+            lines: [GermanGroupTables.VERB],
           },
           {
             type: ViewLineType.AfterAnswer,
@@ -405,7 +492,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
                       ],
                       lines: [
                         {
-                          ...groupTables.VERB,
+                          ...GermanGroupTables.VERB,
                           useAllVariants: true,
                           matcher: {
                             attrs: {
@@ -415,7 +502,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
                           },
                           customGroupMetaArgs: {
                             mood: AttributeMapper.MOOD.records[mood],
-                            tense: AttributeMapper.TENSE.records[VerbTense.Präsens],
+                            tense: AttributeMapper.TENSE.records[tense],
                           },
                         },
                       ],
@@ -423,7 +510,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
                   )
                 : [
                     {
-                      ...groupTables.VERB,
+                      ...GermanGroupTables.VERB,
                       useAllVariants: true,
                       matcher: {
                         attrs: {
@@ -524,7 +611,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
             attrs: [AttributeMapper.NUMBER.id],
           },
           { type: ViewLineType.Separator },
-          groupTables.NOUN,
+          GermanGroupTables.NOUN,
         ],
       },
       {
@@ -541,7 +628,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           },
           {
             type: ViewLineType.AfterAnswerDropdown,
-            lines: [groupTables.NOUN],
+            lines: [GermanGroupTables.NOUN],
           },
         ],
       },
@@ -648,7 +735,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.NewLine },
           { type: ViewLineType.CardValue, useForMainAudio: true, includeArticleSymbol: true },
           { type: ViewLineType.Separator },
-          groupTables.ADJECTIVE,
+          GermanGroupTables.ADJECTIVE,
         ],
       },
       {
@@ -667,7 +754,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
             type: ViewLineType.AfterAnswer,
             lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],
           },
-          { type: ViewLineType.AfterAnswerDropdown, lines: [groupTables.ADJECTIVE] },
+          { type: ViewLineType.AfterAnswerDropdown, lines: [GermanGroupTables.ADJECTIVE] },
         ],
       },
     ],
@@ -753,7 +840,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.NewLine },
           { type: ViewLineType.CardValue },
           { type: ViewLineType.Separator },
-          groupTables.ARTICLE,
+          GermanGroupTables.ARTICLE,
         ],
       },
       {
@@ -763,7 +850,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.Input },
           { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
           { type: ViewLineType.AfterAnswer, lines: [{ type: ViewLineType.Separator }] },
-          groupTables.ARTICLE,
+          GermanGroupTables.ARTICLE,
         ],
       },
     ],
@@ -861,7 +948,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.Separator },
           { type: ViewLineType.Translation },
           { type: ViewLineType.Separator },
-          groupTables.PRONOUN,
+          GermanGroupTables.PRONOUN,
         ],
       },
       {
@@ -871,7 +958,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.Input },
           { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
           { type: ViewLineType.AfterAnswer, lines: [{ type: ViewLineType.Separator }] },
-          { type: ViewLineType.AfterAnswerDropdown, lines: [groupTables.PRONOUN] },
+          { type: ViewLineType.AfterAnswerDropdown, lines: [GermanGroupTables.PRONOUN] },
         ],
       },
     ],
@@ -901,13 +988,282 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
   },
 };
 
+const getFrenchTensesByMood = (mood: VerbMood): VerbTense[] => {
+  if (mood === VerbMood.Indikativ) {
+    return [
+      VerbTense.Präsens,
+      VerbTense.PasséComposé,
+      VerbTense.Imparfait,
+      VerbTense.PlusQueParfait,
+      VerbTense.PastSimple,
+      VerbTense.PasséAntérieur,
+      VerbTense.FutureSimple,
+      VerbTense.FuturAntérieur,
+    ];
+  }
+  if (mood === VerbMood.Subjunctive) {
+    return [VerbTense.Präsens, VerbTense.Past, VerbTense.Imparfait, VerbTense.PlusQueParfait];
+  }
+  if (mood === VerbMood.Conditional) {
+    return [VerbTense.Präsens, VerbTense.Passé1èreforme, VerbTense.Passé2èmeforme];
+  }
+  if (mood === VerbMood.Imperativ) {
+    return [VerbTense.Präsens, VerbTense.Past];
+  }
+  return [];
+};
+const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
+  [CardTypeMapper.VERB]: {
+    variantGroups: [
+      { id: 'init', matcher: { category: 1 } },
+      ...cartesianProduct(
+        [VerbMood.Indikativ, VerbMood.Subjunctive, VerbMood.Conditional, VerbMood.Imperativ],
+        (mood) => getFrenchTensesByMood(mood as VerbMood),
+      ).map(
+        ([mood, tense]): VariantGroup => ({
+          id: `m${AttributeMapper.MOOD.records[mood]}-t${AttributeMapper.TENSE.records[tense]}`,
+          matcher: {
+            category: null,
+            attrs: {
+              [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
+              [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense],
+            },
+          },
+          groupMetaArgs: { mood: AttributeMapper.MOOD.records[mood], tense: AttributeMapper.TENSE.records[tense] },
+          groupViewId: 'gr',
+          testViewId: 'gr-test',
+          forcefullyGroup: true,
+        }),
+      ),
+      ...[VerbForm.ParticiplePresent, VerbForm.ParticiplePastComposed, VerbForm.GerundPresent, VerbForm.GerundPast].map(
+        (verbForm): VariantGroup => ({
+          id: `f${AttributeMapper.VERB_FORMS.records[verbForm]}`,
+          matcher: {
+            attrs: {
+              [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[verbForm],
+            },
+          },
+        }),
+      ),
+      {
+        id: `f${AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast]}`,
+        matcher: {
+          attrs: { [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast] },
+        },
+        groupViewId: 'ngv', // noun-gender-view
+        forcefullyGroup: true,
+      },
+      { id: 'skip', matcher: null, skip: true },
+    ],
+    views: [
+      {
+        id: 'gr',
+        lines: [
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.NewLine },
+          { type: ViewLineType.CardValue, useForMainAudio: true },
+          { type: ViewLineType.Separator },
+          {
+            type: ViewLineType.AttrRecordValues,
+            attrs: [AttributeMapper.MOOD.id, AttributeMapper.TENSE.id],
+            separator: ' - ',
+          },
+          { type: ViewLineType.Separator },
+          FrenchGroupTables.VERB,
+        ],
+      },
+      {
+        id: 'ngv',
+        lines: [
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.NewLine },
+          { type: ViewLineType.CardValue, useForMainAudio: true },
+          { type: ViewLineType.Separator },
+          FrenchGroupTables.VERB_PARTICIPLE_PAST,
+        ],
+      },
+      {
+        id: 'gr-test',
+        lines: [
+          { type: ViewLineType.CardValue, paragraph: true, useForMainAudio: true },
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.AttrRecordValues, attrs: [AttributeMapper.PRONOUN.id] },
+          { type: ViewLineType.NewLine },
+          {
+            type: ViewLineType.Input,
+            hashReplacer: { attrId: AttributeMapper.PRONOUN.id },
+          },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],
+          },
+          {
+            type: ViewLineType.AfterAnswerDropdown,
+            lines: [FrenchGroupTables.VERB],
+          },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.TranslationVariants }],
+          },
+        ],
+      },
+    ],
+    tags: [
+      { attrId: AttributeMapper.MOOD.id, type: 'secondary', matcher: { category: null } },
+      { attrId: AttributeMapper.TENSE.id, type: 'primary', matcher: { category: null } },
+      {
+        attrId: AttributeMapper.VERB_FORMS.id,
+        type: 'primary',
+        matcher: { attrs: { [AttributeMapper.VERB_FORMS.id]: { $not: null } } },
+      },
+      { attrId: AttributeMapper.GENDER.id, type: 'primary', matcher: { viewMode: CardViewMode.test } },
+      { attrId: AttributeMapper.NUMBER.id, type: 'secondary', matcher: { viewMode: CardViewMode.test } },
+      {
+        attrId: AttributeMapper.IMPERATIVE_PRONOUN.id,
+        type: 'secondary',
+        matcher: { viewMode: { $not: CardViewMode.groupView } },
+      },
+    ],
+    groupPriorities: [
+      {
+        cardMatcher: { labels: LabelMapper.ModalVerb },
+        groupIds: [
+          'init',
+          `m${AttributeMapper.MOOD.records[VerbMood.Indikativ]}-t${AttributeMapper.TENSE.records[VerbTense.Präsens]}`,
+          `m${AttributeMapper.MOOD.records[VerbMood.Indikativ]}-t${AttributeMapper.TENSE.records[VerbTense.Präteritum]}`,
+        ],
+      },
+    ],
+    dictionaryView: [
+      { type: ViewLineType.CardValue, bigText: true },
+      {
+        type: ViewLineType.Dropdown,
+        showMoreText: 'Show translations',
+        showLessText: 'Hide translations',
+        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+      },
+      { type: ViewLineType.NewLine },
+      ...[VerbMood.Indikativ, VerbMood.Subjunctive, VerbMood.Conditional, VerbMood.Imperativ]
+        .map(
+          (mood): ViewLine => ({
+            type: ViewLineType.Section,
+            size: 'big',
+            title: [
+              {
+                type: ViewLineType.AttrRecordValues,
+                attrs: [AttributeMapper.MOOD.id],
+                customAttrRecords: { [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood] },
+              },
+            ],
+            lines: getFrenchTensesByMood(mood).map(
+              (tense): ViewLine => ({
+                type: ViewLineType.Section,
+                title: [
+                  {
+                    type: ViewLineType.AttrRecordValues,
+                    attrs: [AttributeMapper.TENSE.id],
+                    customAttrRecords: { [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense] },
+                  },
+                ],
+                lines: [
+                  {
+                    ...FrenchGroupTables.VERB,
+                    useAllVariants: true,
+                    matcher: {
+                      attrs: {
+                        [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
+                        [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense],
+                      },
+                    },
+                    customGroupMetaArgs: {
+                      mood: AttributeMapper.MOOD.records[mood],
+                      tense: AttributeMapper.TENSE.records[tense],
+                    },
+                  },
+                ],
+              }),
+            ),
+          }),
+        )
+        .map((el) => [el, { type: ViewLineType.NewLine } as ViewLine])
+        .flat(1),
+      {
+        type: ViewLineType.Section,
+        title: 'Temps impersonnels',
+        lines: [
+          {
+            type: ViewLineType.CustomCardValue,
+            matcher: {
+              attrs: {
+                [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePresent],
+              },
+            },
+            prefix: { type: 'text', text: 'Participe présent: ' },
+            bigText: true,
+          },
+          {
+            type: ViewLineType.CustomCardValue,
+            matcher: {
+              attrs: {
+                [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePastComposed],
+              },
+            },
+            prefix: { type: 'text', text: 'Participe passé composé: ' },
+            bigText: true,
+          },
+          {
+            type: ViewLineType.CustomCardValue,
+            matcher: {
+              attrs: { [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.GerundPresent] },
+            },
+            prefix: { type: 'text', text: 'Gérondif présent: ' },
+            bigText: true,
+          },
+          {
+            type: ViewLineType.CustomCardValue,
+            matcher: {
+              attrs: { [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.GerundPast] },
+            },
+            prefix: { type: 'text', text: 'Gérondif passé: ' },
+            bigText: true,
+          },
+          {
+            type: ViewLineType.Section,
+            title: 'Participe passé',
+            lines: [
+              {
+                ...FrenchGroupTables.VERB_PARTICIPLE_PAST,
+                useAllVariants: true,
+                matcher: {
+                  attrs: {
+                    [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast],
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    // maxNumOfGroups: 3,
+    maxAllowedNonStandardForms: 1,
+  },
+};
+
 // console.log('CardTypeConfigurationMapper', CardTypeConfigurationMapper[CardTypeMapper.VERB]);
 
-type FirstElements<T extends any[][]> = T extends [infer U extends any[], ...infer Rest extends any[][]]
-  ? [U[number], ...FirstElements<Rest>]
+type ValueOrReturnValue<T> = T extends (...args: any[]) => infer U ? U : T;
+
+type FirstElements<T extends (any[] | ((...args: any[]) => any[]))[]> = T extends [
+  infer U extends any[] | ((...args: any[]) => any[]),
+  ...infer Rest extends (any[] | ((...args: any[]) => any[]))[],
+]
+  ? [ValueOrReturnValue<U>[number], ...FirstElements<Rest>]
   : [];
 
-function cartesianProduct<T extends number[][]>(...arrays: T): FirstElements<T>[] {
+function cartesianProduct<T extends (number[] | ((...prevArgs: number[]) => number[]))[]>(
+  ...arrays: T
+): FirstElements<T>[] {
   // A recursive function to generate the cartesian product
   function cartesianHelper(currentIndex: number, currentResult: number[]): void {
     if (currentIndex === arrays.length) {
@@ -915,7 +1271,10 @@ function cartesianProduct<T extends number[][]>(...arrays: T): FirstElements<T>[
       return;
     }
 
-    for (let value of arrays[currentIndex]) {
+    const arrr = arrays[currentIndex];
+    const arr = typeof arrr === 'function' ? arrr(...currentResult) : arrr;
+
+    for (let value of arr) {
       currentResult.push(value);
       cartesianHelper(currentIndex + 1, currentResult);
       currentResult.pop();
@@ -1035,7 +1394,7 @@ export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
   {
     lang: 'en',
     cardTypeRecordId: CardTypeMapper.VERB,
-    abbr: 'b.',
+    abbr: 'v.',
     name: 'Verb',
     cardDisplayName: 'Verb',
   },
@@ -1075,4 +1434,57 @@ export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
     name: 'Conjunction',
   },
   { lang: 'en', cardTypeRecordId: CardTypeMapper.NUMBER, abbr: 'num.', cardDisplayName: 'Number', name: 'Number' },
+
+  { lang: 'fr', cardTypeRecordId: CardTypeMapper.PHRASE, abbr: '', cardDisplayName: '', name: 'Phrase' },
+  {
+    lang: 'fr',
+    cardTypeRecordId: CardTypeMapper.NOUN,
+    abbr: 'n.',
+    name: 'Nom',
+    cardDisplayName: 'Nom',
+  },
+  {
+    lang: 'fr',
+    cardTypeRecordId: CardTypeMapper.VERB,
+    abbr: 'v.',
+    name: 'Verbe',
+    cardDisplayName: 'Verbe',
+    configuration: FrenchCardTypeConfigurationMapper[CardTypeMapper.VERB],
+  },
+  {
+    lang: 'fr',
+    cardTypeRecordId: CardTypeMapper.REAL_ADJECTIVE,
+    abbr: 'adj.',
+    name: 'Adjectif',
+    cardDisplayName: 'Adjectif',
+  },
+  {
+    lang: 'fr',
+    cardTypeRecordId: CardTypeMapper.REAL_ADVERB,
+    abbr: 'adv.',
+    name: 'Adverbe',
+    cardDisplayName: 'Adverbe',
+  },
+  {
+    lang: 'fr',
+    cardTypeRecordId: CardTypeMapper.PRONOUN,
+    abbr: 'pron.',
+    name: 'Pronom',
+    cardDisplayName: 'Pronom',
+  },
+  {
+    lang: 'fr',
+    cardTypeRecordId: CardTypeMapper.PREPOSITION,
+    abbr: 'pré.',
+    name: 'Préposition',
+    cardDisplayName: 'Préposition',
+  },
+  {
+    lang: 'fr',
+    cardTypeRecordId: CardTypeMapper.CONJUNCTION,
+    abbr: 'conj.',
+    cardDisplayName: 'Conjonction',
+    name: 'Conjonction',
+  },
+  { lang: 'fr', cardTypeRecordId: CardTypeMapper.NUMBER, abbr: 'nom.', cardDisplayName: 'Nombre', name: 'Nombre' },
 ];

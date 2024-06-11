@@ -23,12 +23,24 @@ export enum VerbTense {
   Futur2,
   Futur2_1,
   Futur2_2,
+  Past,
+  PastSimple,
+  FutureSimple,
+  PasséComposé,
+  Imparfait,
+  PlusQueParfait,
+  PasséAntérieur,
+  FuturAntérieur,
+  Passé1èreforme,
+  Passé2èmeforme,
 }
 
 export enum VerbMood {
   Indikativ,
   Konjunktiv,
   Imperativ,
+  Subjunctive,
+  Conditional,
 }
 
 export enum VerbPronoun {
@@ -39,6 +51,21 @@ export enum VerbPronoun {
   wir,
   ihr,
   sie_Sie,
+  they,
+}
+
+export enum VerbForm {
+  ParticiplePresent,
+  ParticiplePast,
+  ParticiplePastComposed,
+  GerundPresent,
+  GerundPast,
+}
+
+export enum ImperativePronoun {
+  Pers2Sing,
+  Pers1Plr,
+  Pers2Plr,
 }
 
 export interface VerbConjugationVariant {

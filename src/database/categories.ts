@@ -25,6 +25,7 @@ export const categoriesLocalized: CategoryLocalized[] = [
   { lang: 'de', categoryId: 1, name: 'Anfangswort' },
   { lang: 'de', categoryId: 2, name: 'Komparativ' },
   { lang: 'de', categoryId: 3, name: 'Superlativ' },
+  { lang: 'fr', categoryId: 1, name: 'Mot initial' },
 ];
 
 export const CATEGORY_MAPPER = {
