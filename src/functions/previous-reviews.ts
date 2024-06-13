@@ -279,38 +279,66 @@ const updateS = (
   // eslint-disable-next-line sonarjs/cognitive-complexity
 ) => {
   if (!s && success) return initialTestS;
-  else if (!s) return Math.max(minS, initialTestS * 0.5);
+  else if (!s) return getSAfterIncorrectAnswer(initialTestS);
+  if (!success) return getSAfterIncorrectAnswer(s);
 
-  if (!success) return Math.max(minS, s * 0.5);
+  const newS = getRegularSAfterSuccess(isGroup, s, passedTimeInSeconds);
+  const sBasedOnLastAnswerValue = getSBasedOnLastAnswer(s, passedTimeInSeconds ?? 0);
 
-  const coeffS = s;
+  return Math.min(maxS, Math.max(minS, newS, sBasedOnLastAnswerValue));
+};
+
+const getSAfterIncorrectAnswer = (s: number) => {
+  return Math.max(minS, s * 0.5);
+};
+
+const getRegularSAfterSuccess = (isGroup: boolean, s: number, passedTimeInSeconds: number | undefined) => {
   let successMultiplier;
 
   const probability =
     passedTimeInSeconds === undefined ? 0 : calculateProbability(Math.max(30, passedTimeInSeconds), s);
   let minDoubleCoeff = 0.05;
 
-  if (coeffS >= calculateHalfLifeCoefficient(60 * 20) && coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) {
+  if (s >= calculateHalfLifeCoefficient(60 * 20) && s < calculateHalfLifeCoefficient(60 * 60 * 4)) {
     minDoubleCoeff = 0.02;
   }
 
   let successDoubleCoeff = Math.max(minDoubleCoeff, 1 - Math.max(0, probability - 0.5) * 2);
 
-  if (coeffS < calculateHalfLifeCoefficient(60 * 6)) {
-    successMultiplier = isGroup ? calcMultiplierToAdd(coeffS, 60 * 4) : calcMultiplierToAdd(coeffS, 60 * 3); // add minutes to the half-life
-  } else if (coeffS < calculateHalfLifeCoefficient(60 * 20)) successMultiplier = isGroup ? 3 : 2.5;
-  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 6 : 4;
-  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 24)) successMultiplier = isGroup ? 5 : 3;
-  else if (coeffS < calculateHalfLifeCoefficient(60 * 60 * 24 * 2)) successMultiplier = isGroup ? 3 : 2;
+  if (s < calculateHalfLifeCoefficient(60 * 6)) {
+    successMultiplier = isGroup ? calcMultiplierToAdd(s, 60 * 4) : calcMultiplierToAdd(s, 60 * 3); // add minutes to the half-life
+  } else if (s < calculateHalfLifeCoefficient(60 * 20)) successMultiplier = isGroup ? 3 : 2.5;
+  else if (s < calculateHalfLifeCoefficient(60 * 60 * 4)) successMultiplier = isGroup ? 6 : 4;
+  else if (s < calculateHalfLifeCoefficient(60 * 60 * 24)) successMultiplier = isGroup ? 5 : 3;
+  else if (s < calculateHalfLifeCoefficient(60 * 60 * 24 * 2)) successMultiplier = isGroup ? 3 : 2;
   else successMultiplier = isGroup ? 1.8 : 1.5;
 
-  if (coeffS < calculateHalfLifeCoefficient(60 * 20)) {
+  if (s < calculateHalfLifeCoefficient(60 * 20)) {
     successDoubleCoeff = Math.max(0.8, successDoubleCoeff);
   }
 
   const finalMultiplier = (successMultiplier - 1) * successDoubleCoeff + 1;
 
-  return Math.min(maxS, Math.max(minS, coeffS * finalMultiplier));
+  return s * finalMultiplier;
+};
+const getSBasedOnLastAnswer = (s: number, passedTimeInSeconds: number) => {
+  const halfLife = secondsUntilProbabilityIsHalf(s);
+
+  if (halfLife > passedTimeInSeconds) {
+    return s; // let's not alter s if half life is still in future
+  }
+
+  let maxHalfLife: number;
+  if (passedTimeInSeconds < 60 * 60 * 24) {
+    maxHalfLife = passedTimeInSeconds;
+  } else if (passedTimeInSeconds < 5 * 60 * 60 * 24) {
+    maxHalfLife = Math.min(
+      Math.max(halfLife * 4, 60 * 60 * 24),
+      60 * 60 * 24 + (passedTimeInSeconds - 60 * 60 * 24) * 0.5,
+    );
+  } else maxHalfLife = Math.min(Math.max(halfLife * 2, 3 * 60 * 60 * 24), 10 * 60 * 60 * 24);
+
+  return calculateHalfLifeCoefficient(Math.min(maxHalfLife, passedTimeInSeconds));
 };
 
 const calcMultiplierToAdd = (s: number, addedHalfTimeSeconds: number) => {
@@ -332,15 +360,29 @@ function getFirstNS(n: number) {
   return result;
 }
 
-function getFirstNSFast(n: number) {
+function getFirstNSFast(n: number, multiplyBy2 = true) {
   let currentS = initialTestS;
   let passedTimeInSeconds = 5;
   const result = [secondsUntilProbabilityIsHalf(currentS)];
   for (let i = 1; i < n; i++) {
-    // console.log('passedTimeInSeconds', formatTime(passedTimeInSeconds));
+    currentS = updateS(true, false, currentS, passedTimeInSeconds);
+    if (multiplyBy2) {
+      passedTimeInSeconds *= 2;
+      passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24 * 15);
+    }
+    result.push(secondsUntilProbabilityIsHalf(currentS));
+  }
+  return result;
+}
+
+function getFirstNSSlow(n: number) {
+  let currentS = initialTestS;
+  let passedTimeInSeconds = 60 * 60 * 5;
+  const result = [secondsUntilProbabilityIsHalf(currentS)];
+  for (let i = 1; i < n; i++) {
     currentS = updateS(true, false, currentS, passedTimeInSeconds);
     passedTimeInSeconds *= 2;
-    passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24);
+    passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24 * 15);
     result.push(secondsUntilProbabilityIsHalf(currentS));
   }
   return result;
@@ -348,6 +390,8 @@ function getFirstNSFast(n: number) {
 // eslint-disable-next-line no-constant-condition
 if (1 > 2) {
   console.log('zzzz', getFirstNS(15).map(formatTime));
+  console.log('zzzz super fast', getFirstNSFast(20, false).map(formatTime));
   console.log('zzzz fast', getFirstNSFast(20).map(formatTime));
+  console.log('zzzz slow', getFirstNSSlow(20).map(formatTime));
 }
 // (window as any).formatTime = formatTime;
