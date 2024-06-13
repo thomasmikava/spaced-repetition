@@ -1,0 +1,184 @@
+function cpVerbConvertMoodName(moodName) {
+  if (!moodName) throw new Error('undefined mood');
+  switch (moodName) {
+    case 'Indicatif':
+      return 27;
+    case 'Subjonctif':
+      return 56;
+    case 'Conditionnel':
+      return 57;
+    case 'Impératif':
+      return 29;
+    case 'Temps impersonnels':
+      return null;
+    default:
+      throw new Error('Invalid mood name ' + moodName);
+  }
+}
+function cpVerbConvertTenseName(tenseName, moodId) {
+  if (!tenseName) throw new Error('undefined tense in mood ' + moodId);
+  if (tenseName === 'Présent') return 21;
+  if (tenseName === 'Passé composé') return 50;
+  if (tenseName === 'Imparfait') return 51;
+  if (tenseName === 'Plus-que-parfait') return 52;
+  if (tenseName === 'Passé simple') return 47;
+  if (tenseName === 'Passé antérieur') return 53;
+  if (tenseName === 'Futur simple') return 48;
+  if (tenseName === 'Futur antérieur') return 49;
+  if (tenseName === 'Passé') return 46;
+  if (tenseName === 'Passé 1ère forme') return 54;
+  if (tenseName === 'Passé 2ème forme') return 55;
+  if (
+    ['Participe présent', 'Participe passé', 'Participe passé composé', 'Gérondif présent', 'Gérondif passé'].includes(
+      tenseName,
+    )
+  ) {
+    return null;
+  }
+  throw new Error('Invalid tense name ' + tenseName + ' in mood ' + moodId);
+}
+function cpVerbConvertPronounIndex(index) {
+  switch (index) {
+    case 0:
+      return 11;
+    case 1:
+      return 12;
+    case 2:
+      return 16;
+    case 3:
+      return 17;
+    case 4:
+      return 18;
+    case 5:
+      return 19;
+  }
+  throw new Error('Invalid pronoun index ' + index);
+}
+function cpVerbConvertImperativePronounIndex(index) {
+  switch (index) {
+    case 0:
+      return 58;
+    case 1:
+      return 59;
+    case 2:
+      return 60;
+  }
+  throw new Error('Invalid pronoun index ' + index);
+}
+function mapValueConjugation(value) {
+  return value.replace("'il/elle ", "'(il/elle) ").replace("'ils/elles ", "'(ils/elles) ");
+}
+function removeLastParentheses(str) {
+  const lastOpenIndex = str.lastIndexOf('(');
+  if (lastOpenIndex === -1) {
+    return str;
+  }
+  const lastCloseIndex = str.indexOf(')', lastOpenIndex);
+  if (lastCloseIndex === -1) {
+    return str;
+  }
+  return str.substring(0, lastOpenIndex) + str.substring(lastCloseIndex + 1);
+}
+function cpVerbGetConjugationVariant(value, index, moodId) {
+  if (value === '-' || !value) return null;
+  if (moodId === 27 || moodId === 56 || moodId === 57) {
+    return {
+      pronoun: cpVerbConvertPronounIndex(index),
+      value: mapValueConjugation(value),
+    };
+  }
+  if (moodId === 29) {
+    // imperative
+    return {
+      imperativePronoun: cpVerbConvertImperativePronounIndex(index),
+      value: removeLastParentheses(value).trim(),
+    };
+  } else {
+    throw new Error('Unsupported mood (for conjugation) ' + moodId);
+  }
+}
+function copyVerbTable() {
+  let _a;
+  const verbValue = (_a = document.querySelector('#search-field')) === null || _a === void 0 ? void 0 : _a.value.trim();
+  const verb = {
+    type: 3,
+    value: verbValue,
+    lang: 'fr',
+    translation: '',
+    variants: [{ categoryId: 1, value: verbValue }],
+    isOfficial: true,
+  };
+  document.querySelectorAll('.flect-tables-container').forEach((mood, index) => {
+    const moodName = mood.parentElement.querySelector('.bg-darkyellow').innerText;
+    const moodId = cpVerbConvertMoodName(moodName);
+    const tables = Array.from(mood.querySelectorAll(`.tb-bg-alt-lightgray`));
+    const texts = tables.map((table) => table.innerText);
+    texts.forEach((text) => {
+      const modifiedText = text.replaceAll('/\n', '/');
+      const column = modifiedText.split('\n');
+      const tenseName = column[0];
+      const tenseId = cpVerbConvertTenseName(tenseName, moodId);
+      column.forEach((cell, idx) => {
+        let _a, _b;
+        if (idx === 0) return cell; // header
+        const trimmedValue = cell.trim();
+        if (!trimmedValue || trimmedValue === '-') return;
+        if (tenseName === 'Participe présent') {
+          return verb.variants.push({
+            value: trimmedValue,
+            attrs: { 12: 61 },
+          });
+        }
+        if (tenseName === 'Participe passé composé') {
+          return verb.variants.push({
+            value: trimmedValue,
+            attrs: { 12: 63 },
+          });
+        }
+        if (tenseName === 'Gérondif présent') {
+          return verb.variants.push({
+            value: trimmedValue,
+            attrs: { 12: 64 },
+          });
+        }
+        if (tenseName === 'Gérondif passé') {
+          return verb.variants.push({
+            value: trimmedValue,
+            attrs: { 12: 65 },
+          });
+        }
+        if (tenseName === 'Participe passé') {
+          const attrs = {
+            0: { 2: 3, 1: 1, 12: 62 },
+            1: { 2: 4, 1: 1, 12: 62 },
+            2: { 2: 3, 1: 2, 12: 62 },
+            3: { 2: 4, 1: 2, 12: 62 }, // feminine plural
+          }[idx - 1];
+          if (!attrs) {
+            throw new Error('Invalid index ' + (idx - 1) + ' for Participe passé');
+          }
+          return verb.variants.push({
+            value: trimmedValue,
+            attrs,
+          });
+        }
+        if (tenseId === null) {
+          throw new Error('Invalid tense ' + tenseName);
+        }
+        const conj = cpVerbGetConjugationVariant(cell, idx - 1, moodId);
+        if (conj && (typeof conj.pronoun === 'number' || typeof conj.imperativePronoun === 'number')) {
+          verb.variants.push({
+            value: conj.value,
+            attrs: {
+              4: (_a = conj.pronoun) !== null && _a !== void 0 ? _a : undefined,
+              5: tenseId !== null && tenseId !== void 0 ? tenseId : undefined,
+              6: moodId !== null && moodId !== void 0 ? moodId : undefined,
+              11: (_b = conj.imperativePronoun) !== null && _b !== void 0 ? _b : undefined,
+            },
+          });
+        }
+      });
+    });
+  });
+  return JSON.stringify(verb);
+}

@@ -3,25 +3,26 @@ import styles from './styles.module.css';
 import Dropdown from 'antd/es/dropdown';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { paths } from '../../routes/paths';
 import { useAuth } from '../../contexts/Auth';
 
 const BASE = import.meta.env.BASE_URL ?? '';
 
 const Header = () => {
-  const { signOut, isSignedIn } = useAuth();
+  const { signOut, isSignedIn, userData } = useAuth();
+  const isAdmin = userData?.adminLangs && userData.adminLangs.length > 0;
   const navigate = useNavigate();
 
-  const gotoMainPage = () => {
-    navigate(paths.app.main());
+  const gotoScriptsPage = () => {
+    navigate(paths.admin.scripts());
   };
 
   return (
     <Layout.Header className={styles.header + ' ' + (!isSignedIn ? styles.inCenter : '')}>
-      <div className={styles.logoContainer} onClick={gotoMainPage}>
+      <Link className={styles.logoContainer} to={paths.app.main()}>
         <img src={BASE + 'logo.svg'} className={styles.logo} />
-      </div>
+      </Link>
 
       {isSignedIn && (
         <>
@@ -29,7 +30,10 @@ const Header = () => {
           <Dropdown
             className={styles.avatarDropdown}
             menu={{
-              items: [{ key: 'l', label: 'Log out', onClick: signOut }],
+              items: [
+                isAdmin ? { key: 's', label: 'Scripts', onClick: gotoScriptsPage } : null,
+                { key: 'l', label: 'Log out', onClick: signOut },
+              ],
             }}
             trigger={['click']}
             placement='bottomLeft'

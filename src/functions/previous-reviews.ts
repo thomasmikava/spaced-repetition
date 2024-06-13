@@ -281,6 +281,8 @@ const updateS = (
   if (!s && success) return initialTestS;
   else if (!s) return Math.max(minS, initialTestS * 0.5);
 
+  if (!success) return Math.max(minS, s * 0.5);
+
   const coeffS = s;
   let successMultiplier;
 
@@ -308,23 +310,7 @@ const updateS = (
 
   const finalMultiplier = (successMultiplier - 1) * successDoubleCoeff + 1;
 
-  // console.log(
-  //   'probability',
-  //   probability,
-  //   'successDoubleCoeff',
-  //   successDoubleCoeff,
-  //   'successMultiplier',
-  //   successMultiplier,
-  //   'finalMultiplier',
-  //   finalMultiplier,
-  //   formatTime(secondsUntilProbabilityIsHalf(coeffS)),
-  //   '-->',
-  //   formatTime(
-  //     secondsUntilProbabilityIsHalf(Math.min(maxS, Math.max(minS, success ? coeffS * finalMultiplier : coeffS * 0.5))),
-  //   ),
-  // );
-
-  return Math.min(maxS, Math.max(minS, success ? coeffS * finalMultiplier : coeffS * 0.5));
+  return Math.min(maxS, Math.max(minS, coeffS * finalMultiplier));
 };
 
 const calcMultiplierToAdd = (s: number, addedHalfTimeSeconds: number) => {

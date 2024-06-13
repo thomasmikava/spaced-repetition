@@ -33,4 +33,7 @@ export const paths = addPrefix('/')({
       '/review',
     ),
   }),
+  admin: addPrefix('/admin')({
+    scripts: '/scripts',
+  }),
 });

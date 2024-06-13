@@ -26,6 +26,7 @@ import SearchPage from './Pages/Search/SearchPage.tsx';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const TestingThingsPage = React.lazy(() => import('./Pages/TestingThings.tsx'));
+const ScriptsPage = React.lazy(() => import('./Pages/Scripts/ScriptsPage.tsx'));
 
 const router = createBrowserRouter(
   [
@@ -116,8 +117,16 @@ const router = createBrowserRouter(
     {
       path: '/testing-things',
       element: (
-        <PageGuard onlyAuth>
+        <PageGuard onlyAuth onlyAdmins>
           <TestingThingsPage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: paths.admin.scripts.routePath,
+      element: (
+        <PageGuard onlyAuth onlyAdmins>
+          <ScriptsPage />
         </PageGuard>
       ),
     },
