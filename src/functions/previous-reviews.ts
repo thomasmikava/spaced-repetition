@@ -324,7 +324,7 @@ const getRegularSAfterSuccess = (isGroup: boolean, s: number, passedTimeInSecond
 const getSBasedOnLastAnswer = (s: number, passedTimeInSeconds: number) => {
   const halfLife = secondsUntilProbabilityIsHalf(s);
 
-  if (halfLife > passedTimeInSeconds) {
+  if (halfLife * 1.2 > passedTimeInSeconds) {
     return s; // let's not alter s if half life is still in future
   }
 
