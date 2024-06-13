@@ -169,6 +169,27 @@ const AdjectiveSuffixes = {
   },
 };
 
+const isGermanPronoun = (
+  pronoun: VerbPronoun,
+): pronoun is
+  | VerbPronoun.ich
+  | VerbPronoun.du
+  | VerbPronoun.er_sie_es
+  | VerbPronoun.es
+  | VerbPronoun.wir
+  | VerbPronoun.ihr
+  | VerbPronoun.sie_Sie => {
+  return (
+    pronoun === VerbPronoun.ich ||
+    pronoun === VerbPronoun.du ||
+    pronoun === VerbPronoun.er_sie_es ||
+    pronoun === VerbPronoun.es ||
+    pronoun === VerbPronoun.wir ||
+    pronoun === VerbPronoun.ihr ||
+    pronoun === VerbPronoun.sie_Sie
+  );
+};
+
 export function getVerbStandardForm(
   verb: string,
   mood: VerbMood,
@@ -176,6 +197,7 @@ export function getVerbStandardForm(
   pronoun: VerbPronoun,
   firstPronounForm?: string,
 ): string | null {
+  if (!isGermanPronoun(pronoun)) return null;
   if (firstPronounForm && firstPronounForm.includes('/')) {
     return mergeSplitted(slashSplit(firstPronounForm).map((v) => getVerbStandardForm(verb, mood, tense, pronoun, v)));
   }
@@ -244,6 +266,7 @@ function getVerbStandardFormBasedOnFirstPronoun(
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
     const [firstPart, secondPart] = separateBySpace(firstPronounForm);
     if (secondPart === DEFAULT_PRONOUNS.a[VerbPronoun.ich]) {
+      if (!isGermanPronoun(pronoun)) return null;
       return getDefaultPresentConjugation(verb, pronoun) + ' ' + DEFAULT_PRONOUNS.a[pronoun];
     } else if (firstPart && secondPart) {
       return getDefaultPresentConjugation(firstPart + 'n', pronoun) + ' ' + secondPart;
@@ -256,6 +279,7 @@ function getVerbStandardFormBasedOnFirstPronoun(
   }
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
     const [firstPart, secondPart] = separateBySpace(firstPronounForm);
+    if (!isGermanPronoun(pronoun)) return null;
     let prefix = '';
     if (firstPart === 'habe') {
       prefix = DEFAULT_VERBS.haben_present[pronoun];
