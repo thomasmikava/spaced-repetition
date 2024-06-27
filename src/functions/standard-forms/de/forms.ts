@@ -199,7 +199,10 @@ export function getVerbStandardForm(
 ): string | null {
   if (!isGermanPronoun(pronoun)) return null;
   if (firstPronounForm && firstPronounForm.includes('/')) {
-    return mergeSplitted(slashSplit(firstPronounForm).map((v) => getVerbStandardForm(verb, mood, tense, pronoun, v)));
+    return mergeSplitted(
+      slashSplit(firstPronounForm).map((v) => getVerbStandardForm(verb, mood, tense, pronoun, v)),
+      true,
+    );
   }
   if (firstPronounForm && pronoun !== VerbPronoun.ich) {
     const guessValue = getVerbStandardFormBasedOnFirstPronoun(verb, mood, tense, pronoun, firstPronounForm);
