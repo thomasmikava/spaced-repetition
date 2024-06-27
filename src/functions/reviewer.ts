@@ -1,3 +1,4 @@
+/* eslint-disable no-debugger */
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { StandardCard } from '../database/types';
 import type { Helper } from './generate-card-content';
@@ -41,6 +42,8 @@ export interface CardWithProbability {
   reviewDue: number;
   groupLevel: number;
 }
+
+const HISTORY_ID_TO_OBSERVE = -4430;
 
 export class Reviewer {
   private allTestableCards: StandardTestableCard[];
@@ -112,7 +115,7 @@ export class Reviewer {
     const groupsMetaData: {
       [key in string]?: GroupMeta;
     } = {};
-    const getSingleKey = (card: StandardTestableCard['card']) => card.type + '*sngl*' + card.id;
+    const getSingleKey = (card: StandardTestableCard['card']) => card.id + '*sngl*';
     const blockCache: Record<string, boolean | undefined> = {};
     const updateIsAnyPrevGroupBlocked = (groupKey: string): boolean => {
       if (typeof blockCache[groupKey] === 'boolean') return blockCache[groupKey] ?? false;
@@ -132,21 +135,25 @@ export class Reviewer {
         const individualViewRecord = this.prevReviews.getCardHistory(record, CardViewMode.individualView);
         const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView);
 
-        const prevKey = record.previousGroupViewKey
-          ? record.previousGroupViewKey
+        const prevGroupGlobalKey = record.previousGroupViewKey
+          ? record.card.id + '__' + record.previousGroupViewKey
           : record.initial
             ? undefined
             : getSingleKey(record.card);
 
+        const groupGlobalKey = record.groupViewKey
+          ? record.card.id + '__' + record.groupViewKey
+          : getSingleKey(record.card);
+
         const willBeTested = this.hasAnotherRepetition(record, CardViewMode.test, historyRecord?.lc);
         if (record.groupViewKey) {
-          const groupRecord: GroupMeta = groupsMetaData[record.groupViewKey] || {
+          const groupRecord: GroupMeta = groupsMetaData[groupGlobalKey] || {
             lastViewDate: 0,
             numOfCards: 0,
             numOfTestedCards: 0,
             numOfTestableCards: 0,
             minReviewDue: Infinity,
-            prevGroupMetaKey: prevKey,
+            prevGroupMetaKey: prevGroupGlobalKey,
           };
           groupRecord.numOfCards++;
           if (willBeTested) groupRecord.numOfTestableCards++;
@@ -161,15 +168,15 @@ export class Reviewer {
           if (lastViewDate) {
             groupRecord.lastViewDate = Math.max(lastViewDate, groupRecord.lastViewDate);
           }
-          groupsMetaData[record.groupViewKey] = groupRecord;
+          groupsMetaData[groupGlobalKey] = groupRecord;
         } else if (record.initial) {
-          groupsMetaData[getSingleKey(record.card)] = {
+          groupsMetaData[groupGlobalKey] = {
             lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
             numOfCards: 1,
             numOfTestableCards: willBeTested ? 1 : 0,
             numOfTestedCards: willBeTested && historyRecord ? 1 : 0,
             minReviewDue: Infinity,
-            prevGroupMetaKey: prevKey,
+            prevGroupMetaKey: prevGroupGlobalKey,
           };
         }
         return {
@@ -178,51 +185,65 @@ export class Reviewer {
           individualViewRecord,
           groupVewRecord,
           willBeTested,
+          groupGlobalKey,
+          prevGroupGlobalKey,
         };
       })
-      .map(({ record, historyRecord, individualViewRecord, groupVewRecord, willBeTested }) => {
-        const lastGroupViewDate =
-          record.groupViewKey && record.hasGroupViewMode
-            ? groupsMetaData[record.groupViewKey]?.lastViewDate
-            : undefined;
-        const lastNormalizedViewDate = lastGroupViewDate ?? historyRecord?.lastDate;
-        const probability =
-          historyRecord && lastNormalizedViewDate
-            ? calculateProbability(
-                Math.floor(currentDate / 1000) - lastNormalizedViewDate,
-                historyRecord.lastS ?? initialTestS,
-              )
-            : 0;
-        const reviewDue = historyRecord
-          ? getReviewDue(historyRecord, lastNormalizedViewDate, currentDate)
-          : getFirstDue(
-              groupVewRecord,
-              individualViewRecord,
-              record.hasGroupViewMode,
-              lastNormalizedViewDate,
-              currentDate,
-            );
-
-        if (record.groupViewKey) {
-          const groupRecord = groupsMetaData[record.groupViewKey];
-          if (groupRecord) groupRecord.minReviewDue = Math.min(groupRecord.minReviewDue, reviewDue);
-        } else if (record.initial) {
-          const meta = groupsMetaData[getSingleKey(record.card)];
-          if (meta) meta.minReviewDue = reviewDue;
-        }
-
-        return {
+      .map(
+        ({
           record,
           historyRecord,
           individualViewRecord,
           groupVewRecord,
-          probability,
-          reviewDue,
-          lastNormalizedViewDate,
-          lastGroupViewDate,
           willBeTested,
-        };
-      })
+          groupGlobalKey,
+          prevGroupGlobalKey,
+        }) => {
+          const lastGroupViewDate =
+            record.groupViewKey && record.hasGroupViewMode ? groupsMetaData[groupGlobalKey]?.lastViewDate : undefined;
+          const lastNormalizedViewDate = lastGroupViewDate ?? historyRecord?.lastDate;
+          const probability =
+            historyRecord && lastNormalizedViewDate
+              ? calculateProbability(
+                  Math.floor(currentDate / 1000) - lastNormalizedViewDate,
+                  historyRecord.lastS ?? initialTestS,
+                )
+              : 0;
+          if (historyRecord?.id === HISTORY_ID_TO_OBSERVE) {
+            debugger;
+          }
+          const reviewDue = historyRecord
+            ? getOptimalReviewDue(historyRecord, historyRecord.lastDate, lastNormalizedViewDate, currentDate)
+            : getFirstDue(
+                groupVewRecord,
+                individualViewRecord,
+                record.hasGroupViewMode,
+                lastNormalizedViewDate,
+                currentDate,
+              );
+
+          if (record.groupViewKey) {
+            const groupRecord = groupsMetaData[groupGlobalKey];
+            if (groupRecord) groupRecord.minReviewDue = Math.min(groupRecord.minReviewDue, reviewDue);
+          } else if (record.initial) {
+            const meta = groupsMetaData[groupGlobalKey];
+            if (meta) meta.minReviewDue = reviewDue;
+          }
+
+          return {
+            record,
+            historyRecord,
+            individualViewRecord,
+            groupVewRecord,
+            probability,
+            reviewDue,
+            lastNormalizedViewDate,
+            lastGroupViewDate,
+            willBeTested,
+            prevGroupGlobalKey,
+          };
+        },
+      )
       .map(
         ({
           record,
@@ -234,24 +255,25 @@ export class Reviewer {
           lastNormalizedViewDate,
           lastGroupViewDate,
           willBeTested,
+          prevGroupGlobalKey,
         }): CardWithProbability => {
           const isTested = !!historyRecord;
-          const prevKey = record.previousGroupViewKey
-            ? record.previousGroupViewKey
-            : record.initial
-              ? undefined
-              : getSingleKey(record.card);
-          const prevGroupMeta = prevKey ? groupsMetaData[prevKey] : undefined;
-          const isAnyPrevGroupBlocked = prevKey ? updateIsAnyPrevGroupBlocked(prevKey) : false;
+          if (historyRecord?.id === HISTORY_ID_TO_OBSERVE) {
+            debugger;
+          }
+          const prevGroupMeta = prevGroupGlobalKey ? groupsMetaData[prevGroupGlobalKey] : undefined;
+          const isAnyPrevGroupBlocked = prevGroupGlobalKey ? updateIsAnyPrevGroupBlocked(prevGroupGlobalKey) : false;
           const isBlockedByPreviousGroup =
             isAnyPrevGroupBlocked ||
             (prevGroupMeta ? prevGroupMeta.numOfTestedCards < prevGroupMeta.numOfTestableCards : false);
-          const prevGroupReviewDue = prevKey ? (groupsMetaData[prevKey]?.minReviewDue ?? -Infinity) - 1 : -Infinity;
-          // console.log(minReviewDue);
+          const prevGroupReviewDue = prevGroupGlobalKey
+            ? (groupsMetaData[prevGroupGlobalKey]?.minReviewDue ?? -Infinity) - 1
+            : -Infinity;
           const finalReviewDue =
             isTested && prevGroupReviewDue !== -Infinity && prevGroupReviewDue - reviewDue <= 60
               ? Math.max(reviewDue, prevGroupReviewDue + 1)
               : reviewDue;
+
           return {
             record,
             historyRecord,
@@ -284,6 +306,9 @@ export class Reviewer {
         return a.reviewDue - b.reviewDue;
       })
       .map((a) => {
+        if (a.historyRecord?.id === HISTORY_ID_TO_OBSERVE) {
+          debugger;
+        }
         const viewMode = getCardViewMode(a);
         let isTestNotRecommended = false;
         let isViewNotRecommended = false;
@@ -434,4 +459,17 @@ export const getCardViewMode = (a: CardWithProbability) => {
   } else {
     return CardViewMode.test;
   }
+};
+
+const getOptimalReviewDue = (
+  historyRecord: AnyReviewHistory,
+  lastDate: number,
+  groupViewMaxLastDate: number | undefined,
+  currentDateMS: number,
+) => {
+  const t1 = getReviewDue(historyRecord, lastDate, currentDateMS);
+  if (!groupViewMaxLastDate || groupViewMaxLastDate <= lastDate || 1 < 2) return t1;
+  const t2 = getReviewDue(historyRecord, groupViewMaxLastDate, currentDateMS);
+  if (t2 - t1 >= 240) return t1 + 120;
+  return Math.floor(t1 + t2 / 2);
 };

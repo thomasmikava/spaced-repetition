@@ -73,6 +73,9 @@ export class PreviousReviews {
     const wordHistory = wordsIndex[wordId];
     if (!wordHistory) return 0;
     const dueDateSec = Math.floor(accordingToDate.getTime() / 1000);
+    /* wordHistory
+      .filter((e) => e.dueDate && e.dueDate < dueDateSec)
+      .forEach((e) => console.log('historyId', e.id, 'w', e.wordId)); */
     return wordHistory.filter((e) => e.dueDate && e.dueDate < dueDateSec).length;
   };
 

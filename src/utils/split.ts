@@ -134,11 +134,11 @@ export function areSplittedEqual(v1: string | null | undefined, v2: string | nul
   return s1.join('^') === s2.join('^');
 }
 
-export function mergeSplitted(splitted: (string | null | undefined)[]): string {
-  return splitted
-    .filter(isNonNullable)
-    .map((e) => (e.match(/\s/) ? `(${e})` : e))
-    .join('/');
+export function mergeSplitted(splitted: (string | null | undefined)[], optimized = false): string {
+  const stringValues = splitted.filter(isNonNullable);
+  if (stringValues.length <= 1) return stringValues.join('/');
+  if (!optimized) return stringValues.map((e) => (e.match(/\s/) ? `(${e})` : e)).join('/');
+  return combineWords(stringValues);
 }
 
 function generateCombinations(limits: number[]): number[][] {
