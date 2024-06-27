@@ -5,7 +5,11 @@ import { useEffect, useMemo, useRef, useState, type FC } from 'react';
 import type { Control } from 'react-hook-form';
 import { Controller, FormProvider, useController, useFieldArray, useForm, useFormContext } from 'react-hook-form';
 import { useCreateNewWord, useOneWord, useUpdateWord } from '../../api/controllers/words/words.query';
-import type { AdvancedTranslationDTO, WordWithTranslationDTO } from '../../api/controllers/words/words.schema';
+import type {
+  AdvancedTranslationDTO,
+  BaseWordVariantDTO,
+  WordWithTranslationDTO,
+} from '../../api/controllers/words/words.schema';
 import type { TranslationVariant } from '../../database/types';
 import type { Helper } from '../../functions/generate-card-content';
 import { useTranslationLangOptions } from '../../hooks/langs';
@@ -25,6 +29,8 @@ import type {
 import { getWholeWordFromPastedData, replaceEmptyObjects } from './utils';
 import { Checkbox } from '../../ui/Checkbox/Checkbox';
 import { mergeRefs } from 'react-merge-refs';
+import type { LoadedModalProps } from '../DictionaryModal';
+import { DictionaryLoadedModal } from '../DictionaryModal';
 
 interface OfficialWordFormModalProps {
   defaultTranslationLang: string;
@@ -196,6 +202,29 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
   };
   const handleSubmit = form.handleSubmit(handleSuccess, console.error);
 
+  const [viewTableProps, setViewTableProps] = useState<LoadedModalProps>();
+
+  const closeViewTable = () => {
+    setViewTableProps(undefined);
+  };
+
+  const viewTable = () => {
+    const data = form.getValues();
+    const currentLangTranslation = data.translations.find((t) => t.lang === defaultTranslationLang);
+    setViewTableProps({
+      helper,
+      word: {
+        ...data,
+        id: 1,
+        userId: 0,
+        variants: data.variants.map((v): BaseWordVariantDTO => ({ ...v, id: 1 })),
+        translation: currentLangTranslation?.translation ?? '',
+        advancedTranslation: currentLangTranslation?.advancedTranslation ?? null,
+      },
+      onClose: closeViewTable,
+    });
+  };
+
   return (
     <Modal
       title={'Edit forms'}
@@ -204,6 +233,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
       onCancel={handleClose}
       footer={
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <Button onClick={viewTable} label='See table' />
           <Button onClick={handleClose} label='Cancel' />
           <Button onClick={handleSubmit} label='Submit' variant='primary' loading={isSubmitLoading} />
         </div>
@@ -221,6 +251,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
         </FormProvider>
       )}
       {confirmationModalElement}
+      {viewTableProps && <DictionaryLoadedModal {...viewTableProps} />}
     </Modal>
   );
 };

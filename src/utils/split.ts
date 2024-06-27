@@ -140,3 +140,89 @@ export function mergeSplitted(splitted: (string | null | undefined)[]): string {
     .map((e) => (e.match(/\s/) ? `(${e})` : e))
     .join('/');
 }
+
+function generateCombinations(limits: number[]): number[][] {
+  const results: number[][] = [];
+
+  function backtrack(current: number[], index: number) {
+    if (index === limits.length) {
+      results.push([...current]);
+      return;
+    }
+
+    for (let i = 0; i < limits[index]; i++) {
+      current.push(i);
+      backtrack(current, index + 1);
+      current.pop();
+    }
+  }
+
+  backtrack([], 0);
+  return results;
+}
+
+export function combineWords(arr: string[]): string {
+  if (arr.length === 0) return '';
+
+  const allSentences = new Set(arr);
+  const sentences = arr.map((sentence) => sentence.split(' '));
+
+  const combinations = generateCombinations(sentences.map((sentence) => sentence.length + 1));
+
+  let optimalString = null as string | null;
+  for (const combination of combinations) {
+    const prefixes: string[] = [];
+    const suffixes: string[] = [];
+    for (let i = 0; i < sentences.length; i++) {
+      const index = combination[i];
+      const currentSentence = sentences[i];
+      prefixes.push(currentSentence.slice(0, index).join(' '));
+      suffixes.push(currentSentence.slice(index).join(' '));
+    }
+    let couldIdBePrefix = true;
+    for (let i = 0; i < sentences.length; i++) {
+      for (let j = i + 1; j < sentences.length; j++) {
+        const newWord1 = prefixes[i] + ' ' + suffixes[j];
+        const newWord2 = prefixes[j] + ' ' + suffixes[i];
+        if (!allSentences.has(newWord1) || !allSentences.has(newWord2)) {
+          couldIdBePrefix = false;
+          break;
+        }
+      }
+      if (couldIdBePrefix) break;
+    }
+    if (!couldIdBePrefix) continue;
+    const match = combinePrefixes(prefixes) + ' ' + combineWords(suffixes);
+    if (optimalString === null || optimalString.length > match.length) {
+      optimalString = match;
+    }
+  }
+
+  if (optimalString === null) {
+    return combinePrefixes(arr);
+  }
+
+  return optimalString;
+}
+
+const combinePrefixes = (arr: string[]): string => {
+  if (arr.length === 0) return '';
+  return [...new Set(arr)].map((sentence) => (sentence.includes(' ') ? `(${sentence})` : sentence)).join('/');
+};
+/* 
+// Example usage:
+const example1 = ['I gonna go to bar', 'I gonna go to café', 'you gonna go to bar', 'you gonna go to café'];
+const example2 = [
+  'er ist geworden',
+  'er ist worden',
+  'sie ist geworden',
+  'sie ist worden',
+  'es ist geworden',
+  'es ist worden',
+];
+const example3 = ['You and I are fine', 'You and I will be fine', 'We are fine', 'We will be fine'];
+
+console.log(combineWords(example1)); // Output: "I/you gonna go to bar/café"
+console.log(combineWords(example2)); // Output: "er/sie/es ist geworden/worden"
+console.log(combineWords(example3)); // Output: "(You and I)/We are/(will be) fine"
+ */

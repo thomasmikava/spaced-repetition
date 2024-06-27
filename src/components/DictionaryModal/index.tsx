@@ -20,7 +20,7 @@ const DictionaryModal: FC<{ helper: Helper; wordId: number; onClose: () => void;
   return <DictionaryLoadedModal onClose={onClose} word={word ?? null} helper={helper} />;
 };
 
-type LoadedModalProps = {
+export type LoadedModalProps = {
   word: WordWithTranslationVariantsDTO | null;
   card?: StandardCard;
   helper: Helper;

@@ -92,7 +92,7 @@ function updateStorage(updatedItems: AnyReviewHistory[]) {
   removeSuccessfullySavedItemsFromStorage(successfullySavedKeys);
 }
 
-function loadInDb(data: GetManyRecordsResDTO, notSavedData: PostHistoryRecordsReqDTO) {
+function loadInDb(data: GetManyRecordsResDTO['records'], notSavedData: PostHistoryRecordsReqDTO) {
   const cls = new PreviousReviews();
   cls.loadInDb(data, notSavedData, true);
 }
