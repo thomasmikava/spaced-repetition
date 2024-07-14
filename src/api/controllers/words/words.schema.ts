@@ -104,6 +104,7 @@ export type GetMyCoursesWordsResDTO = WordWithTranslationAndLessonsAndVariantsDT
 ///
 export interface GetLanguageDictionaryReqDTO {
   lang: string;
+  translationLang?: string | null;
 }
 export type GetLanguageDictionaryResDTO = WordWithTranslationVariantsDTO[];
 
@@ -117,6 +118,17 @@ export interface GetOneWordReqDTO {
 }
 export type GetOneWordResDTO = WordWithTranslationVariantsDTO & {
   officialTranslations?: TranslationDTO[];
+};
+
+///
+export interface GetWordsByIdsReqDTO {
+  ids: number[];
+  translationLang?: string | null;
+  onlyOfficialTranslation?: boolean;
+  includeAllOfficialTranslations?: boolean;
+}
+export type GetWordsByIdsResDTO = {
+  words: GetOneWordResDTO[];
 };
 
 ///
@@ -233,3 +245,15 @@ export interface UpdateWordReqDTO {
 }
 
 export type UpdateWordResDTO = WordDTO;
+
+///
+
+export interface MultiSearchWordIdReqDTO {
+  searchValues: string[];
+  lang: string;
+  wordType?: number;
+}
+
+export interface MultiSearchWordIdResDTO {
+  queries: { searchValue: string; wordIds: number[] }[];
+}

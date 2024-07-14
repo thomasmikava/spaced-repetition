@@ -2,12 +2,12 @@ import type { FC } from 'react';
 import { useMemo, useRef, useState } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useMyMainCourses } from '../api/controllers/courses/courses.query';
-import { useDictionary, useWordIds } from '../api/controllers/words/words.query';
+import { useWordIds } from '../api/controllers/words/words.query';
 import type { GetWordIdsResDTO, WordDTO } from '../api/controllers/words/words.schema';
 import { CardTypeMapper } from '../database/card-types';
 import {
-  getAllMatchingVariants,
   getIndexedDictionary,
+  getAllMatchingVariants,
   isInDatabase,
   type IndexedDatabase,
 } from '../functions/dictionary';
@@ -17,10 +17,11 @@ import { calculateHalfLifeCoefficient } from '../functions/reviews';
 import { useLangToLearnOptions } from '../hooks/langs';
 import Button from '../ui/Button';
 import Select from '../ui/Select';
-import { uniquelize } from '../utils/array';
+import { chunkArray, uniquelize } from '../utils/array';
 import LoadingPage from './Loading/LoadingPage';
 import { useHelper } from './hooks/text-helpers';
 import type { AddNewWordInfo, JSONPasteWords } from './Course/EditContent/Form';
+import { wordController } from '../api/controllers/words/words.controller';
 
 const NewWordsPage: FC<{ helper: Helper }> = () => {
   const [langToLearn, setLangToLearn] = useLocalStorage('lang-to-learn', null as null | string);
@@ -30,9 +31,7 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
   const { data: mainCourses, isLoading: isLoadingCourses } = useMyMainCourses();
   const { data: wordsInfo, isLoading: isLoadingWordIds } = useWordIds({});
 
-  const { data: dictionary, isLoading: isDictionaryLoading, isError: isDictionaryError } = useDictionary(langToLearn);
-
-  const indexedDictionary = useMemo(() => dictionary && getIndexedDictionary(dictionary), [dictionary]);
+  const [isDictionaryLoading, setIsDictionaryLoading] = useState(false);
 
   const learnLangOptions = useLangToLearnOptions();
 
@@ -51,8 +50,10 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
   );
   const [currentCourse, setCurrentCourse] = useState('');
 
-  const calculate = () => {
-    if (!textAreaRef.current || !wordsInfo || !indexedDictionary) return;
+  const calculate = async () => {
+    if (!langToLearn || !textAreaRef.current || !wordsInfo) return;
+
+    setIsDictionaryLoading(true);
 
     const courseId = currentCourse ? +currentCourse : '';
     const existingWordIds =
@@ -65,9 +66,14 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
             : [];
     const value = textAreaRef.current.value;
     console.log('existingTokens', existingWordIds);
+    const textTokens = uniquelize(getTextTokens(value));
+    const wordIds = await searchWordIds(langToLearn, textTokens);
+    const dictionary = await getDictionary(wordIds);
+    const indexedDictionary = getIndexedDictionary(dictionary);
     const tokens = getTokens(value, existingWordIds, indexedDictionary);
     console.log('tokens', tokens);
     setResults(tokens);
+    setIsDictionaryLoading(false);
   };
   const copyResults = () => {
     if (!results) return;
@@ -123,12 +129,6 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
         placeholder='Choose course'
       />
       <br />
-      {isDictionaryError && (
-        <div style={{ color: 'red' }}>
-          Error loading dictionary
-          <br />
-        </div>
-      )}
       <Button label='Calculate' loading={isDictionaryLoading} onClick={calculate} variant='primary' />
       {results && (
         <div>
@@ -165,6 +165,35 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
   );
 };
 
+const searchWordIds = async (lang: string, tokens: string[]) => {
+  const searchChunks = chunkArray(tokens, 30);
+
+  const results = await Promise.all(
+    searchChunks.map((queries) => {
+      return wordController.multiSearchWordIds({
+        lang,
+        searchValues: queries,
+      });
+    }),
+  );
+
+  return results.flatMap((e) => e.queries.flatMap((r) => r.wordIds));
+};
+
+const getDictionary = async (wordIds: number[]) => {
+  const searchChunks = chunkArray(wordIds, 100);
+
+  const results = await Promise.all(
+    searchChunks.map((ids) => {
+      return wordController.getWordsByIds({
+        ids,
+      });
+    }),
+  );
+
+  return results.flatMap((e) => e.words);
+};
+
 const getCourseWordIds = (courseId: number, wordsInfo: GetWordIdsResDTO): number[] => {
   const course = wordsInfo.find((course) => course.courseId === courseId);
   if (!course) return [];
@@ -188,16 +217,26 @@ const getMyReviewedWordIds = (wellKnown: boolean): number[] => {
 
 const ignoredWords: string[] = ["geht's", "gibt's", 'Neues', 'los', 'Hause', 'am'];
 
+const getLineTokens = (line: string) => {
+  return line
+    .split(' ')
+    .map((token) => token.replace(/[.,?!:"()]/g, ''))
+    .filter((e) => e.length > 0 && e.match(/[a-zA-ZäöüÄÖÜß]/) && ignoredWords.indexOf(e) === -1);
+};
+
+const divideByLines = (text: string) => text.split(/[\n+.?!]/);
+
+const getTextTokens = (text: string) => {
+  return divideByLines(text).flatMap(getLineTokens);
+};
+
 const getTokens = (value: string, existingWordIds: number[], database: IndexedDatabase) => {
-  const lines = value.split(/[\n+.?!]/);
+  const lines = divideByLines(value);
   const unknownTokens: string[] = [];
   const matchedKnownWordIds: { word: WordDTO; originalToken: string }[] = [];
   const usedWordTokens = new Set<string>(existingWordIds.map((id) => database.wordsAllValues.get(id) || []).flat());
   for (const line of lines) {
-    let tokens = line
-      .split(' ')
-      .map((token) => token.replace(/[.,?!:"()]/g, ''))
-      .filter((e) => e.length > 0 && e.match(/[a-zA-ZäöüÄÖÜß]/) && ignoredWords.indexOf(e) === -1);
+    let tokens = getLineTokens(line);
     const firstToken = tokens[0];
     const isFirstTokenNoun = firstToken
       ? getAllMatchingVariants(firstToken, database).some(

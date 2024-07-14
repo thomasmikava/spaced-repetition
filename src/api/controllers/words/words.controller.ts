@@ -12,8 +12,12 @@ import type {
   GetOneWordResDTO,
   GetWordIdsReqDTO,
   GetWordIdsResDTO,
+  GetWordsByIdsReqDTO,
+  GetWordsByIdsResDTO,
   GetWordsReqDTO,
   GetWordsResDTO,
+  MultiSearchWordIdReqDTO,
+  MultiSearchWordIdResDTO,
   SearchWordReqDTO,
   SearchWordResDTO,
   UpdateWordReqDTO,
@@ -43,6 +47,10 @@ class WordController {
     return this.request.get('/words/:id', query);
   };
 
+  getWordsByIds = async (query: GetWordsByIdsReqDTO): Promise<GetWordsByIdsResDTO> => {
+    return this.request.post('/words/ids', query);
+  };
+
   updateOne = async (query: UpdateWordReqDTO): Promise<UpdateWordResDTO> => {
     return this.request.patch('/words/:id', query);
   };
@@ -58,6 +66,10 @@ class WordController {
   searchWords = async (query: SearchWordReqDTO): Promise<SearchWordResDTO> => {
     const modifiedSearch = getModifiedSearchValue(query.searchValue, query.lang, query.wordType);
     return this.request.get('/words', { ...query, searchValue: modifiedSearch });
+  };
+
+  multiSearchWordIds = async (query: MultiSearchWordIdReqDTO): Promise<MultiSearchWordIdResDTO> => {
+    return this.request.post('/words/multi-search-ids', query);
   };
 }
 

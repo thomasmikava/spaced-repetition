@@ -77,7 +77,7 @@ export const getWholeWordFromPastedData = (clipboardData: DataTransfer | null): 
       type: data.type,
       attributes: data.attributes,
       isOfficial: data.isOfficial,
-      translations: [],
+      translations: data.translations ?? [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       variants: data.variants.map((variant: any): FormVariant => {
         return {
