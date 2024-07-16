@@ -42,7 +42,7 @@ import {
   PlusOutlined,
   SettingFilled,
 } from '@ant-design/icons';
-import type { WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
+import type { TranslationDTO, WordDTO, WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
 import { useSearchWords } from '../../../api/controllers/words/words.query';
 import { useDebounce } from 'use-debounce';
 import Select from '../../../ui/Select';
@@ -217,7 +217,7 @@ interface FieldArrayRef {
 
 export type AddNewWordInfo =
   | { wordValue: string; translation?: string; word?: undefined }
-  | { word: WordWithTranslationDTO; customTranslation?: string };
+  | { word: WordDTO & { officialTranslations?: TranslationDTO[] }; customTranslation?: string };
 
 export interface JSONPasteWords {
   type: 'internal-paste';
@@ -251,17 +251,25 @@ const FieldArray = memo(
       append(newLesson);
     }, [append]);
 
+    const translationLang = formBaseInfo.translationLang;
+
     const handleAddNewWord = useCallback(
+      // eslint-disable-next-line sonarjs/cognitive-complexity
       (values: AddNewWordInfo[] = [{ wordValue: '', translation: '' }]) => {
         for (const value of values) {
+          const translationObj = value.word?.officialTranslations?.find((t) => t.lang === translationLang);
           const newWord: WordInfo = value.word
             ? {
                 type: 'word',
                 subType: 'search-word',
                 wordValue: value.word.value,
-                word: value.word,
-                translation: value.customTranslation ?? value.word.translation ?? '',
-                advancedTranslation: value.word.advancedTranslation ?? null,
+                word: {
+                  ...value.word,
+                  translation: translationObj?.translation,
+                  advancedTranslation: translationObj?.advancedTranslation ?? null,
+                },
+                translation: value.customTranslation ? value.customTranslation : translationObj?.translation ?? '',
+                advancedTranslation: value.customTranslation ? null : translationObj?.advancedTranslation ?? null,
                 wordDisplayType:
                   value.word.mainType ?? (value.word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : value.word.type),
                 fieldUniqueId: Math.random().toString(),
@@ -277,7 +285,7 @@ const FieldArray = memo(
           append(newWord);
         }
       },
-      [append],
+      [append, translationLang],
     );
 
     useImperativeHandle(

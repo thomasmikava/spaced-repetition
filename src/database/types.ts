@@ -1,4 +1,4 @@
-import { CardLabelsDTO } from '../api/controllers/words/words.schema';
+import { AdvancedTranslationDTO, CardLabelsDTO } from '../api/controllers/words/words.schema';
 
 export enum CardType {
   ARTICLE = 'ARTICLE',
@@ -249,11 +249,7 @@ export type StandardCardVariant = {
   value: string;
 };
 
-export type TranslationVariant = {
-  schema?: string;
-  attrs?: Record<string, IdType | IdType[]>;
-  translation: string;
-};
+export type TranslationVariant = AdvancedTranslationDTO;
 
 export type StandardCard = {
   id: IdType;

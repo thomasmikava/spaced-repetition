@@ -45,10 +45,16 @@ export interface WordVariantDTO extends BaseWordVariantDTO {
   isOfficial: boolean;
 }
 
+export type WordUsageExampleDTO = {
+  text: string;
+  translation?: string;
+};
+
 export type AdvancedTranslationDTO = {
   schema?: string;
   attrs?: Record<string, number | number[]>;
   translation: string;
+  examples?: WordUsageExampleDTO[];
 };
 
 export interface TranslationDTO {

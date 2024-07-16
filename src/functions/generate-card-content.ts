@@ -21,6 +21,7 @@ import { getConditionalOrRawValue, isMatch } from '../utils/matcher';
 import type { StandardTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
 import { getArticle, getWithSymbolArticle } from './texts';
+import type { WordUsageExampleDTO } from '../api/controllers/words/words.schema';
 
 const getTopRow = (lang: string, tags: ContentTag[], word: string): AnyContent => {
   return {
@@ -75,8 +76,9 @@ const getVerbTranslationsContent2 = (
   cardValue: string | null,
   langToLearn: string,
   helper: Helper,
+  isAnswerRevealed: boolean,
 ): AnyContent[] => {
-  return translations.flatMap(({ schema, attrs, translation }): AnyContent | AnyContent[] => {
+  return translations.flatMap(({ schema, attrs, translation, examples }): AnyContent | AnyContent[] => {
     if (schema) {
       return {
         type: 'div',
@@ -98,17 +100,43 @@ const getVerbTranslationsContent2 = (
     return {
       type: 'div',
       content: [
-        attrs
-          ? {
-              type: 'tag',
-              content: getTranslationVariantTags(attrs, langToLearn, helper),
-            }
-          : null,
-        { type: 'paragraph', content: translation, style: { textAlign: 'center' } },
+        {
+          type: 'div',
+          content: [
+            attrs
+              ? {
+                  type: 'tag',
+                  content: getTranslationVariantTags(attrs, langToLearn, helper),
+                }
+              : null,
+            { type: 'paragraph', content: translation, style: { textAlign: 'center', margin: 0 } },
+          ],
+          style: { display: 'flex', columnGap: 10, alignItems: 'center', justifyContent: 'center' },
+        },
+        examples && isAnswerRevealed ? getExamplesContent(examples) : undefined,
       ],
-      style: { display: 'flex', columnGap: 10, alignItems: 'center', justifyContent: 'center' },
+      style: { margin: '15px 0', fontSize: 20, borderTop: '1px solid black' },
     };
   });
+};
+
+const getExamplesContent = (examples: WordUsageExampleDTO[]): AnyContent => {
+  return {
+    type: 'div',
+    content: examples.map(
+      (example): AnyContent => ({
+        type: 'div',
+        content: [
+          { type: 'paragraph', content: `Example: ${example.text}`, style: { margin: 0 } },
+          example.translation
+            ? { type: 'paragraph', content: `Translation: ${example.translation}`, style: { margin: 0 } }
+            : undefined,
+        ],
+        style: { marginBottom: 10 },
+      }),
+    ),
+    style: { fontSize: 18 },
+  };
 };
 
 const getTranslationVariantTags = (
@@ -135,8 +163,8 @@ const getVerbTranslationBeforeAndAfterAnswer2 = (
   helper: Helper,
 ): AnyContent[] => {
   return [
-    { type: 'beforeAnswer', content: getVerbTranslationsContent2(translations, '*', langToLearn, helper) },
-    { type: 'afterAnswer', content: getVerbTranslationsContent2(translations, cardValue, langToLearn, helper) },
+    { type: 'beforeAnswer', content: getVerbTranslationsContent2(translations, '*', langToLearn, helper, false) },
+    { type: 'afterAnswer', content: getVerbTranslationsContent2(translations, cardValue, langToLearn, helper, true) },
   ];
 };
 
@@ -371,6 +399,7 @@ export const viewLinesToContentLines = (
           record.card.value,
           record.card.lang,
           helper,
+          true,
         );
       case ViewLineType.AttrRecordValues:
         const attrs = (line.customAttrRecords ?? record.variant.attrs) || {};

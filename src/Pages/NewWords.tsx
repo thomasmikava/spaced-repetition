@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useMyMainCourses } from '../api/controllers/courses/courses.query';
 import { useWordIds } from '../api/controllers/words/words.query';
-import type { GetWordIdsResDTO, WordDTO } from '../api/controllers/words/words.schema';
+import type { GetWordIdsResDTO, WordDTO, WordWithTranslationDTO } from '../api/controllers/words/words.schema';
 import { CardTypeMapper } from '../database/card-types';
 import {
   getIndexedDictionary,
@@ -22,6 +22,7 @@ import LoadingPage from './Loading/LoadingPage';
 import { useHelper } from './hooks/text-helpers';
 import type { AddNewWordInfo, JSONPasteWords } from './Course/EditContent/Form';
 import { wordController } from '../api/controllers/words/words.controller';
+import { removeKeys } from '../utils/object';
 
 const NewWordsPage: FC<{ helper: Helper }> = () => {
   const [langToLearn, setLangToLearn] = useLocalStorage('lang-to-learn', null as null | string);
@@ -79,7 +80,7 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
     if (!results) return;
     const texts = results.knownTokens.map(
       (e): AddNewWordInfo => ({
-        word: e.word,
+        word: removeKeys(e.word as WordWithTranslationDTO, 'translation', 'advancedTranslation'),
       }),
     );
     const data: JSONPasteWords = {
@@ -187,6 +188,7 @@ const getDictionary = async (wordIds: number[]) => {
     searchChunks.map((ids) => {
       return wordController.getWordsByIds({
         ids,
+        includeAllOfficialTranslations: true,
       });
     }),
   );

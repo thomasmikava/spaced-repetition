@@ -25,6 +25,7 @@ export const replaceEmptyObjects = (data: FormData): FormData => {
                   schema: advanced.schema || undefined,
                   translation: advanced.translation,
                   attrs: handleEmptyObject(advanced.attrs) ?? undefined,
+                  examples: !advanced.examples || advanced.examples.length === 0 ? undefined : advanced.examples,
                 };
               })
               .filter((advanced) => advanced.translation || advanced.schema || advanced.attrs),
