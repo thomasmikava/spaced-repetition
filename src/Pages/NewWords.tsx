@@ -2,15 +2,12 @@ import type { FC } from 'react';
 import { useMemo, useRef, useState } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useMyMainCourses } from '../api/controllers/courses/courses.query';
+import { wordController } from '../api/controllers/words/words.controller';
 import { useWordIds } from '../api/controllers/words/words.query';
 import type { GetWordIdsResDTO, WordDTO, WordWithTranslationDTO } from '../api/controllers/words/words.schema';
 import { CardTypeMapper } from '../database/card-types';
-import {
-  getIndexedDictionary,
-  getAllMatchingVariants,
-  isInDatabase,
-  type IndexedDatabase,
-} from '../functions/dictionary';
+import type { Searcher } from '../functions/dictionary';
+import { getSearcher } from '../functions/dictionary';
 import type { Helper } from '../functions/generate-card-content';
 import { PreviousReviews } from '../functions/previous-reviews';
 import { calculateHalfLifeCoefficient } from '../functions/reviews';
@@ -18,11 +15,10 @@ import { useLangToLearnOptions } from '../hooks/langs';
 import Button from '../ui/Button';
 import Select from '../ui/Select';
 import { chunkArray, uniquelize } from '../utils/array';
+import { removeKeys } from '../utils/object';
+import type { AddNewWordInfo, JSONPasteWords } from './Course/EditContent/Form';
 import LoadingPage from './Loading/LoadingPage';
 import { useHelper } from './hooks/text-helpers';
-import type { AddNewWordInfo, JSONPasteWords } from './Course/EditContent/Form';
-import { wordController } from '../api/controllers/words/words.controller';
-import { removeKeys } from '../utils/object';
 
 const NewWordsPage: FC<{ helper: Helper }> = () => {
   const [langToLearn, setLangToLearn] = useLocalStorage('lang-to-learn', null as null | string);
@@ -68,10 +64,10 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
     const value = textAreaRef.current.value;
     console.log('existingTokens', existingWordIds);
     const textTokens = uniquelize(getTextTokens(value));
-    const wordIds = await searchWordIds(langToLearn, textTokens);
+    const { wordIds, wordToSearches } = await searchWordIds(langToLearn, textTokens);
     const dictionary = await getDictionary(wordIds);
-    const indexedDictionary = getIndexedDictionary(dictionary);
-    const tokens = getTokens(value, existingWordIds, indexedDictionary);
+    const saercher = getSearcher(dictionary, wordToSearches);
+    const tokens = getTokens(value, existingWordIds, saercher);
     console.log('tokens', tokens);
     setResults(tokens);
     setIsDictionaryLoading(false);
@@ -166,7 +162,10 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
   );
 };
 
-const searchWordIds = async (lang: string, tokens: string[]) => {
+const searchWordIds = async (
+  lang: string,
+  tokens: string[],
+): Promise<{ wordIds: number[]; wordToSearches: Map<string, number[]> }> => {
   const searchChunks = chunkArray(tokens, 30);
 
   const results = await Promise.all(
@@ -178,7 +177,14 @@ const searchWordIds = async (lang: string, tokens: string[]) => {
     }),
   );
 
-  return results.flatMap((e) => e.queries.flatMap((r) => r.wordIds));
+  const wordIds = results.flatMap((e) => e.queries.flatMap((r) => r.wordIds));
+  const wordToSearches = new Map<string, number[]>();
+  for (const result of results) {
+    for (const query of result.queries) {
+      wordToSearches.set(query.searchValue, query.wordIds);
+    }
+  }
+  return { wordIds, wordToSearches };
 };
 
 const getDictionary = async (wordIds: number[]) => {
@@ -232,29 +238,27 @@ const getTextTokens = (text: string) => {
   return divideByLines(text).flatMap(getLineTokens);
 };
 
-const getTokens = (value: string, existingWordIds: number[], database: IndexedDatabase) => {
+const getTokens = (value: string, existingWordIds: number[], searcher: Searcher) => {
   const lines = divideByLines(value);
   const unknownTokens: string[] = [];
   const matchedKnownWordIds: { word: WordDTO; originalToken: string }[] = [];
-  const usedWordTokens = new Set<string>(existingWordIds.map((id) => database.wordsAllValues.get(id) || []).flat());
+  const usedWordTokens = new Set<string>(existingWordIds.map((id) => searcher.wordsAllValues.get(id) || []).flat());
   for (const line of lines) {
     let tokens = getLineTokens(line);
     const firstToken = tokens[0];
     const isFirstTokenNoun = firstToken
-      ? getAllMatchingVariants(firstToken, database).some(
-          (e) => (e.word.mainType ?? e.word.type) === CardTypeMapper.NOUN,
-        )
+      ? searcher.search(firstToken).some((e) => (e.word.mainType ?? e.word.type) === CardTypeMapper.NOUN)
       : false;
-    if (tokens.length > 0 && !isFirstTokenNoun && isInDatabase(tokens[0].toLocaleLowerCase(), database)) {
+    if (tokens.length > 0 && !isFirstTokenNoun && searcher.hasMatch(tokens[0].toLocaleLowerCase())) {
       tokens[0] = tokens[0].toLocaleLowerCase();
     }
     tokens = uniquelize(tokens.filter((token) => !usedWordTokens.has(token)));
     // debugger;
-    unknownTokens.push(...tokens.filter((e) => !isInDatabase(e, database)));
+    unknownTokens.push(...tokens.filter((e) => !searcher.hasMatch(e)));
     const matchedKnown = tokens
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
       .filter(<T extends unknown>(e: T): e is NonNullable<T> => !!e)
-      .map((token) => ({ token, matches: getAllMatchingVariants(token, database) }))
+      .map((token) => ({ token, matches: searcher.search(token) }))
       .filter(
         (e) =>
           e.matches.length > 0 &&
