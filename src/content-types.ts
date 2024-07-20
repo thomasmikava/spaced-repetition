@@ -33,11 +33,20 @@ export interface ContentVoice {
 
 type TagVariant = 'primary' | 'secondary' | 'regular';
 
-export type ContentTag = string | null | undefined | { variant: TagVariant; text: string; color: string };
+export type ContentTag = string | null | undefined | Omit<ContentTagElement, 'type'>;
+export type ContentTagAfterAnswer = Omit<ContentAfterAnswer, 'content'> & { content: ContentTag };
+export type ContentTagLike = ContentTag | ContentTagAfterAnswer;
+
+export type ContentTagElement = {
+  type: 'tag-element';
+  variant: TagVariant;
+  text: string;
+  color?: string;
+};
 
 interface ContentTagContainer {
   type: 'tag';
-  content: ContentTag[];
+  content: ContentTagLike[];
 }
 interface ContentDiv {
   type: 'div';
@@ -107,5 +116,6 @@ export type AnyContent =
   | ContentAfterAnswer
   | ContentBeforeAnswer
   | ContentExpandable
-  | ContentSection;
+  | ContentSection
+  | ContentTagElement;
 type InnerContent = string | number | AnyContent;

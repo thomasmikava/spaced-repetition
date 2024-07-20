@@ -40,6 +40,7 @@ export interface CardTypeRecord {
   abbr: string;
   // TODO: should be locale specific
   configuration?: CardTypeConfiguration;
+  includeArticleSymbol?: boolean;
 }
 
 export interface CardTypeRecordLocalization {
@@ -49,6 +50,7 @@ export interface CardTypeRecordLocalization {
   abbr: string;
   cardDisplayName: string;
   configuration?: CardTypeConfiguration;
+  includeArticleSymbol?: boolean;
 }
 
 export type CategoryAttrsMatcher<T = {}> = Matcher<
@@ -312,6 +314,7 @@ export interface CardTypeConfiguration {
     matcher: MatcherWithView | null;
     type: 'primary' | 'secondary' | null;
     defValue?: IdType;
+    displayAfterAnswer?: boolean;
   }[];
   variantGroups?: VariantGroup[];
   views?: {
@@ -1248,6 +1251,57 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
     // maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,
   },
+
+  [CardTypeMapper.NOUN]: {
+    caseSensitive: true,
+    tags: [
+      {
+        attrId: AttributeMapper.GENDER.id,
+        type: 'primary',
+        matcher: { viewMode: { $not: CardViewMode.test } },
+      },
+      {
+        attrId: AttributeMapper.GENDER.id,
+        type: 'primary',
+        matcher: { viewMode: CardViewMode.test },
+        displayAfterAnswer: true,
+      },
+      {
+        attrId: AttributeMapper.NUMBER.id,
+        type: 'secondary',
+        matcher: { viewMode: CardViewMode.groupView },
+      },
+      {
+        attrId: AttributeMapper.NUMBER.id,
+        type: 'secondary',
+        matcher: { viewMode: CardViewMode.test, category: null },
+      },
+    ],
+    variantGroups: [
+      { id: 'init', matcher: { category: 1 }, indViewId: 'init-view', testViewId: 'init-test' },
+      { id: 'skip', matcher: null, skip: true },
+    ],
+    views: [
+      {
+        id: 'init-view',
+        lines: [
+          { type: ViewLineType.Audio, useArticleAsPrefix: true },
+          { type: ViewLineType.VariantValue, bigText: true, useArticleAsPrefix: true },
+          { type: ViewLineType.Separator },
+          { type: ViewLineType.Translation },
+          { type: ViewLineType.TranslationVariants },
+        ],
+      },
+      {
+        id: 'init-test',
+        lines: [
+          { type: ViewLineType.Translation },
+          { type: ViewLineType.Input, useArticleAsPrefix: true },
+          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+        ],
+      },
+    ],
+  },
 };
 
 // console.log('CardTypeConfigurationMapper', CardTypeConfigurationMapper[CardTypeMapper.VERB]);
@@ -1442,6 +1496,8 @@ export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
     abbr: 'n.',
     name: 'Nom',
     cardDisplayName: 'Nom',
+    configuration: FrenchCardTypeConfigurationMapper[CardTypeMapper.NOUN],
+    includeArticleSymbol: true,
   },
   {
     lang: 'fr',

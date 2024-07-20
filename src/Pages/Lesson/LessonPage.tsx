@@ -22,6 +22,8 @@ import { Table, type TableRow } from '../../ui/Table/Table';
 import Button from '../../ui/Button';
 import DictionaryModal from '../../components/DictionaryModal';
 import { useConfirmationModal } from '../../ui/ConfirmationModal';
+import { getWithSymbolArticle } from '../../functions/texts';
+import { AttributeMapper } from '../../database/attributes';
 
 const LessonPage = () => {
   const userData = useSignInUserData();
@@ -104,14 +106,18 @@ const LessonPage = () => {
   const rows = lessonsInfo.map((item): TableRow => {
     const { closestDueIn: closestDueDate, word } = item;
     const key = word.id;
+    const cardTypeHelper = helper.getCardType(word.mainType ?? word.type, word.lang);
+    const genderId = word.attributes?.[AttributeMapper.GENDER.id] ?? null;
     return {
       key,
       cells: [
         {
-          cellValue: helper.getCardType(word.mainType ?? word.type, word.lang)?.abbr,
+          cellValue: cardTypeHelper?.abbr,
           style: { opacity: 0.5, paddingRight: 30 },
         },
-        word.value,
+        cardTypeHelper?.includeArticleSymbol && genderId !== null
+          ? getWithSymbolArticle(word.lang, word.value, genderId)
+          : word.value,
         word.translation,
         {
           cellValue:

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cssModule from './App.module.css';
 import type {
   AnyContent,
@@ -6,6 +6,9 @@ import type {
   ContentBeforeAnswer,
   ContentExpandable,
   ContentInput,
+  ContentTagAfterAnswer,
+  ContentTagElement,
+  ContentTagLike,
   ContentVoice,
 } from './content-types';
 import { useTestContext } from './contexts/testContext';
@@ -73,27 +76,47 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
     case 'tag':
       return (
         <div className={cssModule.contentTagsContainer}>
-          {/* <span>{content.content.map((e) => (typeof e === 'object' && e ? e.text : e || '')).join(', ')}</span> */}
-          {content.content.map((tag, idx) => {
-            const variant = typeof tag === 'object' && tag ? tag.variant : 'regular';
-            const color = typeof tag === 'object' && tag ? convertColor(tag.color) : undefined;
-            const bgColor = variant === 'primary' ? color : undefined;
-            const borderColor = variant === 'primary' || variant === 'secondary' ? color : undefined;
-            return tag === undefined || tag === null ? null : (
-              <div
-                className={cssModule.contentTag + ' ' + cssModule['contentTag-' + variant]}
-                key={idx}
-                style={{
-                  background: bgColor,
-                  boxShadow: borderColor ? `0 0 0 1px ${color}, inset 0 0 0 1px ${color}` : undefined,
-                }}
-              >
-                {typeof tag === 'object' ? renderContent(tag.text) : renderContent(tag)}
-              </div>
+          {content.content.map((rawTag, idx) => {
+            const tag = isTagAfterAnswer(rawTag) ? rawTag.content : rawTag;
+            if (tag === undefined || tag === null) return null;
+            const variant = typeof tag === 'object' ? tag.variant : 'regular';
+            const color = typeof tag === 'object' ? tag.color : undefined;
+            const tagElement: ContentTagElement = {
+              type: 'tag-element',
+              variant,
+              color,
+              text: typeof tag === 'object' ? tag.text : tag,
+            };
+            return (
+              <Fragment key={idx}>
+                {isTagAfterAnswer(rawTag)
+                  ? renderContent({
+                      type: 'afterAnswer',
+                      content: tagElement,
+                    })
+                  : renderContent(tagElement)}
+              </Fragment>
             );
           })}
         </div>
       );
+    case 'tag-element': {
+      const variant = content.variant;
+      const color = content.color ? convertColor(content.color) : undefined;
+      const bgColor = variant === 'primary' ? color : undefined;
+      const borderColor = variant === 'primary' || variant === 'secondary' ? color : undefined;
+      return (
+        <div
+          className={cssModule.contentTag + ' ' + cssModule['contentTag-' + variant]}
+          style={{
+            background: bgColor,
+            boxShadow: borderColor ? `0 0 0 1px ${color}, inset 0 0 0 1px ${color}` : undefined,
+          }}
+        >
+          {renderContent(content.text)}
+        </div>
+      );
+    }
     case 'table':
       return (
         <table style={content.style}>
@@ -120,6 +143,9 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
       return <Expandable {...content} />;
   }
 });
+
+const isTagAfterAnswer = (content: ContentTagLike): content is ContentTagAfterAnswer =>
+  typeof content === 'object' && !!content && 'type' in content && content.type === 'afterAnswer';
 
 const AfterAnswer = ({ content }: ContentAfterAnswer) => {
   const { mode } = useTestContext();

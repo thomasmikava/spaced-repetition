@@ -336,9 +336,28 @@ function getGermanArticle(searchAttrs: Record<PropertyKey, number>, onlyFirst = 
   return articles.map((e) => e.value).join('/');
 }
 
-export function getArticle(lang: string, searchAttrs: Record<PropertyKey, number>, onlyFirst = false) {
+export function getArticle(lang: string, word: string, searchAttrs: Record<PropertyKey, number>, onlyFirst = false) {
   if (lang === 'de') return getGermanArticle(searchAttrs, onlyFirst);
+  if (lang === 'fr') return getFrenchArticle(searchAttrs, word);
   return '';
+}
+
+function getFrenchArticle(searchAttrs: Record<PropertyKey, number>, word: string) {
+  const number = searchAttrs[AttributeMapper.NUMBER.id];
+  if (number === AttributeMapper.NUMBER.records[NounNumber.plural]) return 'les';
+  const gender = searchAttrs[AttributeMapper.GENDER.id];
+  if (gender == undefined || gender === null) return '';
+  const isSoft = startsWithFrenchVowel(word);
+  if (isSoft) return "l'";
+  if (gender === AttributeMapper.GENDER.records[NounGender.Maskulinum]) return 'le';
+  return 'la';
+}
+
+export function getWithArticle(lang: string, word: string, searchAttrs: Record<PropertyKey, number>) {
+  const article = getArticle(lang, word, searchAttrs, true);
+  if (!article) return word;
+  if (lang === 'fr') return article[article.length - 1] === "'" ? article + word : article + ' ' + word;
+  return article + ' ' + word;
 }
 
 const GermanArticles = new Set(GermanArticleObjects.map((e) => e.value));
@@ -377,3 +396,33 @@ export const Colors = {
   violet: '#6517b6',
   blue: '#173eb6',
 };
+
+const FrenchVowels = [
+  'h',
+  'a',
+  'e',
+  'i',
+  'o',
+  'u',
+  'y',
+  'à',
+  'â',
+  'ä',
+  'é',
+  'è',
+  'ê',
+  'ë',
+  'î',
+  'ï',
+  'ô',
+  'ö',
+  'ù',
+  'û',
+  'ü',
+  'ÿ',
+];
+
+function startsWithFrenchVowel(word: string) {
+  const firstLetter = word.charAt(0).toLowerCase();
+  return FrenchVowels.includes(firstLetter);
+}

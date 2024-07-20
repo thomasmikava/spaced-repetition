@@ -1,6 +1,12 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { AdvancedAnswerCheckerOptions, AnyContent, ContentTag, ContentVoice } from '../content-types';
+import type {
+  AdvancedAnswerCheckerOptions,
+  AnyContent,
+  ContentTag,
+  ContentTagLike,
+  ContentVoice,
+} from '../content-types';
 import { AttributeMapper } from '../database/attributes';
 import type { AudioAffix, ViewLine } from '../database/card-types';
 import { ViewLineType, type CardTypeRecord } from '../database/card-types';
@@ -20,10 +26,10 @@ import { slashSplit } from '../utils/split';
 import { getConditionalOrRawValue, isMatch } from '../utils/matcher';
 import type { StandardTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
-import { getArticle, getWithSymbolArticle } from './texts';
+import { getArticle, getWithArticle, getWithSymbolArticle } from './texts';
 import type { WordUsageExampleDTO } from '../api/controllers/words/words.schema';
 
-const getTopRow = (lang: string, tags: ContentTag[], word: string): AnyContent => {
+const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyContent => {
   return {
     type: 'div',
     content: [
@@ -181,7 +187,7 @@ export interface Helper {
 const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helper) => {
   const viewAttrs = helper.getCardType(record.displayType, record.card.lang)?.configuration?.tags;
   const cardTypeDisplayName = helper.getCardType(record.displayType, record.card.lang)?.cardDisplayName;
-  const tags: ContentTag[] = !cardTypeDisplayName ? [] : [cardTypeDisplayName];
+  const tags: ContentTagLike[] = !cardTypeDisplayName ? [] : [cardTypeDisplayName];
 
   const getAttrInfo = (attrId: IdType | string, value: IdType) => {
     const attr = helper.getAttribute(attrId, record.card.lang);
@@ -191,7 +197,7 @@ const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helpe
     return { color: attrRecord.color || '', text: attrRecord.name };
   };
   if (viewAttrs) {
-    viewAttrs.forEach(({ attrId, type, defValue, matcher }) => {
+    viewAttrs.forEach(({ attrId, type, defValue, matcher, displayAfterAnswer }) => {
       if (
         matcher &&
         !isMatch<{ category?: IdType | null; attrs?: StandardCardAttributes | null; viewMode: CardViewMode }>(
@@ -205,11 +211,19 @@ const getTags = (record: StandardTestableCard, mode: CardViewMode, helper: Helpe
       if (attr === undefined) return null;
       const info = getAttrInfo(attrId, attr);
       if (!info) return null;
-      tags.push({
+      const tag: ContentTag = {
         text: info.text,
         color: info.color,
         variant: type ?? 'regular',
-      });
+      };
+      if (displayAfterAnswer) {
+        tags.push({
+          type: 'afterAnswer',
+          content: tag,
+        });
+      } else {
+        tags.push(tag);
+      }
     });
   } else if (record.card.attributes) {
     for (const id in record.card.attributes) {
@@ -313,7 +327,7 @@ const withArticle = (
   ) {
     return word;
   }
-  let newWord = options.useArticleAsPrefix ? getArticle(lang, attributes, true) + ' ' + word : word;
+  let newWord = options.useArticleAsPrefix ? getWithArticle(lang, word, attributes) : word;
   if (options.hashReplacer && attributes && hasHash(word)) {
     const recordId = attributes[options.hashReplacer.attrId];
     if (recordId !== undefined) {
@@ -527,6 +541,7 @@ export const viewLinesToContentLines = (
                   row.push(
                     getArticle(
                       record.card.lang,
+                      variant.value,
                       pickKeys(
                         (variant.attrs || {}) as Record<number, number>,
                         AttributeMapper.NUMBER.id,
