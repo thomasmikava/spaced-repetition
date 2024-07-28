@@ -5,16 +5,6 @@ import { NounGender, NounNumber } from '../database/types';
 import { isMatch } from '../utils/matcher';
 import { removeKeys } from '../utils/object';
 
-export function getWithArticleOld(word: string, gender: NounGender) {
-  const prefix = {
-    [NounGender.Maskulinum]: 'der ',
-    [NounGender.Femininum]: 'die ',
-    [NounGender.Neutrum]: 'das ',
-    [NounGender.Plural]: 'die ',
-  }[gender];
-  return prefix + word;
-}
-
 const GermanArticleObjects: { value: string; attrs: StandardCardAttributes }[] = [
   {
     value: 'der',
