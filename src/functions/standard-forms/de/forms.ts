@@ -345,18 +345,25 @@ export const generateNounStandardVariant = (
   case_: Case,
 ): string | null | string[] => {
   if (number === NounNumber.singular && case_ === Case.Nominativ) return noun;
-  if (gender === NounGender.Femininum && number === NounNumber.singular) return noun;
 
   const lastLetter = noun[noun.length - 1];
+
+  if (gender === NounGender.Femininum && number === NounNumber.singular) {
+    if (lastLetter === 'e') return [noun, `${noun}/${noun}n`, `${noun}n/${noun}`];
+    return noun;
+  }
 
   if (gender === NounGender.Femininum && number === NounNumber.plural) {
     if (pluralNominative && case_ !== Case.Nominativ) return pluralNominative;
     return addSuffixSafely(noun, 'en');
   }
   if ((gender === NounGender.Maskulinum || gender === NounGender.Neutrum) && number === NounNumber.singular) {
-    if (lastLetter === 'e' && case_ === Case.Genitiv) return noun + 's';
+    if (lastLetter === 'e') return noun + 'n';
     if (lastLetter === 's' && case_ === Case.Genitiv) return noun + 'es';
-    if (case_ === Case.Genitiv) return [`${noun}s/${noun}es`, `${noun}s`];
+    if (case_ === Case.Dativ) {
+      return [noun, `${noun}/${noun}e`, `${noun}e/${noun}`]; // support old form
+    }
+    if (case_ === Case.Genitiv) return [`${noun}s`, `${noun}s/${noun}es`, `${noun}es/${noun}s`];
     return noun;
   }
 

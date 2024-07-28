@@ -78,6 +78,7 @@
   text-align: left;
   background: unset;
   align-items: center;
+  color: white;
 }
 .suggestedWords .wordSuggestion:last-of-type {
   border-bottom: none;

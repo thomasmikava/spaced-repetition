@@ -19,6 +19,7 @@ import type { TableRow } from '../../ui/Table/Table';
 import Table from '../../ui/Table';
 import { BookOutlined } from '@ant-design/icons';
 import DictionaryModal from '../../components/DictionaryModal';
+import styles from './styles.module.css';
 
 const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
   const navigate = useNavigate();
@@ -89,8 +90,8 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
         <div style={{ textAlign: 'center', marginBottom: 20, cursor: 'pointer' }} onClick={goToMainPage}>
           <ArrowLeftOutlined style={{ cursor: 'pointer' }} /> <span>Back to home page</span>
         </div>
-        <div style={{ display: 'flex', gap: 40 }}>
-          <div style={{ display: 'flex', gap: 10 }}>
+        <div className={styles.searchOptionsHeader}>
+          <div className={styles.langSelectContainer}>
             <label>Main language:</label>
             <Select
               options={learnLangOptions}
@@ -100,7 +101,7 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
               placeholder='Select language'
             />
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className={styles.langSelectContainer}>
             <label>Translation language:</label>
             <Select
               options={translationLangOptions}
@@ -115,13 +116,14 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
         {wordTypeChoices && (
           <>
             <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 5 }}>
-              <Input fullWidth placeholder='search' onChange={(e) => setInput(e.target.value)} value={input} />
+              <Input fullWidth placeholder='Type word' onChange={(e) => setInput(e.target.value)} value={input} />
               <Select<number>
                 options={wordTypeChoices}
                 value={wordType}
                 allowClear
                 onChange={setWordType}
-                style={{ width: 200 }}
+                className={styles.wordTypeSelect}
+                placeholder='Word type'
               />
             </div>
 

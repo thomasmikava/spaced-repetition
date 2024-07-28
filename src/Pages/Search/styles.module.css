@@ -1,0 +1,26 @@
+.searchOptionsHeader {
+  display: flex;
+  gap: 40px;
+}
+
+@media screen and (max-width: 1000px) {
+  .searchOptionsHeader {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+.langSelectContainer {
+  display: flex;
+  gap: 10px;
+}
+
+.wordTypeSelect {
+  width: 200px;
+}
+
+@media screen and (max-width: 1000px) {
+  .wordTypeSelect {
+    width: 100px;
+  }
+}
