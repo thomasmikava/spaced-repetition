@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ReviewButtons from '../../ReviewButtons';
 import { useCourseById, useMyMainCourses } from '../../api/controllers/courses/courses.query';
 import { useCourseLessons, useDeleteLesson } from '../../api/controllers/lessons/lessons.query';
-import { useCourseWords } from '../../api/controllers/words/words.query';
+import { useCourseWords, useWordIds } from '../../api/controllers/words/words.query';
 import { PreviousReviews } from '../../functions/previous-reviews';
 import { paths } from '../../routes/paths';
 import { isNonNullable } from '../../utils/array';
@@ -37,6 +37,21 @@ const LessonPage = () => {
 
   const { data: course, isLoading: isCourseLoading } = useCourseById(courseId);
   const { data: myMainCourses, isLoading: isMyMainCourseLoading } = useMyMainCourses();
+
+  const { data: wordsInfo, isLoading: isWordsIdsLoading } = useWordIds({ courseId, lessonId });
+
+  const myLessonWordsIds = useMemo(
+    () =>
+      new Set(
+        wordsInfo
+          ?.find((item) => item.courseId === courseId)
+          ?.lessons.find((item) => item.id === lessonId)
+          ?.words?.filter((item) => !item.h)
+          .map((word) => word.id) || [],
+      ),
+    [wordsInfo, courseId, lessonId],
+  );
+
   const { data: allCourseLessons, isLoading: isLessonLoading } = useCourseLessons({
     courseId,
     returnAllChildrenLessons: true,
@@ -77,7 +92,7 @@ const LessonPage = () => {
 
   const [displayedWordId, setDisplayedWordId] = useState<number | null>(null);
 
-  if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || !helper) {
+  if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || isWordsIdsLoading || !helper) {
     return <LoadingPage />;
   }
 
@@ -89,11 +104,13 @@ const LessonPage = () => {
 
   if (!myLesson || !allCourseLessons) return <div>Lesson not found</div>;
 
-  const lessonsInfo = lessonWords.map((word) => {
-    const closestDueDate = prevReviews.getClosestDueDate(word.id);
-    const closestDueIn = closestDueDate === Infinity ? Infinity : closestDueDate - Math.floor(Date.now() / 1000);
-    return { closestDueIn, word };
-  });
+  const lessonsInfo = lessonWords
+    .filter((word) => myLessonWordsIds.has(word.id))
+    .map((word) => {
+      const closestDueDate = prevReviews.getClosestDueDate(word.id);
+      const closestDueIn = closestDueDate === Infinity ? Infinity : closestDueDate - Math.floor(Date.now() / 1000);
+      return { closestDueIn, word };
+    });
   const studiedCards = lessonsInfo.filter((item) => item.closestDueIn !== Infinity).length;
   const allCardsCount = lessonsInfo.length;
 
@@ -101,7 +118,7 @@ const LessonPage = () => {
 
   const isInMyCoursesList = myMainCourses.some((c) => c.id === courseId);
 
-  const isEmpty = !!lessons && lessons.length === 0 && lessonWords.length === 0;
+  const isEmpty = !!lessons && lessons.length === 0 && lessonsInfo.length === 0;
 
   const rows = lessonsInfo.map((item): TableRow => {
     const { closestDueIn: closestDueDate, word } = item;
