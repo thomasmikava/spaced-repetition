@@ -4,7 +4,12 @@ import { useLocalStorage } from 'usehooks-ts';
 import { useMyMainCourses } from '../api/controllers/courses/courses.query';
 import { wordController } from '../api/controllers/words/words.controller';
 import { useWordIds } from '../api/controllers/words/words.query';
-import type { GetWordIdsResDTO, WordDTO, WordWithTranslationDTO } from '../api/controllers/words/words.schema';
+import type {
+  GetOneWordResDTO,
+  GetWordIdsResDTO,
+  WordDTO,
+  WordWithTranslationDTO,
+} from '../api/controllers/words/words.schema';
 import { CardTypeMapper } from '../database/card-types';
 import type { Searcher } from '../functions/dictionary';
 import { getSearcher } from '../functions/dictionary';
@@ -29,6 +34,8 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
   const { data: wordsInfo, isLoading: isLoadingWordIds } = useWordIds({});
 
   const [isDictionaryLoading, setIsDictionaryLoading] = useState(false);
+  const wordsToSearchRef = useRef<Map<string, number[]> | undefined>(undefined);
+  const fetchedWordsRef = useRef<GetOneWordResDTO[] | undefined>(undefined);
 
   const learnLangOptions = useLangToLearnOptions();
 
@@ -45,27 +52,32 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
             ]),
     [langToLearn, mainCourses],
   );
-  const [currentCourse, setCurrentCourse] = useState('');
+  const [excludableCourses, setExcludableCourses] = useState([] as string[]);
 
   const calculate = async () => {
     if (!langToLearn || !textAreaRef.current || !wordsInfo) return;
 
     setIsDictionaryLoading(true);
 
-    const courseId = currentCourse ? +currentCourse : '';
-    const existingWordIds =
-      currentCourse === 'existing'
-        ? getMyReviewedWordIds(false)
-        : currentCourse === 'well-known'
-          ? getMyReviewedWordIds(true)
-          : courseId
-            ? getCourseWordIds(courseId, wordsInfo)
-            : [];
+    const existingWordIds = uniquelize(
+      excludableCourses.flatMap((each) => {
+        const courseId = each ? +each : '';
+        return each === 'existing'
+          ? getMyReviewedWordIds(false)
+          : each === 'well-known'
+            ? getMyReviewedWordIds(true)
+            : courseId
+              ? getCourseWordIds(courseId, wordsInfo)
+              : [];
+      }),
+    );
     const value = textAreaRef.current.value;
-    console.log('existingTokens', existingWordIds);
     const textTokens = uniquelize(getTextTokens(value));
-    const { wordIds, wordToSearches } = await searchWordIds(langToLearn, textTokens);
-    const dictionary = await getDictionary(wordIds);
+    const { wordIds, wordToSearches } = await searchWordIds(langToLearn, textTokens, wordsToSearchRef.current);
+    wordsToSearchRef.current = wordToSearches;
+    const newWords = await getNewWords(wordIds, fetchedWordsRef.current);
+    const dictionary = newWords.concat(fetchedWordsRef.current ?? []);
+    fetchedWordsRef.current = dictionary;
     const saercher = getSearcher(dictionary, wordToSearches);
     const tokens = getTokens(value, existingWordIds, saercher);
     console.log('tokens', tokens);
@@ -120,10 +132,11 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
       <Select
         style={{ width: 400 }}
         options={courseOptions}
-        value={currentCourse || null}
+        value={excludableCourses || null}
         allowClear
-        onChange={(x) => setCurrentCourse(x || '')}
-        placeholder='Choose course'
+        onChange={(x) => setExcludableCourses(x || [])}
+        placeholder='Choose courses to exclude words from'
+        mode='multiple'
       />
       <br />
       <Button label='Calculate' loading={isDictionaryLoading} onClick={calculate} variant='primary' />
@@ -165,8 +178,10 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
 const searchWordIds = async (
   lang: string,
   tokens: string[],
+  initialWordToSearches = new Map<string, number[]>(),
 ): Promise<{ wordIds: number[]; wordToSearches: Map<string, number[]> }> => {
-  const searchChunks = chunkArray(tokens, 30);
+  const newTokens = tokens.filter((e) => !initialWordToSearches.has(e));
+  const searchChunks = chunkArray(newTokens, 30);
 
   const results = await Promise.all(
     searchChunks.map((queries) => {
@@ -178,7 +193,7 @@ const searchWordIds = async (
   );
 
   const wordIds = results.flatMap((e) => e.queries.flatMap((r) => r.wordIds));
-  const wordToSearches = new Map<string, number[]>();
+  const wordToSearches = new Map(initialWordToSearches);
   for (const result of results) {
     for (const query of result.queries) {
       wordToSearches.set(query.searchValue, query.wordIds);
@@ -187,8 +202,10 @@ const searchWordIds = async (
   return { wordIds, wordToSearches };
 };
 
-const getDictionary = async (wordIds: number[]) => {
-  const searchChunks = chunkArray(wordIds, 100);
+const getNewWords = async (wordIds: number[], fetchedWords: GetOneWordResDTO[] = []) => {
+  const fetchedWordIds = new Set(fetchedWords.map((e) => e.id));
+  const newWordIds = wordIds.filter((id) => !fetchedWordIds.has(id));
+  const searchChunks = chunkArray(newWordIds, 100);
 
   const results = await Promise.all(
     searchChunks.map((ids) => {

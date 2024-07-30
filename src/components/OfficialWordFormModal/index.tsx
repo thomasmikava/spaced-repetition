@@ -529,7 +529,7 @@ const AttributesSelector: FC<{
           <div key={attrId}>
             <label style={{ marginRight: 10 }}>{attribute.name}:</label>
             <Select
-              mode={isMulti ? 'multiple' : undefined}
+              mode={(isMulti ? 'multiple' : undefined) as undefined}
               options={helper
                 .getAttributeRecordsByAttributeId(attrId, lang)
                 .map((v) => ({ value: v.id, label: v.name }))}

@@ -38,5 +38,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      window.onload = function () {
+        if (!window.__MyApp) {
+          document.getElementById('root').innerHTML =
+            '<div style="height: 100vh; display: flex; align-items: center; justify-content: center;"><h1 style="text-align: center;">New version is available. Please, reload the page.</h1></div>';
+        }
+      };
+    </script>
   </body>
 </html>

@@ -4,19 +4,22 @@ import type { ReactElement } from 'react';
 import { forwardRef } from 'react';
 import type { ExtractRef } from './types';
 
-type SelectProps<ValueType> = Pick<
+type SelectProps<ValueType, IsMulti extends boolean = false> = Pick<
   AntSelectProps,
-  'style' | 'className' | 'size' | 'showSearch' | 'disabled' | 'mode'
+  'style' | 'className' | 'size' | 'showSearch' | 'disabled'
 > & {
-  value?: ValueType | null;
-  defaultValue?: ValueType | null;
-  onChange?: (value: ValueType) => void;
+  value?: (IsMulti extends true ? ValueType[] : ValueType) | null;
+  defaultValue?: (IsMulti extends true ? ValueType[] : ValueType) | null;
+  onChange?: (value: IsMulti extends true ? ValueType[] : ValueType) => void;
   options: { value: ValueType; label: string }[];
   allowClear?: boolean;
   placeholder?: string;
 };
 
-type SelectFn = <ValueType>(props: SelectProps<ValueType>) => ReactElement;
+type SelectFn = {
+  <ValueType>(props: SelectProps<ValueType, false> & { mode?: undefined }): ReactElement;
+  <ValueType>(props: SelectProps<ValueType, true> & { mode: 'multiple' | 'tags' }): ReactElement;
+};
 
 const Select = forwardRef<ExtractRef<typeof AntSelect>, SelectProps<unknown>>(
   ({ value, onChange, options, showSearch = true, ...props }, ref) => {

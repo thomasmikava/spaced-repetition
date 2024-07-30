@@ -25,6 +25,8 @@ import ExploreCoursesPage from './Pages/Course/ExploreCoursesPage.tsx';
 import SearchPage from './Pages/Search/SearchPage.tsx';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
+(window as never as Record<string, unknown>).__MyApp = 'Spaced Repetition.';
+
 const TestingThingsPage = React.lazy(() => import('./Pages/TestingThings.tsx'));
 const ScriptsPage = React.lazy(() => import('./Pages/Scripts/ScriptsPage.tsx'));
 
