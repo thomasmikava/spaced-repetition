@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ReviewButtons from '../../ReviewButtons';
 import { useCourseById, useMyMainCourses } from '../../api/controllers/courses/courses.query';
 import { useCourseLessons, useDeleteLesson } from '../../api/controllers/lessons/lessons.query';
-import { useCourseWords, useWordIds } from '../../api/controllers/words/words.query';
+import { useCourseWords } from '../../api/controllers/words/words.query';
 import { PreviousReviews } from '../../functions/previous-reviews';
 import { paths } from '../../routes/paths';
 import { isNonNullable } from '../../utils/array';
@@ -37,20 +37,6 @@ const LessonPage = () => {
 
   const { data: course, isLoading: isCourseLoading } = useCourseById(courseId);
   const { data: myMainCourses, isLoading: isMyMainCourseLoading } = useMyMainCourses();
-
-  const { data: wordsInfo, isLoading: isWordsIdsLoading } = useWordIds({ courseId, lessonId });
-
-  const myLessonWordsIds = useMemo(
-    () =>
-      new Set(
-        wordsInfo
-          ?.find((item) => item.courseId === courseId)
-          ?.lessons.find((item) => item.id === lessonId)
-          ?.words?.filter((item) => !item.h)
-          .map((word) => word.id) || [],
-      ),
-    [wordsInfo, courseId, lessonId],
-  );
 
   const { data: allCourseLessons, isLoading: isLessonLoading } = useCourseLessons({
     courseId,
@@ -92,7 +78,7 @@ const LessonPage = () => {
 
   const [displayedWordId, setDisplayedWordId] = useState<number | null>(null);
 
-  if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || isWordsIdsLoading || !helper) {
+  if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || !helper) {
     return <LoadingPage />;
   }
 
@@ -104,13 +90,11 @@ const LessonPage = () => {
 
   if (!myLesson || !allCourseLessons) return <div>Lesson not found</div>;
 
-  const lessonsInfo = lessonWords
-    .filter((word) => myLessonWordsIds.has(word.id))
-    .map((word) => {
-      const closestDueDate = prevReviews.getClosestDueDate(word.id);
-      const closestDueIn = closestDueDate === Infinity ? Infinity : closestDueDate - Math.floor(Date.now() / 1000);
-      return { closestDueIn, word };
-    });
+  const lessonsInfo = lessonWords.map((word) => {
+    const closestDueDate = prevReviews.getClosestDueDate(word.id);
+    const closestDueIn = closestDueDate === Infinity ? Infinity : closestDueDate - Math.floor(Date.now() / 1000);
+    return { closestDueIn, word };
+  });
   const studiedCards = lessonsInfo.filter((item) => item.closestDueIn !== Infinity).length;
   const allCardsCount = lessonsInfo.length;
 
@@ -120,38 +104,43 @@ const LessonPage = () => {
 
   const isEmpty = !!lessons && lessons.length === 0 && lessonsInfo.length === 0;
 
-  const rows = lessonsInfo.map((item): TableRow => {
-    const { closestDueIn: closestDueDate, word } = item;
-    const key = word.id;
-    const cardTypeHelper = helper.getCardType(word.mainType ?? word.type, word.lang);
-    const genderId = word.attributes?.[AttributeMapper.GENDER.id] ?? null;
-    return {
-      key,
-      cells: [
-        {
-          cellValue: cardTypeHelper?.abbr,
-          style: { opacity: 0.5, paddingRight: 30 },
-        },
-        cardTypeHelper?.includeArticleSymbol && genderId !== null
-          ? getWithSymbolArticle(word.lang, word.value, genderId)
-          : word.value,
-        word.translation,
-        {
-          cellValue:
-            closestDueDate === Infinity || closestDueDate === null
-              ? null
-              : closestDueDate <= 0
-                ? 'Ready'
-                : 'In ' + formatTime(closestDueDate),
-          style: { opacity: closestDueDate <= 10 ? 1 : undefined, textAlign: 'right' },
-        },
-        {
-          cellValue: <Button label={<BookOutlined />} variant='text' onClick={() => setDisplayedWordId(word.id)} />,
-          style: { width: '46px' },
-        },
-      ],
-    };
-  });
+  const wordRows =
+    lessons && lessons.length > 0
+      ? null
+      : lessonsInfo.map((item): TableRow => {
+          const { closestDueIn: closestDueDate, word } = item;
+          const key = word.id;
+          const cardTypeHelper = helper.getCardType(word.mainType ?? word.type, word.lang);
+          const genderId = word.attributes?.[AttributeMapper.GENDER.id] ?? null;
+          return {
+            key,
+            cells: [
+              {
+                cellValue: cardTypeHelper?.abbr,
+                style: { opacity: 0.5, paddingRight: 30 },
+              },
+              cardTypeHelper?.includeArticleSymbol && genderId !== null
+                ? getWithSymbolArticle(word.lang, word.value, genderId)
+                : word.value,
+              word.translation,
+              {
+                cellValue:
+                  closestDueDate === Infinity || closestDueDate === null
+                    ? null
+                    : closestDueDate <= 0
+                      ? 'Ready'
+                      : 'In ' + formatTime(closestDueDate),
+                style: { opacity: closestDueDate <= 10 ? 1 : undefined, textAlign: 'right' },
+              },
+              {
+                cellValue: (
+                  <Button label={<BookOutlined />} variant='text' onClick={() => setDisplayedWordId(word.id)} />
+                ),
+                style: { width: '46px' },
+              },
+            ],
+          };
+        });
 
   return (
     <div className='body'>
@@ -188,7 +177,7 @@ const LessonPage = () => {
         <AddToMyCoursesButton courseId={courseId} />
       )}
       {lessons && lessons.length > 0 && <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} />}
-      <Table rows={rows} removeEmptyColumns />
+      {wordRows && <Table rows={wordRows} removeEmptyColumns />}
       <br />
 
       {displayedWordId && !!course.translationLang && (

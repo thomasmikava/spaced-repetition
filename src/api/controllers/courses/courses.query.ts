@@ -36,7 +36,10 @@ export const useAddToMyCourses = () => {
   return useMutation({
     mutationFn: courseController.addToMyCourses,
     onSuccess: (): Promise<unknown> => {
-      return queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: CourseQueryKeys.getMyMainCourses() }),
+        queryClient.invalidateQueries({ queryKey: WordQueryKeys.getWordIds({}) }),
+      ]);
     },
   });
 };

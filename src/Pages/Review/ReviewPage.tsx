@@ -129,9 +129,9 @@ export const ReviewPageLoader = () => {
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
   const helper = useHelper();
 
-  const { data: words, isLoading: areWordsLoading } = useWords({ courseId, lessonId });
+  const { data: words, isLoading: areWordsLoading, isFetching } = useWords({ courseId, lessonId });
 
-  const isLoading = !helper || areWordsLoading;
+  const isLoading = !helper || areWordsLoading || isFetching;
   if (isLoading) {
     return <LoadingPage />;
   }

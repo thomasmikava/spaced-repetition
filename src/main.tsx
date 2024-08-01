@@ -146,7 +146,7 @@ const router = createBrowserRouter(
   },
 );
 
-const isTansackVisible = false;
+const isTansackVisible = true;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
