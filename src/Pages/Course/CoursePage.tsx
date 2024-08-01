@@ -119,7 +119,7 @@ const CoursePage = () => {
           Add content
         </Button>
       )}
-      <LessonBody courseId={courseId} lessonId={null} lessons={lessons} />
+      <LessonBody courseId={courseId} lessonId={null} lessons={lessons} canManageCourse={!!canManageCourse} />
       <br />
       {confirmationModalElement}
     </div>

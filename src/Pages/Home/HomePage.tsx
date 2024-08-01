@@ -8,6 +8,7 @@ import { useMyMainCourses } from '../../api/controllers/courses/courses.query';
 import { paths } from '../../routes/paths';
 import { CourseBox } from '../Course/Box';
 import cssModule from './styles.module.css';
+import { specialBoxClasses } from './boxes';
 
 const HomePage = () => {
   const { data: mainCourses } = useMyMainCourses();
@@ -42,7 +43,7 @@ const SearchBox = () => {
 
 const AddBox = () => {
   return (
-    <Link className={cssModule.specialBox} to={paths.app.course.add()}>
+    <Link className={specialBoxClasses.container} to={paths.app.course.add()}>
       <PlusOutlined />
       <span className={cssModule.title}>Create a course</span>
     </Link>
@@ -53,7 +54,7 @@ const PublicCourses = () => {
   const navigate = useNavigate();
   const onClick = () => navigate(paths.app.explore());
   return (
-    <div className={cssModule.specialBox} onClick={onClick}>
+    <div className={specialBoxClasses.container} onClick={onClick}>
       <GlobalOutlined />
       <span className={cssModule.title}>Explore courses</span>
     </div>

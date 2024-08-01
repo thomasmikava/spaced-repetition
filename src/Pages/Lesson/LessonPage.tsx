@@ -1,4 +1,11 @@
-import { BookOutlined, DeleteOutlined, EditOutlined, LeftOutlined, SettingFilled } from '@ant-design/icons';
+import {
+  BookOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  LeftOutlined,
+  PlusOutlined,
+  SettingFilled,
+} from '@ant-design/icons';
 import AntButton from 'antd/es/button';
 import Dropdown from 'antd/es/dropdown';
 import { useMemo, useState } from 'react';
@@ -24,7 +31,9 @@ import DictionaryModal from '../../components/DictionaryModal';
 import { useConfirmationModal } from '../../ui/ConfirmationModal';
 import { getWithSymbolArticle } from '../../functions/texts';
 import { AttributeMapper } from '../../database/attributes';
+import { specialBoxClasses } from '../Home/boxes';
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 const LessonPage = () => {
   const userData = useSignInUserData();
   const params = useParams();
@@ -176,8 +185,13 @@ const LessonPage = () => {
       ) : (
         <AddToMyCoursesButton courseId={courseId} />
       )}
-      {lessons && lessons.length > 0 && <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} />}
+      {lessons && lessons.length > 0 && (
+        <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} canManageCourse={!!canManageCourse} />
+      )}
       {wordRows && <Table rows={wordRows} removeEmptyColumns />}
+      {canManageCourse && lessons && lessons.length === 0 && (!wordRows || !wordRows.length) && (
+        <AddBox onClick={goToEdit} />
+      )}
       <br />
 
       {displayedWordId && !!course.translationLang && (
@@ -190,6 +204,17 @@ const LessonPage = () => {
       )}
       {confirmationModalElement}
     </div>
+  );
+};
+
+const AddBox = ({ onClick }: { onClick: () => void }) => {
+  return (
+    <>
+      <div className={specialBoxClasses.container} onClick={onClick}>
+        <PlusOutlined />
+        <span className={specialBoxClasses.title}>Add words or sub-lessons</span>
+      </div>
+    </>
   );
 };
 
