@@ -71,6 +71,7 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
               : [];
       }),
     );
+    console.log('existingWordIds', existingWordIds.length);
     const value = textAreaRef.current.value;
     const textTokens = uniquelize(getTextTokens(value));
     const { wordIds, wordToSearches } = await searchWordIds(langToLearn, textTokens, wordsToSearchRef.current);
@@ -229,7 +230,7 @@ const getMyReviewedWordIds = (wellKnown: boolean): number[] => {
   const histRecords = new PreviousReviews().getHistoryRecords();
 
   const wordIds = new Set<number>();
-  const wellKnownCoefficient = calculateHalfLifeCoefficient(60 * 60 * 24);
+  const wellKnownCoefficient = calculateHalfLifeCoefficient(60 * 60 * 24 * 4);
 
   for (const histRecord of histRecords) {
     if (typeof histRecord.lastS !== 'number') continue;

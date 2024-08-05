@@ -1,16 +1,13 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import { AttributeMapper } from '../../../database/attributes';
 import { CardTypeMapper } from '../../../database/card-types';
-import type {
-  AdjectiveInflection,
-  StandardCard,
-  StandardCardVariant,
-  VerbMood,
-  VerbTense,
-} from '../../../database/types';
+import type { AdjectiveInflection, StandardCard, StandardCardVariant } from '../../../database/types';
+import { VerbTense } from '../../../database/types';
+import { VerbMood } from '../../../database/types';
 import { PronounFunction } from '../../../database/types';
 import { AdjectiveDegree, VerbPronoun, Case, NounGender, NounNumber } from '../../../database/types';
-import { getAttrEnumValue, isStandardEqual } from '../utils';
+import { slashSplit } from '../../../utils/split';
+import { getAttrEnumValue, isSomeFormStandard, isStandardEqual } from '../utils';
 import {
   generateNounStandardVariant,
   getAdjectiveStandardForm,
@@ -26,6 +23,18 @@ export const getGermanStandardFormFn = (
   allCardVariants: StandardCardVariant[],
 ): ((variant: StandardCardVariant) => boolean) => {
   if (card.type === CardTypeMapper.VERB) {
+    const perfectFormRaw = allCardVariants.find(
+      (v) =>
+        v.attrs &&
+        v.attrs[AttributeMapper.MOOD.id] === AttributeMapper.MOOD.records[VerbMood.Indikativ] &&
+        v.attrs[AttributeMapper.TENSE.id] === AttributeMapper.TENSE.records[VerbTense.Perfekt],
+    )?.value;
+    const perfectFormWithVerb = perfectFormRaw
+      ? perfectFormRaw.includes('/')
+        ? slashSplit(perfectFormRaw)[0]
+        : perfectFormRaw
+      : undefined;
+    const perfectForm = perfectFormWithVerb ? perfectFormWithVerb.split(' ')[1] : undefined;
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
       const { value: mood, id: moodId } = getAttrEnumValue<VerbMood>(variant.attrs, AttributeMapper.MOOD);
@@ -44,6 +53,7 @@ export const getGermanStandardFormFn = (
             x.attrs[AttributeMapper.TENSE.id] === tenseId &&
             x.attrs[AttributeMapper.PRONOUN.id] === AttributeMapper.PRONOUN.records[VerbPronoun.ich],
         )?.value,
+        perfectForm,
       );
       return isStandardEqual(variant.value, standardForm);
     };
@@ -54,10 +64,10 @@ export const getGermanStandardFormFn = (
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
       if (variant.category === 2) {
-        return isStandardEqual(variant.value, getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Komparativ));
+        return isSomeFormStandard(variant.value, getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Komparativ));
       }
       if (variant.category === 3) {
-        return isStandardEqual(variant.value, getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Superlativ));
+        return isSomeFormStandard(variant.value, getAdjectiveTrioStandardForm(card.value, AdjectiveDegree.Superlativ));
       }
 
       const { value: degree, id: degreeId } = getAttrEnumValue<AdjectiveDegree>(variant.attrs, AttributeMapper.DEGREE);
@@ -97,7 +107,7 @@ export const getGermanStandardFormFn = (
         gender,
         caseValue,
       );
-      return isStandardEqual(variant.value, standardForm);
+      return isSomeFormStandard(variant.value, standardForm);
     };
   }
 
@@ -119,7 +129,7 @@ export const getGermanStandardFormFn = (
       if (gender === undefined || number === undefined || caseValue === undefined) return false;
 
       const standardForm = generateNounStandardVariant(initialValue, pluralNominative, gender, number, caseValue);
-      return isStandardEqual(variant.value, standardForm);
+      return isSomeFormStandard(variant.value, standardForm);
     };
   }
 

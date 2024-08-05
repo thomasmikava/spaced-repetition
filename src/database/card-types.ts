@@ -532,7 +532,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         .map((el, ind, arr) => (ind < arr.length - 1 ? [el, { type: ViewLineType.NewLine } as ViewLine] : [el]))
         .flat(1),
     ],
-    maxNumOfGroups: 3,
+    maxNumOfGroups: 4,
     maxAllowedNonStandardForms: 1,
   },
   [CardTypeMapper.NOUN]: {

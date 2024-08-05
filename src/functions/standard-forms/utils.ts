@@ -1,5 +1,5 @@
 import type { StandardCardAttributes } from '../../database/types';
-import { areSplittedEqual } from '../../utils/split';
+import { areSplittedEqual, areSplittedOverlapping, slashSplit } from '../../utils/split';
 
 const reverseMapper = new Map<object, Map<number, unknown>>();
 
@@ -32,4 +32,20 @@ export function isStandardEqual(value: string, standardForm: string | null | str
   if (!standardForm) return false;
   if (typeof standardForm === 'string') return areSplittedEqual(value, standardForm);
   return standardForm.some((form) => areSplittedEqual(value, form));
+}
+
+export function isStandardEqualSoft(value: string, standardForm: string | null | string[]) {
+  if (!standardForm) return false;
+  if (value === standardForm) return true;
+  if (typeof standardForm === 'string') return areSplittedOverlapping(value, standardForm);
+  return standardForm.some((form) => areSplittedOverlapping(value, form));
+}
+
+export function isSomeFormStandard(value: string, standardForm: string | null | string[]) {
+  if (!standardForm) return false;
+  if (value === standardForm) return true;
+  if (!value.includes('/')) {
+    return isStandardEqualSoft(value, standardForm);
+  }
+  return slashSplit(value).some((splittedValue) => isStandardEqualSoft(splittedValue, standardForm));
 }

@@ -196,6 +196,7 @@ export function getVerbStandardForm(
   tense: VerbTense,
   pronoun: VerbPronoun,
   firstPronounForm?: string,
+  perfectRoot?: string,
 ): string | null {
   if (!isGermanPronoun(pronoun)) return null;
   if (firstPronounForm && firstPronounForm.includes('/')) {
@@ -213,6 +214,7 @@ export function getVerbStandardForm(
   if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präsens) {
     return getDefaultPresentConjugation(verb, pronoun);
   } else if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Präteritum) {
+    if (perfectRoot && perfectRoot.startsWith('ge')) return getConjugatedPastFromRoot(perfectRoot.slice(2), pronoun);
     return getDefaultPastConjugation(verb, pronoun);
   } else if ((mood === VerbMood.Indikativ || mood === VerbMood.Konjunktiv) && tense === VerbTense.Perfekt) {
     const perfectRoot = 'ge' + root + 't';

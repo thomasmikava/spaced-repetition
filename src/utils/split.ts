@@ -133,6 +133,12 @@ export function areSplittedEqual(v1: string | null | undefined, v2: string | nul
   const s2 = slashSplit(v2);
   return s1.join('^') === s2.join('^');
 }
+export function areSplittedOverlapping(v1: string | null | undefined, v2: string | null | undefined): boolean {
+  if (!v1 || !v2 || (!v1.includes('/') && !v2.includes('/'))) return v1 === v2;
+  const s1 = slashSplit(v1);
+  const s2 = slashSplit(v2);
+  return s1.some((v1) => s2.includes(v1));
+}
 
 export function mergeSplitted(splitted: (string | null | undefined)[], optimized = false): string {
   const stringValues = splitted.filter(isNonNullable);
