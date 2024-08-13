@@ -123,7 +123,7 @@ export const getGermanStandardFormFn = (
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
       const { value: gender } = getAttrEnumValue<NounGender>(variant.attrs, AttributeMapper.GENDER);
-      const { value: number } = getAttrEnumValue<number>(variant.attrs, AttributeMapper.NUMBER);
+      const { value: number } = getAttrEnumValue<NounNumber>(variant.attrs, AttributeMapper.NUMBER);
       const { value: caseValue } = getAttrEnumValue<Case>(variant.attrs, AttributeMapper.CASE);
 
       if (gender === undefined || number === undefined || caseValue === undefined) return false;

@@ -241,6 +241,38 @@ const FrenchGroupTables = {
       { type: 'audio', values: ['3'] },
     ],
   },
+  ADJECTIVE: {
+    type: ViewLineType.Table,
+    columns: [
+      {
+        type: 'attr',
+        main: true,
+        attr: AttributeMapper.GENDER.id,
+        attrRecordValues: [
+          AttributeMapper.GENDER.records[NounGender.Maskulinum],
+          AttributeMapper.GENDER.records[NounGender.Femininum],
+        ],
+      },
+      {
+        type: 'variantMatcher',
+        matcher: {
+          attrs: {
+            [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.singular],
+          },
+        },
+        children: [{ type: 'value' }, { type: 'audio', values: ['1.0'] }],
+      },
+      {
+        type: 'variantMatcher',
+        matcher: {
+          attrs: { [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural] },
+        },
+        children: [{ type: 'value' }, { type: 'audio', values: ['3.0'] }],
+      },
+    ],
+    matcher: { category: { $or: [1, null] } },
+    useAllVariants: true,
+  },
 } satisfies Record<string, ViewTableLine>;
 
 export type AudioAffix = { type: 'attr'; attrId: IdType; splitIndex?: number } | { type: 'text'; text: string };
@@ -532,7 +564,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         .map((el, ind, arr) => (ind < arr.length - 1 ? [el, { type: ViewLineType.NewLine } as ViewLine] : [el]))
         .flat(1),
     ],
-    maxNumOfGroups: 4,
+    maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,
   },
   [CardTypeMapper.NOUN]: {
@@ -1269,16 +1301,27 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       {
         attrId: AttributeMapper.NUMBER.id,
         type: 'secondary',
-        matcher: { viewMode: CardViewMode.groupView },
+        matcher: { attrs: { [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural] } },
       },
       {
         attrId: AttributeMapper.NUMBER.id,
         type: 'secondary',
-        matcher: { viewMode: CardViewMode.test, category: null },
+        matcher: { viewMode: CardViewMode.test, category: 1 },
+        defValue: AttributeMapper.NUMBER.records[NounNumber.singular],
       },
     ],
     variantGroups: [
       { id: 'init', matcher: { category: 1 }, indViewId: 'init-view', testViewId: 'init-test' },
+      {
+        id: 'plural',
+        matcher: {
+          category: { $not: 1 },
+          attrs: { [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural] },
+        },
+        indViewId: 'init-view',
+        testViewId: 'init-test',
+        skipIfStandard: true,
+      },
       { id: 'skip', matcher: null, skip: true },
     ],
     views: [
@@ -1301,6 +1344,138 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         ],
       },
     ],
+    dictionaryView: [
+      { type: ViewLineType.CardValue, bigText: true },
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: {
+          category: null,
+          attrs: { [AttributeMapper.NUMBER.id]: AttributeMapper.NUMBER.records[NounNumber.plural] },
+        },
+        useArticleAsPrefix: true,
+        prefix: { type: 'text', text: 'Plurielle: ' },
+        bigText: true,
+      },
+      { type: ViewLineType.Translation, includeLegend: true },
+      { type: ViewLineType.TranslationVariants },
+    ],
+  },
+  [CardTypeMapper.REAL_ADJECTIVE]: {
+    caseSensitive: true,
+    tags: [
+      {
+        attrId: AttributeMapper.DEGREE.id,
+        type: 'primary',
+        matcher: { category: { $not: null } },
+      },
+      {
+        attrId: AttributeMapper.DEGREE.id,
+        type: 'secondary',
+        matcher: { category: null },
+      },
+      {
+        attrId: AttributeMapper.GENDER.id,
+        type: 'primary',
+        matcher: { category: null, viewMode: { $not: CardViewMode.groupView } },
+      },
+      {
+        attrId: AttributeMapper.NUMBER.id,
+        type: 'secondary',
+        matcher: { category: null, viewMode: { $not: CardViewMode.groupView } },
+        defValue: AttributeMapper.NUMBER.records[NounNumber.singular],
+      },
+    ],
+    variantGroups: [
+      { id: 'init', matcher: { category: 1 } },
+      { id: 'comp', matcher: { category: 2 }, skipIfStandard: true },
+      { id: 'super', matcher: { category: 3 }, skipIfStandard: true },
+      {
+        id: `rest`,
+        matcher: {
+          category: null,
+          attrs: {
+            [AttributeMapper.NUMBER.id]: { $not: null },
+            [AttributeMapper.GENDER.id]: { $not: null },
+          },
+        },
+        groupViewId: 'gr',
+        testViewId: 'gr-test',
+        skipIfStandard: true,
+        forcefullyGroup: true,
+        sortBy: [
+          {
+            attrId: AttributeMapper.GENDER.id,
+            attrRecords: [
+              AttributeMapper.GENDER.records[NounGender.Maskulinum],
+              AttributeMapper.GENDER.records[NounGender.Femininum],
+            ],
+          },
+          {
+            attrId: AttributeMapper.NUMBER.id,
+            attrRecords: [
+              AttributeMapper.NUMBER.records[NounNumber.singular],
+              AttributeMapper.NUMBER.records[NounNumber.plural],
+            ],
+          },
+        ],
+      },
+      { id: 'skip', matcher: null, skip: true },
+    ],
+    views: [
+      {
+        id: 'gr',
+        lines: [
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.NewLine },
+          { type: ViewLineType.CardValue, useForMainAudio: true, includeArticleSymbol: true },
+          { type: ViewLineType.Separator },
+          FrenchGroupTables.ADJECTIVE,
+        ],
+      },
+      {
+        id: 'gr-test',
+        lines: [
+          { type: ViewLineType.Audio },
+          {
+            type: ViewLineType.CustomCardValue,
+            matcher: { category: { $not: null }, attrs: { [AttributeMapper.DEGREE.id]: SELF_REF } },
+            useForMainAudio: true,
+            includeArticleSymbol: true,
+            paragraph: true,
+          },
+          { type: ViewLineType.Input },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],
+          },
+          { type: ViewLineType.AfterAnswerDropdown, lines: [FrenchGroupTables.ADJECTIVE] },
+        ],
+      },
+    ],
+
+    dictionaryView: [
+      { type: ViewLineType.CardValue, bigText: true },
+      FrenchGroupTables.ADJECTIVE,
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: { category: 2 },
+        prefix: { type: 'text', text: 'Komparativ: ' },
+        bigText: true,
+      },
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: { category: 3 },
+        prefix: { type: 'text', text: 'Superlativ: ' },
+        bigText: true,
+      },
+      {
+        type: ViewLineType.Dropdown,
+        showMoreText: 'Show translations',
+        showLessText: 'Hide translations',
+        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+      },
+    ],
+    maxAllowedNonStandardForms: 4,
   },
 };
 
@@ -1513,6 +1688,7 @@ export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
     abbr: 'adj.',
     name: 'Adjectif',
     cardDisplayName: 'Adjectif',
+    configuration: FrenchCardTypeConfigurationMapper[CardTypeMapper.REAL_ADJECTIVE],
   },
   {
     lang: 'fr',

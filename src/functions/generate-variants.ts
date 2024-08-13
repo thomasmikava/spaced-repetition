@@ -180,6 +180,7 @@ const sortVariants = (sortStrategy: SortBy[], variants: StandardCardVariant[]): 
     if (indexA !== -1 && indexB !== -1) {
       if (indexA < indexB) return -1;
       if (indexA > indexB) return 1;
+      return compare(a, b, strategyIndex + 1);
     }
 
     if (indexA !== -1) return -1;

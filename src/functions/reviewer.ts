@@ -355,7 +355,7 @@ export class Reviewer {
     if (removableDueDatesCardKeys) {
       this.prevReviews.removeDueDates(removableDueDatesCardKeys);
     }
-    console.log(sorted);
+    console.log(sorted.slice(0, 100), sorted.length);
     const topCard = sorted[0];
     const shouldFinish =
       this.mode === 'normal' &&
