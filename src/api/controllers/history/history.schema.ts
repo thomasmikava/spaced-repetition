@@ -30,11 +30,13 @@ export interface ReviewWithOptionalDTO extends BaseRecordDTO {
 export type GetManyRecordsReqDTO = {
   limit: number;
   skip: number;
+  getTotalCount?: boolean;
 };
 
 export type GetManyRecordsResDTO = {
   records: MinimalReviewRecordDTO[];
   isLastPage: boolean;
+  totalRecords?: number;
 };
 
 ///
