@@ -84,7 +84,14 @@ type ColumnBasicType =
   | { type: 'variantMatcher'; matcher: CategoryAttrsMatcher; children: (ColumnBasicType | ColumnConditionalType)[] }
   | { type: 'value' }
   | { type: 'article' }
-  | { type: 'attr'; attr: IdType; main?: boolean; attrRecordValues?: (IdType | IdType[])[]; hidden?: boolean }
+  | {
+      type: 'attr';
+      attr: IdType;
+      main?: boolean;
+      attrRecordValues?: (IdType | IdType[])[];
+      hidden?: boolean;
+      transformer?: string;
+    }
   | { type: 'matchers'; main: true; hidden: true; matchers: CategoryAttrsMatcher[] }
   | { type: 'audio'; values: string[] };
 
@@ -174,22 +181,54 @@ const FrenchGroupTables = {
             AttributeMapper.IMPERATIVE_PRONOUN.records[ImperativePronoun.Pers1Plr],
             AttributeMapper.IMPERATIVE_PRONOUN.records[ImperativePronoun.Pers2Plr],
           ],
-          hidden: false,
         },
         else: {
-          type: 'attr',
-          main: true,
-          attr: AttributeMapper.PRONOUN.id,
-          attrRecordValues: [
-            AttributeMapper.PRONOUN.records[VerbPronoun.ich],
-            AttributeMapper.PRONOUN.records[VerbPronoun.du],
-            AttributeMapper.PRONOUN.records[VerbPronoun.er_sie_es],
-            AttributeMapper.PRONOUN.records[VerbPronoun.wir],
-            AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
-            AttributeMapper.PRONOUN.records[VerbPronoun.they],
-          ],
-          hidden: true,
+          $if: { groupMetaArgs: { mood: AttributeMapper.MOOD.records[VerbMood.Subjunctive] } },
+          then: {
+            type: 'attr',
+            main: true,
+            attr: AttributeMapper.PRONOUN.id,
+            attrRecordValues: [
+              AttributeMapper.PRONOUN.records[VerbPronoun.ich],
+              AttributeMapper.PRONOUN.records[VerbPronoun.du],
+              AttributeMapper.PRONOUN.records[VerbPronoun.er_sie_es],
+              AttributeMapper.PRONOUN.records[VerbPronoun.wir],
+              AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
+              AttributeMapper.PRONOUN.records[VerbPronoun.they],
+            ],
+            transformer: 'subjunctivePronoun',
+          },
+          else: {
+            type: 'attr',
+            main: true,
+            attr: AttributeMapper.PRONOUN.id,
+            attrRecordValues: [
+              AttributeMapper.PRONOUN.records[VerbPronoun.ich],
+              AttributeMapper.PRONOUN.records[VerbPronoun.du],
+              AttributeMapper.PRONOUN.records[VerbPronoun.er_sie_es],
+              AttributeMapper.PRONOUN.records[VerbPronoun.wir],
+              AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
+              AttributeMapper.PRONOUN.records[VerbPronoun.they],
+            ],
+          },
         },
+      },
+      { type: 'value' },
+      { type: 'audio', values: ['1.0'] },
+    ],
+  },
+  VERBFORMS: {
+    type: ViewLineType.Table,
+    columns: [
+      {
+        type: 'attr',
+        main: true,
+        attr: AttributeMapper.VERB_FORMS.id,
+        attrRecordValues: [
+          AttributeMapper.VERB_FORMS.records[VerbForm.InfinitiveCompound],
+          AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePresent],
+          AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast],
+        ],
       },
       { type: 'value' },
       { type: 'audio', values: ['1.0'] },
@@ -1027,20 +1066,20 @@ const getFrenchTensesByMood = (mood: VerbMood): VerbTense[] => {
   if (mood === VerbMood.Indikativ) {
     return [
       VerbTense.Präsens,
-      VerbTense.PasséComposé,
       VerbTense.Imparfait,
-      VerbTense.PlusQueParfait,
       VerbTense.PastSimple,
-      VerbTense.PasséAntérieur,
       VerbTense.FutureSimple,
+      VerbTense.PasséComposé,
+      VerbTense.PlusQueParfait,
+      VerbTense.PasséAntérieur,
       VerbTense.FuturAntérieur,
     ];
   }
   if (mood === VerbMood.Subjunctive) {
-    return [VerbTense.Präsens, VerbTense.Past, VerbTense.Imparfait, VerbTense.PlusQueParfait];
+    return [VerbTense.Präsens, VerbTense.Imparfait, VerbTense.Past, VerbTense.PlusQueParfait];
   }
   if (mood === VerbMood.Conditional) {
-    return [VerbTense.Präsens, VerbTense.Passé1èreforme, VerbTense.Passé2èmeforme];
+    return [VerbTense.Präsens, VerbTense.Passé1èreforme];
   }
   if (mood === VerbMood.Imperativ) {
     return [VerbTense.Präsens, VerbTense.Past];
@@ -1051,6 +1090,19 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
   [CardTypeMapper.VERB]: {
     variantGroups: [
       { id: 'init', matcher: { category: 1 } },
+      {
+        id: `forms`,
+        matcher: {
+          category: null,
+          attrs: {
+            [AttributeMapper.VERB_FORMS.id]: { $not: null },
+          },
+        },
+        groupViewId: 'f-gr',
+        testViewId: 'f-gr-test',
+        forcefullyGroup: true,
+        skipIfStandard: true,
+      },
       ...cartesianProduct(
         [VerbMood.Indikativ, VerbMood.Subjunctive, VerbMood.Conditional, VerbMood.Imperativ],
         (mood) => getFrenchTensesByMood(mood as VerbMood),
@@ -1068,26 +1120,9 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           groupViewId: 'gr',
           testViewId: 'gr-test',
           forcefullyGroup: true,
+          skipIfStandard: true,
         }),
       ),
-      ...[VerbForm.ParticiplePresent, VerbForm.ParticiplePastComposed, VerbForm.GerundPresent, VerbForm.GerundPast].map(
-        (verbForm): VariantGroup => ({
-          id: `f${AttributeMapper.VERB_FORMS.records[verbForm]}`,
-          matcher: {
-            attrs: {
-              [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[verbForm],
-            },
-          },
-        }),
-      ),
-      {
-        id: `f${AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast]}`,
-        matcher: {
-          attrs: { [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast] },
-        },
-        groupViewId: 'ngv', // noun-gender-view
-        forcefullyGroup: true,
-      },
       { id: 'skip', matcher: null, skip: true },
     ],
     views: [
@@ -1108,13 +1143,13 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         ],
       },
       {
-        id: 'ngv',
+        id: 'f-gr',
         lines: [
           { type: ViewLineType.Audio },
           { type: ViewLineType.NewLine },
           { type: ViewLineType.CardValue, useForMainAudio: true },
           { type: ViewLineType.Separator },
-          FrenchGroupTables.VERB_PARTICIPLE_PAST,
+          FrenchGroupTables.VERBFORMS,
         ],
       },
       {
@@ -1142,14 +1177,48 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           },
         ],
       },
+      {
+        id: 'f-gr-test',
+        lines: [
+          { type: ViewLineType.CardValue, paragraph: true, useForMainAudio: true },
+          { type: ViewLineType.Audio },
+          { type: ViewLineType.NewLine },
+          {
+            type: ViewLineType.Input,
+          },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.Separator }],
+          },
+          {
+            type: ViewLineType.AfterAnswerDropdown,
+            lines: [FrenchGroupTables.VERBFORMS],
+          },
+          {
+            type: ViewLineType.AfterAnswer,
+            lines: [{ type: ViewLineType.TranslationVariants }],
+          },
+        ],
+      },
     ],
     tags: [
-      { attrId: AttributeMapper.MOOD.id, type: 'secondary', matcher: { category: null } },
-      { attrId: AttributeMapper.TENSE.id, type: 'primary', matcher: { category: null } },
+      {
+        attrId: AttributeMapper.MOOD.id,
+        type: 'secondary',
+        matcher: { category: null, attrs: { [AttributeMapper.VERB_FORMS.id]: null } },
+      },
+      {
+        attrId: AttributeMapper.TENSE.id,
+        type: 'primary',
+        matcher: { category: null, attrs: { [AttributeMapper.VERB_FORMS.id]: null } },
+      },
       {
         attrId: AttributeMapper.VERB_FORMS.id,
         type: 'primary',
-        matcher: { attrs: { [AttributeMapper.VERB_FORMS.id]: { $not: null } } },
+        matcher: {
+          attrs: { [AttributeMapper.VERB_FORMS.id]: { $not: null } },
+          viewMode: { $not: CardViewMode.groupView },
+        },
       },
       { attrId: AttributeMapper.GENDER.id, type: 'primary', matcher: { viewMode: CardViewMode.test } },
       { attrId: AttributeMapper.NUMBER.id, type: 'secondary', matcher: { viewMode: CardViewMode.test } },
@@ -1171,6 +1240,36 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
     ],
     dictionaryView: [
       { type: ViewLineType.CardValue, bigText: true },
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: {
+          attrs: {
+            [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.InfinitiveCompound],
+          },
+        },
+        prefix: { type: 'text', text: 'Infinitif composé: ' },
+        bigText: false,
+      },
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: {
+          attrs: {
+            [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePresent],
+          },
+        },
+        prefix: { type: 'text', text: 'Participe présent: ' },
+        bigText: false,
+      },
+      {
+        type: ViewLineType.CustomCardValue,
+        matcher: {
+          attrs: {
+            [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast],
+          },
+        },
+        prefix: { type: 'text', text: 'Participe passé: ' },
+        bigText: false,
+      },
       {
         type: ViewLineType.Dropdown,
         showMoreText: 'Show translations',
@@ -1222,63 +1321,6 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         )
         .map((el) => [el, { type: ViewLineType.NewLine } as ViewLine])
         .flat(1),
-      {
-        type: ViewLineType.Section,
-        title: 'Temps impersonnels',
-        lines: [
-          {
-            type: ViewLineType.CustomCardValue,
-            matcher: {
-              attrs: {
-                [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePresent],
-              },
-            },
-            prefix: { type: 'text', text: 'Participe présent: ' },
-            bigText: true,
-          },
-          {
-            type: ViewLineType.CustomCardValue,
-            matcher: {
-              attrs: {
-                [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePastComposed],
-              },
-            },
-            prefix: { type: 'text', text: 'Participe passé composé: ' },
-            bigText: true,
-          },
-          {
-            type: ViewLineType.CustomCardValue,
-            matcher: {
-              attrs: { [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.GerundPresent] },
-            },
-            prefix: { type: 'text', text: 'Gérondif présent: ' },
-            bigText: true,
-          },
-          {
-            type: ViewLineType.CustomCardValue,
-            matcher: {
-              attrs: { [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.GerundPast] },
-            },
-            prefix: { type: 'text', text: 'Gérondif passé: ' },
-            bigText: true,
-          },
-          {
-            type: ViewLineType.Section,
-            title: 'Participe passé',
-            lines: [
-              {
-                ...FrenchGroupTables.VERB_PARTICIPLE_PAST,
-                useAllVariants: true,
-                matcher: {
-                  attrs: {
-                    [AttributeMapper.VERB_FORMS.id]: AttributeMapper.VERB_FORMS.records[VerbForm.ParticiplePast],
-                  },
-                },
-              },
-            ],
-          },
-        ],
-      },
     ],
     // maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,

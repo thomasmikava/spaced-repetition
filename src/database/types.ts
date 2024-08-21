@@ -33,6 +33,7 @@ export enum VerbTense {
   FuturAntérieur,
   Passé1èreforme,
   Passé2èmeforme,
+  PastPerfect,
 }
 
 export enum VerbMood {
@@ -57,9 +58,10 @@ export enum VerbPronoun {
 export enum VerbForm {
   ParticiplePresent,
   ParticiplePast,
-  ParticiplePastComposed,
+  ParticiplePastCompound,
   GerundPresent,
   GerundPast,
+  InfinitiveCompound,
 }
 
 export enum ImperativePronoun {

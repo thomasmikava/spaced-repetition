@@ -385,6 +385,8 @@ export const Colors = {
   pink: '#b617af',
   violet: '#6517b6',
   blue: '#173eb6',
+  yellow: '#b6b617',
+  grey: '#666666',
 };
 
 const FrenchVowels = [

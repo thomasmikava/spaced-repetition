@@ -28,6 +28,7 @@ import type { StandardTestableCard } from './reviews';
 import { CardViewMode } from './reviews';
 import { getArticle, getWithArticle, getWithSymbolArticle } from './texts';
 import type { WordUsageExampleDTO } from '../api/controllers/words/words.schema';
+import { getAttributeTransformer } from './transformers';
 
 const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyContent => {
   return {
@@ -534,7 +535,16 @@ export const viewLinesToContentLines = (
                     : valueId
                       ? helper.getAttributeRecord(valueId, record.card.lang)
                       : undefined;
-                row.push(valueRecord?.name ?? '');
+                if (!valueRecord || !valueRecord.name) {
+                  row.push('');
+                } else {
+                  const attributeTransformer = column.transformer
+                    ? getAttributeTransformer(column.transformer, record.card.lang)
+                    : undefined;
+                  row.push(
+                    attributeTransformer ? attributeTransformer(valueRecord, record.card.lang) : valueRecord.name,
+                  );
+                }
               } else if (column.type === 'article') {
                 if (!variant) row.push('');
                 else
