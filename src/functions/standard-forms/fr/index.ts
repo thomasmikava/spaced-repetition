@@ -1,9 +1,11 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import { AttributeMapper } from '../../../database/attributes';
 import { CardTypeMapper } from '../../../database/card-types';
-import type { ImperativePronoun, StandardCard, StandardCardVariant } from '../../../database/types';
+import type { StandardCard, StandardCardVariant } from '../../../database/types';
+import { ImperativePronoun } from '../../../database/types';
 import { VerbForm, VerbMood, VerbTense, VerbPronoun } from '../../../database/types';
 import { NounNumber, NounGender, AdjectiveDegree } from '../../../database/types';
+import { mergeSplitted } from '../../../utils/split';
 import { getAttrEnumValue, isSomeFormStandard, isStandardEqual } from '../utils';
 import {
   generateNounPluralStandardVariant,
@@ -13,6 +15,7 @@ import {
   getParticiplePresentForm,
   getVerbImperativeStandardForm,
   getVerbStandardForm,
+  isOneOfVariantsWithPronouns,
 } from './forms';
 
 const INITIAL_CARD_CATEGORY = 1;
@@ -80,6 +83,15 @@ export const getFrenchStandardFormFn = (
         variant.attrs[AttributeMapper.TENSE.id] === AttributeMapper.TENSE.records[VerbTense.Präsens] &&
         variant.attrs[AttributeMapper.PRONOUN.id] === AttributeMapper.PRONOUN.records[VerbPronoun.wir],
     )?.value;
+    const present1stSingular = allCardVariants.find(
+      (variant) =>
+        variant.attrs &&
+        variant.attrs[AttributeMapper.MOOD.id] === AttributeMapper.MOOD.records[VerbMood.Indikativ] &&
+        variant.attrs[AttributeMapper.TENSE.id] === AttributeMapper.TENSE.records[VerbTense.Präsens] &&
+        variant.attrs[AttributeMapper.PRONOUN.id] === AttributeMapper.PRONOUN.records[VerbPronoun.ich],
+    )?.value;
+    const hasPronounVersion = !!present1stSingular && isOneOfVariantsWithPronouns(present1stSingular);
+    console.log('hasPronounVersion', hasPronounVersion);
 
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;
@@ -94,8 +106,8 @@ export const getFrenchStandardFormFn = (
       if (verbForm === VerbForm.ParticiplePast) {
         return true; // we'll ask for the participle separately in infinitive compound form
       }
-      const { value: mood } = getAttrEnumValue<VerbMood>(variant.attrs, AttributeMapper.MOOD);
-      const { value: tense } = getAttrEnumValue<VerbTense>(variant.attrs, AttributeMapper.TENSE);
+      const { value: mood, id: moodId } = getAttrEnumValue<VerbMood>(variant.attrs, AttributeMapper.MOOD);
+      const { value: tense, id: tenseId } = getAttrEnumValue<VerbTense>(variant.attrs, AttributeMapper.TENSE);
       const { value: pronoun } = getAttrEnumValue<VerbPronoun>(variant.attrs, AttributeMapper.PRONOUN);
       if (mood === undefined || tense === undefined || (mood !== VerbMood.Imperativ && pronoun === undefined))
         return false;
@@ -123,10 +135,42 @@ export const getFrenchStandardFormFn = (
           AttributeMapper.IMPERATIVE_PRONOUN,
         );
         if (imperativePronoun === undefined) return false;
-        const imperativeForm = getVerbImperativeStandardForm(card.value, tense, imperativePronoun);
+        const firstImperativeForm = allCardVariants.find(
+          (variant) =>
+            variant.attrs &&
+            variant.attrs[AttributeMapper.IMPERATIVE_PRONOUN.id] ===
+              AttributeMapper.IMPERATIVE_PRONOUN.records[ImperativePronoun.Pers2Sing] &&
+            variant.attrs[AttributeMapper.MOOD.id] === moodId &&
+            variant.attrs[AttributeMapper.TENSE.id] === tenseId,
+        )?.value;
+        const imperativeForm = getVerbImperativeStandardForm(card.value, tense, imperativePronoun, firstImperativeForm);
         return isStandardEqual(variant.value, imperativeForm);
       }
-      const standardForm = getVerbStandardForm(card.value, mood, tense, pronoun!);
+      const firstPronounForm = allCardVariants.find(
+        (variant) =>
+          variant.attrs &&
+          variant.attrs[AttributeMapper.PRONOUN.id] === AttributeMapper.PRONOUN.records[VerbPronoun.ich] &&
+          variant.attrs[AttributeMapper.MOOD.id] === moodId &&
+          variant.attrs[AttributeMapper.TENSE.id] === tenseId,
+      )?.value;
+      const standardForm =
+        pronoun === VerbPronoun.ich && hasPronounVersion
+          ? mergeSplitted([
+              getVerbStandardForm(card.value, mood, tense, pronoun!, undefined),
+              getVerbStandardForm('me ' + card.value, mood, tense, pronoun!, undefined),
+            ])
+          : getVerbStandardForm(card.value, mood, tense, pronoun!, firstPronounForm);
+      /* console.log(
+        'standardForm',
+        attributeRecordLocalizations.find((e) => e.lang === 'fr' && e.attributeRecordId === moodId)?.name,
+        attributeRecordLocalizations.find((e) => e.lang === 'fr' && e.attributeRecordId === tenseId)?.name,
+        attributeRecordLocalizations.find((e) => e.lang === 'fr' && e.attributeRecordId === pronounId)?.name,
+        standardForm,
+        '..',
+        variant.value,
+        '..',
+        isStandardEqual(variant.value, standardForm),
+      ); */
       return isStandardEqual(variant.value, standardForm);
     };
   }

@@ -3,6 +3,7 @@ import { VerbPronoun } from '../../../database/types';
 import { VerbMood, VerbTense } from '../../../database/types';
 import { NounNumber } from '../../../database/types';
 import { AdjectiveDegree, NounGender } from '../../../database/types';
+import { uniquelize } from '../../../utils/array';
 import { mergeSplitted, slashSplit } from '../../../utils/split';
 
 export const generateNounPluralStandardVariant = (singularForm: string): string | null => {
@@ -97,9 +98,11 @@ export const getAdjectiveStandardForm = (
 export const getParticiplePresentForm = (present1stPlural: string | undefined | null): string | null => {
   if (!present1stPlural) return null;
   if (present1stPlural.includes('/')) {
-    return mergeSplitted(slashSplit(present1stPlural).map(getParticiplePresentForm));
+    return mergeSplitted(uniquelize(slashSplit(present1stPlural).map(getParticiplePresentForm)));
   }
-  return present1stPlural.endsWith('ons') ? present1stPlural.slice(0, -3) + 'ant' : present1stPlural + 'ant';
+  const lastWord = present1stPlural.split(' ').pop();
+  if (!lastWord) return null;
+  return lastWord.endsWith('ons') ? lastWord.slice(0, -3) + 'ant' : lastWord + 'ant';
 };
 
 export const getParticiplePastForm = (verb: string): string | null => {
@@ -123,22 +126,77 @@ export const getVerbStandardForm = (
   mood: VerbMood,
   tense: VerbTense,
   pronoun: VerbPronoun,
+  firstPronounForm: string | undefined,
 ): string | null => {
+  if (firstPronounForm && pronoun !== VerbPronoun.ich && firstPronounForm.includes('/')) {
+    return mergeSplitted(slashSplit(firstPronounForm).map((v) => getVerbStandardForm(verb, mood, tense, pronoun, v)));
+  }
   const lastTwoLetters = verb.slice(-2);
+  if (firstPronounForm) {
+    const [firstPart, secondPart] = separateBySpace(firstPronounForm);
+    if (firstPart === DEFAULT_PRONOUNS.a[VerbPronoun.ich] && secondPart) {
+      return `${DEFAULT_PRONOUNS.a[pronoun as never]} ${getVerbStandardForm(verb, mood, tense, pronoun, secondPart)}`;
+    } else {
+      // in case first pronoun form duplicates two letters or something, we can apply same logic to the rest pronoun conjugations as well
+      const firstPronounEnding = endings[mood as never]?.[tense]?.[lastTwoLetters]?.[VerbPronoun.ich] as
+        | string
+        | undefined;
+      if (firstPronounEnding) {
+        return getVerbStandardForm(
+          firstPronounForm.substring(0, firstPronounForm.length - firstPronounEnding.length) + lastTwoLetters,
+          mood,
+          tense,
+          pronoun,
+          undefined,
+        );
+      }
+    }
+  }
   const myEnding = endings[mood as never]?.[tense]?.[lastTwoLetters]?.[pronoun];
   if (myEnding === undefined) return null;
   return verb.slice(0, -2) + myEnding;
+};
+const separateBySpace = (value: string): [string, string] => {
+  const spaceIndex = value.indexOf(' ');
+  return [value.substring(0, spaceIndex), value.substring(spaceIndex + 1)];
+};
+export const isOneOfVariantsWithPronouns = (firstPronounConjugatedForm: string) => {
+  const forms = firstPronounConjugatedForm.includes('/')
+    ? slashSplit(firstPronounConjugatedForm)
+    : [firstPronounConjugatedForm];
+  return forms.some((form) => form.includes(' ') && separateBySpace(form)[0] === DEFAULT_PRONOUNS.a[VerbPronoun.ich]);
+};
+
+export const DEFAULT_PRONOUNS = {
+  a: {
+    [VerbPronoun.ich]: 'me',
+    [VerbPronoun.du]: 'te',
+    [VerbPronoun.er_sie_es]: 'se',
+    [VerbPronoun.wir]: 'nous',
+    [VerbPronoun.ihr]: 'vous',
+    [VerbPronoun.they]: 'se',
+  },
 };
 
 export const getVerbImperativeStandardForm = (
   verb: string,
   tense: VerbTense,
   imperativePronoun: ImperativePronoun,
+  firstPronounForm: string | undefined,
 ): string | null => {
+  if (firstPronounForm && imperativePronoun !== ImperativePronoun.Pers2Sing && firstPronounForm.includes('/')) {
+    return mergeSplitted(
+      slashSplit(firstPronounForm).map((v) => getVerbImperativeStandardForm(verb, tense, imperativePronoun, v)),
+    );
+  }
+  let suffix = '';
+  if (firstPronounForm && firstPronounForm.endsWith('-toi')) {
+    suffix = imperativePronoun === ImperativePronoun.Pers1Plr ? '-nous' : '-vous';
+  }
   const lastTwoLetters = verb.slice(-2);
   const myEnding = imperativeEndings[tense as never]?.[lastTwoLetters]?.[imperativePronoun];
   if (myEnding === undefined) return null;
-  return verb.slice(0, -2) + myEnding;
+  return verb.slice(0, -2) + myEnding + suffix;
 };
 
 const endings = {
