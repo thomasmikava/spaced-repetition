@@ -34,6 +34,9 @@
 
 .globeWorld {
   font-size: 24px;
+  height: 40px;
+  display: flex;
+  align-items: center;
 }
 .notOfficialWord {
   opacity: 0.5;
@@ -108,4 +111,65 @@
   text-align: right;
   margin-right: 5px;
   opacity: 0.5;
+}
+
+.singleTranslationContainer {
+  margin-bottom: 10px;
+}
+.singleTranslationContainer:last-of-type {
+  margin-bottom: 0;
+}
+
+.translationLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+
+.translationShowMore {
+  white-space: nowrap;
+  cursor: pointer;
+  margin-left: 10px;
+  min-width: 40px;
+  text-align: center;
+}
+.translationShowMore:hover {
+  text-decoration: underline;
+}
+
+.advancedTranslationsContainer {
+  margin-left: 15px;
+}
+
+.advancedTranslationItemOuterContainer,
+.exampleItemOuterContainer {
+  margin-bottom: 10px;
+}
+.advancedTranslationItemContainer,
+.exampleItemContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.addTranslation,
+.addExample {
+  cursor: pointer;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+}
+
+.addExample {
+  font-size: 12px;
+}
+
+.examplesContainer {
+  margin-top: 10px;
+  margin-left: 20px;
 }

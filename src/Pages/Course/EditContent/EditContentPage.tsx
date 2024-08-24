@@ -7,8 +7,10 @@ import { useCourseLessons } from '../../../api/controllers/lessons/lessons.query
 import type { LessonDTO, LessonUpdateActionDTO } from '../../../api/controllers/lessons/lessons.schema';
 import { useCourseWords } from '../../../api/controllers/words/words.query';
 import type {
+  AdvancedTranslationDTO,
   GetWordsResDTO,
   TranslationObjDTO,
+  WordUsageExampleDTO,
   WordWithTranslationDTO,
 } from '../../../api/controllers/words/words.schema';
 import { removeKeys } from '../../../utils/object';
@@ -20,7 +22,7 @@ import { arrayToObject, isNonNullable } from '../../../utils/array';
 import { useHelper } from '../../hooks/text-helpers';
 import LoadingPage from '../../Loading/LoadingPage';
 import { useSignInUserData } from '../../../contexts/Auth';
-import { areTranslationsEqual, fillLangs } from './utils';
+import { addFieldIdsToTranslationObject, areTranslationsEqual, fillLangs } from './utils';
 
 const EditContentPage = () => {
   const params = useParams();
@@ -138,7 +140,7 @@ const calculateInitialData = ({
           subType: 'search-word',
           fieldUniqueId: Math.random().toString(),
           word: removeKeys(word, 'relations'),
-          translations: fillLangs(translationLangs, word.translations),
+          translations: addFieldIdsToTranslationObject(fillLangs(translationLangs, word.translations)),
           wordValue: word.value,
           changed: false,
           wordDisplayType: word.mainType ?? (word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : word.type),
@@ -165,23 +167,58 @@ const getCustomTranslations = ({ word, translations }: WordInfo): TranslationObj
   return Object.values(translations)
     .filter(isNonNullable)
     .filter((e) => !isEmptyTranslation(e))
+    .map((customTranslation) => ({
+      lang: customTranslation.lang,
+      translation: customTranslation.translation.trim(),
+      advancedTranslation: customTranslation.advancedTranslation
+        ? trimAdvancedTranslations(customTranslation.advancedTranslation)
+        : null,
+    }))
+    .filter((e) => !isEmptyTranslation(e))
     .filter((customTranslation) => {
       const officialTrans = officialTranslationsByLang[customTranslation.lang];
       if (!officialTrans) return true;
       return !areTranslationsEqual(customTranslation, officialTrans);
-    })
-    .map((customTranslation) => ({
-      lang: customTranslation.lang,
-      translation: customTranslation.translation.trim(),
-      // TODO: trim advanced translations examples and translations
-      advancedTranslation: customTranslation.advancedTranslation ?? null,
-    }));
+    });
 };
 const getTranslations = ({ translations }: WordInfo): TranslationObjDTO[] => {
   return Object.values(translations)
     .filter(isNonNullable)
     .filter((e) => !isEmptyTranslation(e));
 };
+const trimAdvancedTranslations = (translations: AdvancedTranslationDTO[]): AdvancedTranslationDTO[] | null => {
+  const arr = translations
+    .map(
+      (t): AdvancedTranslationDTO => ({
+        schema: t.schema?.trim(),
+        attrs: t.attrs,
+        translation: t.translation.trim(),
+        examples: t.examples ? trimExamples(t.examples) : undefined,
+      }),
+    )
+    .filter(isNonEmptyAdvancedTranslation);
+  if (arr.length === 0) return null;
+  return arr;
+};
+const isNonEmptyAdvancedTranslation = (translation: AdvancedTranslationDTO) =>
+  !!translation.translation ||
+  !!translation.attrs ||
+  !!translation.schema ||
+  (!!translation.examples && translation.examples.length > 0);
+
+const trimExamples = (examples: WordUsageExampleDTO[]): WordUsageExampleDTO[] | undefined => {
+  const arr = examples
+    .map(
+      (e): WordUsageExampleDTO => ({
+        text: e.text.trim(),
+        translation: e.translation?.trim(),
+      }),
+    )
+    .filter(isNonEmptyExample);
+  if (arr.length === 0) return undefined;
+  return arr;
+};
+const isNonEmptyExample = (example: WordUsageExampleDTO) => !!example.text || !!example.translation;
 
 const isEmptyTranslation = (translation: TranslationObjDTO) =>
   translation.translation.trim() === '' &&

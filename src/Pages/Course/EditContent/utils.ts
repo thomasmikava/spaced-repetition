@@ -1,5 +1,6 @@
 import type { TranslationObjDTO } from '../../../api/controllers/words/words.schema';
 import { isNonNullable } from '../../../utils/array';
+import type { TranslationField } from './Form';
 
 export const fillLangs = (
   langs: string[],
@@ -85,3 +86,32 @@ export const areCustomTranslationsSameAsOfficial = (
     : null;
   return tr2 && areAllTranslationsEqual(tr1, tr2);
 };
+
+export const addFieldIdsToTranslationObject = (translations: { [lang in string]?: TranslationObjDTO }): {
+  [lang in string]?: TranslationField;
+} => {
+  const result: { [lang in string]?: TranslationField } = {};
+  for (const lang in translations) {
+    const translation = translations[lang];
+    if (!translation) continue;
+    result[lang] = addTranslationFieldId(translation);
+  }
+  return result;
+};
+
+const addTranslationFieldId = (translation: TranslationObjDTO): TranslationField => ({
+  ...translation,
+  advancedTranslation:
+    translation.advancedTranslation?.map((t) => ({
+      ...t,
+      fieldUniqueId:
+        (t as never as Record<'fieldUniqueId', string | undefined>).fieldUniqueId ?? Math.random().toString(),
+      examples: t.examples
+        ? t.examples?.map((e) => ({
+            ...e,
+            fieldUniqueId:
+              (e as never as Record<'fieldUniqueId', string | undefined>).fieldUniqueId ?? Math.random().toString(),
+          }))
+        : t.examples,
+    })) ?? null,
+});

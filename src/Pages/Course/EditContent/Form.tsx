@@ -42,9 +42,11 @@ import {
   SettingFilled,
 } from '@ant-design/icons';
 import type {
+  AdvancedTranslationDTO,
   TranslationDTO,
   TranslationObjDTO,
   WordDTO,
+  WordUsageExampleDTO,
   WordWithTranslationDTO,
 } from '../../../api/controllers/words/words.schema';
 import { useSearchWords } from '../../../api/controllers/words/words.query';
@@ -62,7 +64,18 @@ import type { WordModalCloseArg } from '../../../components/OfficialWordFormModa
 import OfficialWordFormModal from '../../../components/OfficialWordFormModal';
 import { Tooltip } from 'antd';
 import { useConfirmationModal } from '../../../ui/ConfirmationModal';
-import { areCustomTranslationsSameAsOfficial, fillLangs } from './utils';
+import { addFieldIdsToTranslationObject, areCustomTranslationsSameAsOfficial, fillLangs } from './utils';
+
+type AdvancedExampleField = WordUsageExampleDTO & { fieldUniqueId: string };
+
+type AdvancedTranslationField = Omit<AdvancedTranslationDTO, 'examples'> & {
+  fieldUniqueId: string;
+  examples?: AdvancedExampleField[];
+};
+
+export type TranslationField = Omit<TranslationObjDTO, 'advancedTranslation'> & {
+  advancedTranslation: AdvancedTranslationField[] | null;
+};
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -72,7 +85,7 @@ interface SearchWordInfo {
   wordDisplayType?: number;
   makeOfficial?: boolean;
   word?: WordWithTranslationDTO & { officialTranslations?: TranslationDTO[] };
-  translations: { [lang in string]?: TranslationObjDTO };
+  translations: { [lang in string]?: TranslationField };
   changed?: boolean;
   askedForChangeConfirmation?: boolean;
 }
@@ -272,10 +285,12 @@ const FieldArray = memo(
                   ...value.word,
                   translations: officialTranslations,
                 },
-                translations: fillLangs(
-                  translationLangs,
-                  value.customTranslations ? Object.values(value.customTranslations) : [],
-                  officialTranslations,
+                translations: addFieldIdsToTranslationObject(
+                  fillLangs(
+                    translationLangs,
+                    value.customTranslations ? Object.values(value.customTranslations) : [],
+                    officialTranslations,
+                  ),
                 ),
                 wordDisplayType:
                   value.word.mainType ?? (value.word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : value.word.type),
@@ -285,7 +300,7 @@ const FieldArray = memo(
                 type: 'word',
                 subType: 'search-word',
                 wordValue: value.wordValue,
-                translations: fillLangs(translationLangs, value.translations),
+                translations: addFieldIdsToTranslationObject(fillLangs(translationLangs, value.translations)),
                 fieldUniqueId: Math.random().toString(),
               };
           append(newWord);
@@ -550,7 +565,7 @@ const SearchWord: FC<{
       setValue(fieldKey, {
         ...currentValue,
         word: suggestion,
-        translations: fillLangs(formBaseInfo.translationLangs, suggestion.translations),
+        translations: addFieldIdsToTranslationObject(fillLangs(formBaseInfo.translationLangs, suggestion.translations)),
         wordValue: suggestion.value,
         wordDisplayType: suggestion.mainType ?? suggestion.type,
         changed: false,
@@ -731,38 +746,217 @@ const TranslationEditor: FC<TranslationEditorProps> = ({
   lang,
   displayLang,
   shouldAskForConfirmationWhenChanging,
-  isLastChild,
   notifyIfNecessary,
   onEnterClick,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   return (
-    <div>
-      <Controller
-        name={`${fieldKey}.translation`}
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Input
-            placeholder={displayLang ? `${lang}: translation` : 'translation'}
-            fullWidth
-            {...field}
-            onChange={
-              !shouldAskForConfirmationWhenChanging
-                ? field.onChange
-                : (e) => {
-                    const newValue = e.target.value;
-                    notifyIfNecessary(() => field.onChange(newValue), `${fieldKey}.translation`);
-                  }
-            }
-            size='large'
-            status={error ? 'error' : undefined}
-            onEnterClick={(e) => {
-              const nextTranslationLangFieldKey = nextLangFieldKey ? `${nextLangFieldKey}.translation` : undefined;
-              onEnterClick(e, nextTranslationLangFieldKey);
-            }}
+    <div className={styles.singleTranslationContainer}>
+      <div className={styles.translationLine}>
+        <Controller
+          name={`${fieldKey}.translation`}
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <Input
+              placeholder={displayLang ? `${lang}: translation` : 'translation'}
+              fullWidth
+              {...field}
+              onChange={
+                !shouldAskForConfirmationWhenChanging
+                  ? field.onChange
+                  : (e) => {
+                      const newValue = e.target.value;
+                      notifyIfNecessary(() => field.onChange(newValue), `${fieldKey}.translation`);
+                    }
+              }
+              size='large'
+              status={error ? 'error' : undefined}
+              onEnterClick={(e) => {
+                const nextTranslationLangFieldKey = nextLangFieldKey ? `${nextLangFieldKey}.translation` : undefined;
+                onEnterClick(e, nextTranslationLangFieldKey);
+              }}
+            />
+          )}
+        />
+        <div className={styles.translationShowMore} onClick={() => setIsExpanded((prev) => !prev)}>
+          {isExpanded ? 'less' : 'more'}
+        </div>
+      </div>
+      {isExpanded && (
+        <AdvancedTranslationsArray fieldKey={`${fieldKey}.advancedTranslation`} control={control} lang={lang} />
+      )}
+    </div>
+  );
+};
+
+interface AdvancedTranslationsArrayProps {
+  fieldKey: `children.${number}.translations.${string}.advancedTranslation`;
+  control: Control<LessonInfo, any>;
+  lang: string;
+}
+
+const AdvancedTranslationsArray: FC<AdvancedTranslationsArrayProps> = ({ fieldKey, control }) => {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: fieldKey,
+  });
+
+  const handleAddAdvancedTranslation = useCallback(() => {
+    const newTrans: AdvancedTranslationField = {
+      translation: '',
+      fieldUniqueId: Math.random().toString(),
+    };
+    append(newTrans);
+  }, [append]);
+
+  return (
+    <div className={styles.advancedTranslationsContainer}>
+      {(fields as never as AdvancedTranslationField[]).map((field, index) => {
+        return (
+          <AdvancedTranslationItem
+            key={field.fieldUniqueId}
+            onRemove={remove}
+            index={index}
+            fieldKey={`${fieldKey}.${index}`}
+            control={control}
           />
-        )}
-      />
-      {!isLastChild && <div style={{ height: 10 }} />}
+        );
+      })}
+      <button
+        className={styles.addTranslation}
+        onClick={(e) => {
+          e.preventDefault();
+          handleAddAdvancedTranslation();
+        }}
+      >
+        <PlusOutlined /> add advanced translation
+      </button>
+    </div>
+  );
+};
+
+interface AdvancedTranslationItemProps {
+  onRemove: (index: number) => void;
+  index: number;
+  fieldKey: `children.${number}.translations.${string}.advancedTranslation.${number}`;
+  control: Control<LessonInfo, any>;
+}
+
+const AdvancedTranslationItem: FC<AdvancedTranslationItemProps> = ({ onRemove, index, fieldKey, control }) => {
+  return (
+    <div className={styles.advancedTranslationItemOuterContainer}>
+      <div className={styles.advancedTranslationItemContainer}>
+        <Controller
+          name={`${fieldKey}.translation`}
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <Input
+              placeholder='translation'
+              fullWidth
+              {...field}
+              onChange={field.onChange}
+              size='large'
+              status={error ? 'error' : undefined}
+              onEnterClick={(e) => {
+                e.preventDefault();
+              }}
+            />
+          )}
+        />
+        <MinusOutlined className={styles.clickableIcon} onClick={() => onRemove(index)} />
+      </div>
+      <ExamplesArray control={control} fieldKey={`${fieldKey}.examples`} />
+    </div>
+  );
+};
+
+interface ExamplesArrayProps {
+  fieldKey: `children.${number}.translations.${string}.advancedTranslation.${number}.examples`;
+  control: Control<LessonInfo, any>;
+}
+
+const ExamplesArray: FC<ExamplesArrayProps> = ({ fieldKey, control }) => {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: fieldKey,
+  });
+
+  const handleAddExample = useCallback(() => {
+    const newExample: AdvancedExampleField = {
+      text: '',
+      translation: '',
+      fieldUniqueId: Math.random().toString(),
+    };
+    append(newExample);
+  }, [append]);
+
+  return (
+    <div className={styles.examplesContainer}>
+      {(fields as never as AdvancedExampleField[]).map((field, index) => {
+        return (
+          <ExampleItem
+            key={field.fieldUniqueId}
+            onRemove={remove}
+            index={index}
+            fieldKey={`${fieldKey}.${index}`}
+            control={control}
+          />
+        );
+      })}
+      <button
+        className={styles.addExample}
+        onClick={(e) => {
+          e.preventDefault();
+          handleAddExample();
+        }}
+      >
+        <PlusOutlined /> add example
+      </button>
+    </div>
+  );
+};
+
+interface ExampleItemProps {
+  onRemove: (index: number) => void;
+  index: number;
+  fieldKey: `children.${number}.translations.${string}.advancedTranslation.${number}.examples.${number}`;
+  control: Control<LessonInfo, any>;
+}
+
+const ExampleItem: FC<ExampleItemProps> = ({ onRemove, index, fieldKey, control }) => {
+  return (
+    <div className={styles.exampleItemOuterContainer}>
+      <div className={styles.exampleItemContainer}>
+        <Controller
+          name={`${fieldKey}.text`}
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <Input
+              placeholder='text'
+              fullWidth
+              {...field}
+              onChange={field.onChange}
+              size='large'
+              status={error ? 'error' : undefined}
+            />
+          )}
+        />
+        <Controller
+          name={`${fieldKey}.translation`}
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <Input
+              placeholder='translation'
+              fullWidth
+              {...field}
+              onChange={field.onChange}
+              size='large'
+              status={error ? 'error' : undefined}
+            />
+          )}
+        />
+        <MinusOutlined className={styles.clickableIcon} onClick={() => onRemove(index)} />
+      </div>
     </div>
   );
 };
