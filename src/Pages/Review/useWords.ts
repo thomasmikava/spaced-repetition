@@ -4,7 +4,7 @@ import type {
   WordWithTranslationAndLessonsAndVariantsDTO,
   WordWithTranslationVariantsDTO,
 } from '../../api/controllers/words/words.schema';
-import type { StandardCard, TranslationVariant } from '../../database/types';
+import type { StandardCard } from '../../database/types';
 
 export const useWords = ({ courseId, lessonId }: { courseId: number | undefined; lessonId: number | undefined }) => {
   const isCourseKnown = courseId !== undefined;
@@ -29,8 +29,7 @@ export const transformToStandardCard = (word: WordWithTranslationVariantsDTO): S
     value: word.value,
     attributes: word.attributes,
     labels: word.labels,
-    translation: word.translation || '',
-    advancedTranslation: word.advancedTranslation as TranslationVariant[] | null,
+    translations: word.translations || [],
     variants: (word.variants || []).map((variant) => ({
       id: variant.id,
       value: variant.value,

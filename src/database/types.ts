@@ -1,4 +1,4 @@
-import { AdvancedTranslationDTO, CardLabelsDTO } from '../api/controllers/words/words.schema';
+import { AdvancedTranslationDTO, CardLabelsDTO, TranslationObjDTO } from '../api/controllers/words/words.schema';
 
 export enum CardType {
   ARTICLE = 'ARTICLE',
@@ -264,10 +264,7 @@ export type StandardCard = {
   labels?: CardLabelsDTO | null;
   attributes?: StandardCardAttributes | null;
   variants: StandardCardVariant[];
-  /** Should be moved into separate table */
-  translation: string;
-  /** Should be moved into separate table */
-  advancedTranslation?: TranslationVariant[] | null;
+  translations: TranslationObjDTO[];
 };
 
 export interface Attribute {

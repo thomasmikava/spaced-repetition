@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { TranslationObjDTO } from '../words/words.schema';
+
 export interface LessonDTO {
   id: number;
   courseId: number;
@@ -16,14 +18,14 @@ export type LessonUpdateActionDTO =
       type: 'existing-word';
       isNewRecord: boolean;
       wordId: number;
-      customTranslation?: { translation: string; translationVariants: any[] | null };
+      customTranslations?: TranslationObjDTO[];
     }
   | {
       type: 'new-word';
       wordType: 'phrase';
       displayType?: number | null;
       value: string;
-      translation: { translation: string; translationVariants: any[] | null };
+      translations: TranslationObjDTO[];
       official?: boolean;
     }
   | {

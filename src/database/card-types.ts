@@ -71,6 +71,7 @@ export enum ViewLineType {
   AttrRecordValues,
   Translation,
   TranslationVariants,
+  TranslationLangSelector,
   Table,
   Input,
   Audio,
@@ -334,7 +335,8 @@ type ViewLineCardTranslationLike =
       includeLegend?: boolean;
       includeArticleSymbol?: boolean;
     }
-  | { type: ViewLineType.TranslationVariants; partiallyHiddenBeforeAnswer?: boolean };
+  | { type: ViewLineType.TranslationVariants; partiallyHiddenBeforeAnswer?: boolean }
+  | { type: ViewLineType.TranslationLangSelector };
 
 export type ViewLine =
   | { type: ViewLineType.Separator | ViewLineType.NewLine }
@@ -530,7 +532,11 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         type: ViewLineType.Dropdown,
         showMoreText: 'Show translations',
         showLessText: 'Hide translations',
-        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+        lines: [
+          { type: ViewLineType.TranslationLangSelector },
+          { type: ViewLineType.Translation, includeLegend: true },
+          { type: ViewLineType.TranslationVariants },
+        ],
       },
       { type: ViewLineType.NewLine },
       ...[VerbMood.Indikativ, VerbMood.Konjunktiv, VerbMood.Imperativ]
@@ -713,7 +719,11 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         type: ViewLineType.Dropdown,
         showMoreText: 'Show translations',
         showLessText: 'Hide translations',
-        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+        lines: [
+          { type: ViewLineType.TranslationLangSelector },
+          { type: ViewLineType.Translation, includeLegend: true },
+          { type: ViewLineType.TranslationVariants },
+        ],
       },
       { type: ViewLineType.NewLine },
 
@@ -851,7 +861,11 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         type: ViewLineType.Dropdown,
         showMoreText: 'Show translations',
         showLessText: 'Hide translations',
-        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+        lines: [
+          { type: ViewLineType.TranslationLangSelector },
+          { type: ViewLineType.Translation, includeLegend: true },
+          { type: ViewLineType.TranslationVariants },
+        ],
       },
     ],
     maxAllowedNonStandardForms: 4,
@@ -1274,7 +1288,11 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         type: ViewLineType.Dropdown,
         showMoreText: 'Show translations',
         showLessText: 'Hide translations',
-        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+        lines: [
+          { type: ViewLineType.TranslationLangSelector },
+          { type: ViewLineType.Translation, includeLegend: true },
+          { type: ViewLineType.TranslationVariants },
+        ],
       },
       { type: ViewLineType.NewLine },
       ...[VerbMood.Indikativ, VerbMood.Subjunctive, VerbMood.Conditional, VerbMood.Imperativ]
@@ -1514,7 +1532,11 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         type: ViewLineType.Dropdown,
         showMoreText: 'Show translations',
         showLessText: 'Hide translations',
-        lines: [{ type: ViewLineType.Translation, includeLegend: true }, { type: ViewLineType.TranslationVariants }],
+        lines: [
+          { type: ViewLineType.TranslationLangSelector },
+          { type: ViewLineType.Translation, includeLegend: true },
+          { type: ViewLineType.TranslationVariants },
+        ],
       },
     ],
     maxAllowedNonStandardForms: 4,

@@ -49,6 +49,10 @@ export type WordUsageExampleDTO = {
   text: string;
   translation?: string;
 };
+const WordUsageExample = z.object({
+  text: z.string(),
+  translation: z.string().optional(),
+});
 
 export type AdvancedTranslationDTO = {
   schema?: string;
@@ -56,6 +60,12 @@ export type AdvancedTranslationDTO = {
   translation: string;
   examples?: WordUsageExampleDTO[];
 };
+const AdvancedTranslation = z.object({
+  schema: z.string().optional(),
+  attrs: z.record(z.union([z.number(), z.array(z.number())])).optional(),
+  translation: z.string(),
+  examples: z.array(WordUsageExample).optional(),
+});
 
 export interface TranslationDTO {
   id: number;
@@ -67,20 +77,22 @@ export interface TranslationDTO {
   isMain: boolean;
 }
 
-const AdvancedTranslation = z.object({
-  schema: z.string().optional(),
-  attrs: z.record(z.union([z.number(), z.array(z.number())])).optional(),
+export const TranslationObjSchema = z.object({
+  lang: z.string(),
   translation: z.string(),
+  advancedTranslation: z.array(AdvancedTranslation).nullable(),
 });
 
+export interface TranslationObjDTO {
+  lang: string;
+  translation: string;
+  advancedTranslation: AdvancedTranslationDTO[] | null;
+}
+
 export const WordWithTranslationSchema = WordSchema.extend({
-  translation: z.string().optional().nullable(),
-  advancedTranslation: z.array(AdvancedTranslation).optional().nullable(),
+  translations: z.array(TranslationObjSchema),
 });
-export type WordWithTranslationDTO = WordDTO & {
-  translation?: TranslationDTO['translation'] | null;
-  advancedTranslation?: TranslationDTO['advancedTranslation'] | null;
-};
+export type WordWithTranslationDTO = WordDTO & { translations: TranslationObjDTO[] };
 
 export type WordWithTranslationAndLessonsDTO = WordWithTranslationDTO & {
   relations: { courseId: number; lessonId: number }[];
@@ -99,9 +111,12 @@ export interface GetWordsReqDTO {
   courseId: number;
   lessonId?: number;
   includeVariants?: boolean;
+  includeOfficialTranslationsSeparately?: boolean;
 }
 
-export type GetWordsResDTO = OptionalKeys<WordWithTranslationAndLessonsAndVariantsDTO, 'variants'>[];
+export type GetWordsResDTO = (OptionalKeys<WordWithTranslationAndLessonsAndVariantsDTO, 'variants'> & {
+  officialTranslations?: TranslationDTO[];
+})[];
 
 ///
 
@@ -118,18 +133,20 @@ export type GetLanguageDictionaryResDTO = WordWithTranslationVariantsDTO[];
 
 export interface GetOneWordReqDTO {
   id: number;
-  translationLang?: string | null;
+  translationLangs?: string[] | null;
   onlyOfficialTranslation?: boolean;
   includeAllOfficialTranslations?: boolean;
 }
-export type GetOneWordResDTO = WordWithTranslationVariantsDTO & {
+export type GetOneWordResDTO = WordDTO & {
+  variants: BaseWordVariantDTO[];
+  translations: TranslationDTO[];
   officialTranslations?: TranslationDTO[];
 };
 
 ///
 export interface GetWordsByIdsReqDTO {
   ids: number[];
-  translationLang?: string | null;
+  translationLangs?: string[] | null;
   onlyOfficialTranslation?: boolean;
   includeAllOfficialTranslations?: boolean;
 }
@@ -157,7 +174,7 @@ export interface SearchWordReqDTO {
   searchValue: string;
   wordType?: number;
   lang: string;
-  translationLang: string;
+  translationLangs: string[];
   limit: number;
   skip: number;
 }
@@ -173,11 +190,6 @@ export type CreateWordStandardCardVariantDTO = {
   categoryId?: number | null;
   value: string;
 };
-export type CreateWordTranslationDTO = {
-  lang: string;
-  translation: string;
-  advancedTranslation?: AdvancedTranslationDTO[] | null;
-};
 
 export interface CreateWordDTO {
   lang: string;
@@ -189,7 +201,7 @@ export interface CreateWordDTO {
   isOfficial: boolean;
   variants: CreateWordStandardCardVariantDTO[];
   variantsIncludeTopCard: boolean;
-  translations: CreateWordTranslationDTO[];
+  translations: TranslationObjDTO[];
 }
 
 export type CreateOneWordsReqDTO = CreateWordDTO;
@@ -225,11 +237,11 @@ export type DeleteTranslationDTO = {
   id: number;
 };
 
-export interface CreateInsideWordTranslationDTO extends CreateWordTranslationDTO {
+export interface CreateInsideWordTranslationDTO extends TranslationObjDTO {
   type: 'create';
 }
 
-export type UpdateTranslationDTO = Partial<CreateWordTranslationDTO> & {
+export type UpdateTranslationDTO = Partial<TranslationObjDTO> & {
   type: 'update';
   id: number;
 };

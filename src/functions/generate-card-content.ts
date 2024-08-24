@@ -29,6 +29,7 @@ import { CardViewMode } from './reviews';
 import { getArticle, getWithArticle, getWithSymbolArticle } from './texts';
 import type { WordUsageExampleDTO } from '../api/controllers/words/words.schema';
 import { getAttributeTransformer } from './transformers';
+import { ALL_LANGS, sortByLangs } from '../Pages/hooks/useTranslationLang';
 
 const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyContent => {
   return {
@@ -396,26 +397,60 @@ export const viewLinesToContentLines = (
         }
         return { type: line.paragraph ? 'paragraph' : 'text', content: displayValue, style: textStyle };
       }
+      case ViewLineType.TranslationLangSelector:
+        return { type: 'translation-lang-selector' };
       case ViewLineType.Translation:
-        const displayValue = withArticle(record.card.translation, record.card.lang, helper, record.variant.attrs, line); // TODO: check if we need to pass card lang or translation lang
-        return { type: 'paragraph', content: displayValue, style: textStyle };
+        return {
+          type: 'under-translation-lang',
+          getContent: (lang, langOptions) => {
+            const translations =
+              lang === ALL_LANGS
+                ? sortByLangs(record.card.translations, langOptions)
+                : record.card.translations.filter((e) => e.lang === lang);
+            if (translations.length === 0) return null;
+            const displayValues = translations.map((translation) =>
+              withArticle(translation.translation, record.card.lang, helper, record.variant.attrs, line),
+            );
+            if (displayValues.length === 1) return { type: 'paragraph', content: displayValues[0], style: textStyle };
+            return {
+              type: 'div',
+              content: displayValues.map((e) => ({ type: 'paragraph', content: e, style: textStyle })),
+            };
+          },
+        };
       case ViewLineType.TranslationVariants:
-        if (!record.card.advancedTranslation || record.card.advancedTranslation.length < 1) return null;
-        if (line.partiallyHiddenBeforeAnswer) {
-          return getVerbTranslationBeforeAndAfterAnswer2(
-            record.card.advancedTranslation,
-            record.card.value,
-            record.card.lang,
-            helper,
-          );
-        }
-        return getVerbTranslationsContent2(
-          record.card.advancedTranslation,
-          record.card.value,
-          record.card.lang,
-          helper,
-          true,
-        );
+        return {
+          type: 'under-translation-lang',
+          getContent: (lang, langOptions): AnyContent | null => {
+            const translations =
+              lang === ALL_LANGS
+                ? sortByLangs(record.card.translations, langOptions)
+                : record.card.translations.filter((e) => e.lang === lang);
+            if (translations.length === 0) return null;
+            const displayValues = translations.map((translation) => {
+              if (!translation.advancedTranslation || translation.advancedTranslation.length < 1) return null;
+              if (line.partiallyHiddenBeforeAnswer) {
+                return getVerbTranslationBeforeAndAfterAnswer2(
+                  translation.advancedTranslation,
+                  record.card.value,
+                  record.card.lang,
+                  helper,
+                );
+              }
+              return getVerbTranslationsContent2(
+                translation.advancedTranslation,
+                record.card.value,
+                record.card.lang,
+                helper,
+                true,
+              );
+            });
+            return {
+              type: 'div',
+              content: displayValues.flat(1),
+            };
+          },
+        };
       case ViewLineType.AttrRecordValues:
         const attrs = (line.customAttrRecords ?? record.variant.attrs) || {};
         const attrValueIds = line.attrs.map((attrId) => attrs[attrId]);

@@ -89,7 +89,7 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
     if (!results) return;
     const texts = results.knownTokens.map(
       (e): AddNewWordInfo => ({
-        word: removeKeys(e.word as WordWithTranslationDTO, 'translation', 'advancedTranslation'),
+        word: removeKeys(e.word as WordWithTranslationDTO, 'translations'),
       }),
     );
     const data: JSONPasteWords = {

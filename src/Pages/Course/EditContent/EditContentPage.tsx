@@ -7,7 +7,8 @@ import { useCourseLessons } from '../../../api/controllers/lessons/lessons.query
 import type { LessonDTO, LessonUpdateActionDTO } from '../../../api/controllers/lessons/lessons.schema';
 import { useCourseWords } from '../../../api/controllers/words/words.query';
 import type {
-  WordWithTranslationAndLessonsDTO,
+  GetWordsResDTO,
+  TranslationObjDTO,
   WordWithTranslationDTO,
 } from '../../../api/controllers/words/words.schema';
 import { removeKeys } from '../../../utils/object';
@@ -15,10 +16,11 @@ import { useFilteredLessons } from '../../Lesson/useFilteredLessons';
 import type { FormData, LessonInfo, WordInfo } from './Form';
 import { ContentForm, DEFAULT_WORD_DISPLAY_TYPE } from './Form';
 import { paths } from '../../../routes/paths';
-import { isNonNullable } from '../../../utils/array';
+import { arrayToObject, isNonNullable } from '../../../utils/array';
 import { useHelper } from '../../hooks/text-helpers';
 import LoadingPage from '../../Loading/LoadingPage';
 import { useSignInUserData } from '../../../contexts/Auth';
+import { areTranslationsEqual, fillLangs } from './utils';
 
 const EditContentPage = () => {
   const params = useParams();
@@ -35,7 +37,13 @@ const EditContentPage = () => {
     courseId,
     returnAllChildrenLessons: true,
   });
-  const { data: courseWords, isLoading: areCourseWordsLoading } = useCourseWords({ courseId, lessonId });
+  const { data: courseWords, isLoading: areCourseWordsLoading } = useCourseWords({
+    courseId,
+    lessonId,
+    includeOfficialTranslationsSeparately: true,
+  });
+
+  const translationLangs = useMemo(() => (!course ? null : course.translationLangs.split(',')), [course]);
 
   const lessons = useFilteredLessons(allCourseLessons, courseId, !lessonId ? null : lessonId, true, true);
   const parentLessonId: number | null = lessonId
@@ -45,13 +53,15 @@ const EditContentPage = () => {
   const { mutate: updateCourseContent, isPending: isSubmitting } = useUpdateCourseContent();
 
   const initialData = useMemo(() => {
-    if (!lessons || !courseWords) return null;
+    if (!lessons || !courseWords || !translationLangs) return null;
 
-    return calculateInitialData({ courseId, lessonId, lessons, courseWords });
-  }, [courseId, courseWords, lessonId, lessons]);
+    return calculateInitialData({ courseId, lessonId, lessons, courseWords, translationLangs });
+  }, [courseId, courseWords, lessonId, lessons, translationLangs]);
 
-  if (isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper) return <LoadingPage />;
-  if (!course || !initialData) return <div>Error</div>;
+  if (isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper) {
+    return <LoadingPage />;
+  }
+  if (!course || !initialData || !translationLangs) return <div>Error</div>;
 
   const gotoCourseLesson = () => {
     if (lessonId) {
@@ -90,7 +100,7 @@ const EditContentPage = () => {
           langToLearn={course.langToLearn}
           defaultData={initialData.children.length > 0 ? initialData : undefined}
           isSubmitting={isSubmitting}
-          translationLang={course.translationLang}
+          translationLangs={translationLangs!}
           onSubmit={handleSubmit}
           helper={helper}
           onCancel={gotoCourseLesson}
@@ -106,11 +116,13 @@ const calculateInitialData = ({
   lessonId,
   lessons,
   courseWords,
+  translationLangs,
 }: {
   courseId: number;
   lessonId: number | undefined;
   lessons: LessonDTO[];
-  courseWords: WordWithTranslationAndLessonsDTO[];
+  courseWords: GetWordsResDTO;
+  translationLangs: string[];
 }): FormData<WordInfo> => {
   const initialLessons = lessonId
     ? lessons.filter((lesson) => lesson.id === lessonId)
@@ -126,8 +138,7 @@ const calculateInitialData = ({
           subType: 'search-word',
           fieldUniqueId: Math.random().toString(),
           word: removeKeys(word, 'relations'),
-          translation: word.translation || '',
-          advancedTranslation: word.advancedTranslation ?? null,
+          translations: fillLangs(translationLangs, word.translations),
           wordValue: word.value,
           changed: false,
           wordDisplayType: word.mainType ?? (word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : word.type),
@@ -148,18 +159,33 @@ const calculateInitialData = ({
   };
 };
 
-const getCustomTranslation = ({
-  word,
-  translation,
-}: WordInfo): { translation: string; translationVariants: any[] | null } | undefined => {
-  if (!word) return undefined;
-  // TODO: check advancedTranslation equality as well
-  if (translation === word.translation || translation.trim() === word.translation?.trim()) return undefined;
-  return { translation, translationVariants: word.advancedTranslation ?? null };
+const getCustomTranslations = ({ word, translations }: WordInfo): TranslationObjDTO[] => {
+  if (!word) return [];
+  const officialTranslationsByLang = arrayToObject(word.translations, 'lang');
+  return Object.values(translations)
+    .filter(isNonNullable)
+    .filter((e) => !isEmptyTranslation(e))
+    .filter((customTranslation) => {
+      const officialTrans = officialTranslationsByLang[customTranslation.lang];
+      if (!officialTrans) return true;
+      return !areTranslationsEqual(customTranslation, officialTrans);
+    })
+    .map((customTranslation) => ({
+      lang: customTranslation.lang,
+      translation: customTranslation.translation.trim(),
+      // TODO: trim advanced translations examples and translations
+      advancedTranslation: customTranslation.advancedTranslation ?? null,
+    }));
 };
-const getTranslation = ({ translation }: WordInfo): { translation: string; translationVariants: any[] | null } => {
-  return { translation, translationVariants: null };
+const getTranslations = ({ translations }: WordInfo): TranslationObjDTO[] => {
+  return Object.values(translations)
+    .filter(isNonNullable)
+    .filter((e) => !isEmptyTranslation(e));
 };
+
+const isEmptyTranslation = (translation: TranslationObjDTO) =>
+  translation.translation.trim() === '' &&
+  (!translation.advancedTranslation || translation.advancedTranslation.length === 0);
 
 const convertLessonUpdates = (
   rootParentLessonId: number | null,
@@ -174,7 +200,7 @@ const convertLessonUpdates = (
         type: 'existing-word',
         isNewRecord: isNew,
         wordId: word.word.id,
-        customTranslation: getCustomTranslation(word),
+        customTranslations: getCustomTranslations(word),
       };
     }
     return {
@@ -182,7 +208,7 @@ const convertLessonUpdates = (
       wordType: 'phrase',
       value: word.wordValue,
       displayType: word.wordDisplayType === DEFAULT_WORD_DISPLAY_TYPE ? null : word.wordDisplayType,
-      translation: getTranslation(word),
+      translations: getTranslations(word),
       official: !word.word && word.makeOfficial,
     };
   }
@@ -222,7 +248,7 @@ const convertLessonUpdates = (
           .filter(isWord)
           .filter((child) => {
             if (child.word && initialWordIds.has(child.word.id)) {
-              return getCustomTranslation(child) !== undefined;
+              return getCustomTranslations(child).length > 0;
             }
             return true;
           })

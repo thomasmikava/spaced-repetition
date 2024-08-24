@@ -4,7 +4,7 @@ import type {
   CreateInsideWordTranslationDTO,
   CreateWordDTO,
   CreateWordStandardCardVariantDTO,
-  CreateWordTranslationDTO,
+  TranslationObjDTO,
   DeleteStandardCardVariantDTO,
   DeleteTranslationDTO,
   UpdateStandardCardVariantDTO,
@@ -109,7 +109,7 @@ const getTranslationUpdates = (oldWord: FormData, newData: FormData): UpdateWord
   const createdTranslations: CreateInsideWordTranslationDTO[] = [];
   const deletedTranslations: DeleteTranslationDTO[] = [];
 
-  const translationComparisonKeys = getKeys<CreateWordTranslationDTO>({
+  const translationComparisonKeys = getKeys<TranslationObjDTO>({
     lang: true,
     translation: true,
     advancedTranslation: true,

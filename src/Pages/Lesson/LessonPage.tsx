@@ -32,6 +32,9 @@ import { useConfirmationModal } from '../../ui/ConfirmationModal';
 import { getWithSymbolArticle } from '../../functions/texts';
 import { AttributeMapper } from '../../database/attributes';
 import { specialBoxClasses } from '../Home/boxes';
+import { ALL_LANGS, sortByLangs, useTranslationLang } from '../hooks/useTranslationLang';
+import { TranslationLangSelector } from '../../components/Lang/TranslationLangSelector';
+import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 const LessonPage = () => {
@@ -85,6 +88,10 @@ const LessonPage = () => {
     );
   };
 
+  const { translationLang, handleTransLangChange, shouldShowTranslationLangs } = useTranslationLang(
+    course?.translationLangs,
+  );
+
   const [displayedWordId, setDisplayedWordId] = useState<number | null>(null);
 
   if (isLessonLoading || isCourseLoading || isWordLoading || isMyMainCourseLoading || !helper) {
@@ -131,7 +138,21 @@ const LessonPage = () => {
               cardTypeHelper?.includeArticleSymbol && genderId !== null
                 ? getWithSymbolArticle(word.lang, word.value, genderId)
                 : word.value,
-              word.translation,
+              translationLang === ALL_LANGS
+                ? {
+                    cellValue: (
+                      <div>
+                        {sortByLangs(word.translations, course.translationLangs).map((tr, i) => (
+                          <div key={tr.lang + '_' + i}>
+                            {shouldShowTranslationLangs ? `${tr.lang}: ` : ''}
+                            {tr.translation}
+                          </div>
+                        ))}
+                      </div>
+                    ),
+                    style: {},
+                  }
+                : word.translations.find((e) => e.lang === translationLang)?.translation,
               {
                 cellValue:
                   closestDueDate === Infinity || closestDueDate === null
@@ -152,58 +173,73 @@ const LessonPage = () => {
         });
 
   return (
-    <div className='body'>
-      <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
-        <LeftOutlined onClick={goToCourse} style={{ cursor: 'pointer' }} />
-        <div>
-          <span>{course.title}</span> - {myLesson.title}{' '}
-          {allCardsCount > 0 && (
-            <span>
-              ({allCardsCount} items. Studied: {roundNumber((studiedCards / allCardsCount) * 100, 1)}%)
-            </span>
+    <TranslationLangsProvider translationLangs={course.translationLangs}>
+      <div className='body'>
+        <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
+          <LeftOutlined onClick={goToCourse} style={{ cursor: 'pointer' }} />
+          <div>
+            <span>{course.title}</span> - {myLesson.title}{' '}
+            {allCardsCount > 0 && (
+              <span>
+                ({allCardsCount} items. Studied: {roundNumber((studiedCards / allCardsCount) * 100, 1)}%)
+              </span>
+            )}
+          </div>
+
+          {canManageCourse && isInMyCoursesList && (
+            <Dropdown
+              menu={{
+                items: [
+                  { label: 'Edit', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
+                  { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal },
+                ].filter(isNonNullable),
+              }}
+              placement='bottom'
+            >
+              <AntButton>
+                <SettingFilled />
+              </AntButton>
+            </Dropdown>
           )}
         </div>
-
-        {canManageCourse && isInMyCoursesList && (
-          <Dropdown
-            menu={{
-              items: [
-                { label: 'Edit', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
-                { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal },
-              ].filter(isNonNullable),
-            }}
-            placement='bottom'
-          >
-            <AntButton>
-              <SettingFilled />
-            </AntButton>
-          </Dropdown>
+        {isEmpty ? null : isInMyCoursesList ? (
+          <ReviewButtons courseId={courseId} lessonId={lessonId} />
+        ) : (
+          <AddToMyCoursesButton courseId={courseId} />
         )}
-      </div>
-      {isEmpty ? null : isInMyCoursesList ? (
-        <ReviewButtons courseId={courseId} lessonId={lessonId} />
-      ) : (
-        <AddToMyCoursesButton courseId={courseId} />
-      )}
-      {lessons && lessons.length > 0 && (
-        <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} canManageCourse={!!canManageCourse} />
-      )}
-      {wordRows && <Table rows={wordRows} removeEmptyColumns />}
-      {canManageCourse && lessons && lessons.length === 0 && (!wordRows || !wordRows.length) && (
-        <AddBox onClick={goToEdit} />
-      )}
-      <br />
+        {lessons && lessons.length > 0 && (
+          <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} canManageCourse={!!canManageCourse} />
+        )}
+        {wordRows && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <TranslationLangSelector
+                options={course.translationLangs}
+                onChange={handleTransLangChange}
+                value={translationLang}
+              />
+            </div>
+            <Table rows={wordRows} removeEmptyColumns />
+          </div>
+        )}
+        {canManageCourse && lessons && lessons.length === 0 && (!wordRows || !wordRows.length) && (
+          <AddBox onClick={goToEdit} />
+        )}
+        <br />
 
-      {displayedWordId && !!course.translationLang && (
-        <DictionaryModal
-          wordId={displayedWordId}
-          helper={helper}
-          onClose={() => setDisplayedWordId(null)}
-          translationLang={course.translationLang}
-        />
-      )}
-      {confirmationModalElement}
-    </div>
+        {displayedWordId && !!course.translationLangs && (
+          <DictionaryModal
+            wordId={displayedWordId}
+            helper={helper}
+            onClose={() => setDisplayedWordId(null)}
+            translationLangs={
+              !translationLang || translationLang === ALL_LANGS ? course.translationLangs.split(',') : [translationLang]
+            }
+          />
+        )}
+        {confirmationModalElement}
+      </div>
+    </TranslationLangsProvider>
   );
 };
 

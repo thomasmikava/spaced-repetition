@@ -15,7 +15,7 @@ import { getCourseLessonsOffline } from '../lessons/lessons.query';
 export const WordQueryKeys = {
   getCourseWords: (query: GetWordsReqDTO) => [
     `word:getCourseWords${query.courseId}`,
-    { courseId: query.courseId },
+    { courseId: query.courseId, includeOfficialTranslationsSeparately: !!query.includeOfficialTranslationsSeparately },
     query,
   ],
   getMyCoursesWords: () => [`word:my-courses`],

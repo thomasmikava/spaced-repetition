@@ -4,8 +4,10 @@ import { WordWithTranslationSchema } from '../../../api/controllers/words/words.
 import type { LessonInfo } from './Form';
 import { zodAddShape } from '../../../utils/z';
 
-export const useValidation = () => {
+export const useValidation = (translationLangs: string[]) => {
   const { createObjectResolver } = useValidators();
+
+  const firstTransLang = translationLangs[0];
 
   const WordInfoSchema = z
     .object({
@@ -16,20 +18,42 @@ export const useValidation = () => {
       wordDisplayType: z.number().optional(),
       word: WordWithTranslationSchema.optional(),
       makeOfficial: z.boolean().optional(),
-      translation: z.string().trim(),
-      advancedTranslation: z.array(z.any()).nullish(),
+      translations: z.record(
+        z.object({
+          lang: z.string(),
+          translation: z.string().trim(),
+          advancedTranslation: z
+            .array(
+              z.object({
+                schema: z.string().optional(),
+                attrs: z.record(z.union([z.number(), z.array(z.number())])).optional(),
+                translation: z.string().trim(),
+                examples: z
+                  .array(
+                    z.object({
+                      text: z.string(),
+                      translation: z.string().trim().optional(),
+                    }),
+                  )
+                  .optional(),
+              }),
+            )
+            .nullable(),
+        }),
+      ),
     })
     .superRefine((obj, ctx) => {
-      if (obj.wordValue && !obj.translation) {
+      const hasSomeTranslation = hasAtLeastOneTranslation(obj.translations);
+      if (obj.wordValue && !hasSomeTranslation) {
         ctx.addIssue({
           code: z.ZodIssueCode.too_small,
           message: 'Cannot be empty',
-          path: ['translation'],
+          path: ['translations', firstTransLang, 'translation'],
           minimum: 1,
           inclusive: true,
           type: 'string',
         });
-      } else if (obj.translation && !obj.wordValue) {
+      } else if (hasSomeTranslation && !obj.wordValue) {
         ctx.addIssue({
           code: z.ZodIssueCode.too_small,
           message: 'Cannot be empty',
@@ -77,4 +101,11 @@ export const useValidation = () => {
       children: z.array(LessonInfoSchema),
     }),
   };
+};
+
+// const getFirstEmptyTranslationLang = (translations: Record<string, { translation: string }>) => {
+//   return Object.keys(translations).find((lang) => !translations[lang].translation);
+// };
+const hasAtLeastOneTranslation = (translations: Record<string, { translation: string }>) => {
+  return Object.values(translations).some((t) => t.translation);
 };

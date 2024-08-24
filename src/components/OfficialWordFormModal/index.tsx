@@ -33,7 +33,7 @@ import type { LoadedModalProps } from '../DictionaryModal';
 import { DictionaryLoadedModal } from '../DictionaryModal';
 
 interface OfficialWordFormModalProps {
-  defaultTranslationLang: string;
+  defaultTranslationLangs: string[];
   learningLang: string;
   defaultType?: number;
   defaultValue?: string;
@@ -41,14 +41,15 @@ interface OfficialWordFormModalProps {
   customTranslations?: {
     translation?: DefaultTranslation['translation'] | null;
     advancedTranslation?: AdvancedTranslationDTO[] | null;
-  };
+    lang: string;
+  }[];
   onClose: (info: WordModalCloseArg) => void;
   helper: Helper;
 }
 
 const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
   wordId,
-  defaultTranslationLang,
+  defaultTranslationLangs,
   learningLang,
   customTranslations,
   defaultType,
@@ -78,23 +79,20 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
       isOfficial: true,
       value: defaultWordValue ?? '',
       translations: customTranslations
-        ? [
-            {
-              ...customTranslations,
-              lang: defaultTranslationLang,
-              advancedTranslation:
-                customTranslations.advancedTranslation?.map((adv) => ({
-                  ...adv,
-                  fieldUniqueId: Math.random().toString(),
-                })) ?? null,
-              translation: customTranslations.translation ?? '',
-              fieldUniqueId: 'default',
-            },
-          ]
+        ? customTranslations.map((tr, i) => ({
+            lang: tr.lang,
+            advancedTranslation:
+              tr.advancedTranslation?.map((adv) => ({
+                ...adv,
+                fieldUniqueId: Math.random().toString(),
+              })) ?? null,
+            translation: tr.translation ?? '',
+            fieldUniqueId: 'default-' + tr.lang + i,
+          }))
         : [],
     };
     return replaceEmptyObjects(def);
-  }, [customTranslations, defaultTranslationLang, defaultType, defaultWordValue, learningLang]);
+  }, [customTranslations, defaultType, defaultWordValue, learningLang]);
 
   const defaultValuesRef = useRef({ isNew: true, data: defaultValues, wordId: undefined as undefined | number });
 
@@ -116,24 +114,24 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
         categoryId: v.categoryId,
         value: v.value,
       })),
-      translations: data.officialTranslations?.map((t) => ({
-        id: t.id,
-        fieldUniqueId: Math.random().toString(),
-        lang: t.lang,
-        translation: t.translation,
-        advancedTranslation:
-          t.advancedTranslation?.map((advanced: TranslationVariant) => ({
-            ...advanced,
-            fieldUniqueId: Math.random().toString(),
-          })) ?? null,
-      })) || [
-        {
-          lang: defaultTranslationLang,
+      translations:
+        data.translations.map((t) => ({
+          id: t.id,
+          fieldUniqueId: Math.random().toString(),
+          lang: t.lang,
+          translation: t.translation,
+          advancedTranslation:
+            t.advancedTranslation?.map((advanced: TranslationVariant) => ({
+              ...advanced,
+              fieldUniqueId: Math.random().toString(),
+            })) ?? null,
+        })) ||
+        defaultTranslationLangs.map((lang) => ({
+          lang,
           translation: '',
           advancedTranslation: null,
           fieldUniqueId: Math.random().toString(),
-        },
-      ],
+        })),
     };
     const newDefaultValues = replaceEmptyObjects(newForm);
     defaultValuesRef.current = { isNew: false, data: newDefaultValues, wordId: data.id };
@@ -159,11 +157,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
 
   const handleSuccess = (data: FormData) => {
     const sanitized = replaceEmptyObjects(data);
-    const officialTranslation = sanitized.translations.find((t) => t.lang === defaultTranslationLang);
-    const translationObj: Pick<WordWithTranslationDTO, 'translation' | 'advancedTranslation'> = {
-      translation: officialTranslation?.translation ?? undefined,
-      advancedTranslation: officialTranslation?.advancedTranslation ?? undefined,
-    };
+    const officialTranslations = sanitized.translations.filter((t) => defaultTranslationLangs.includes(t.lang));
     const onError = (error: unknown) => {
       setIsSubmitLoading(false);
       alert(typeof error === 'object' && error && 'message' in error && error.message ? error.message : 'Error');
@@ -176,7 +170,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
           const newWordId = word.id;
           const wordWithTranslation: WordWithTranslationDTO = {
             ...word,
-            ...translationObj,
+            translations: officialTranslations,
           };
           onClose({ justClosed: false, created: true, wordId: newWordId, word: wordWithTranslation });
         },
@@ -192,7 +186,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
         onSuccess: (word) => {
           const wordWithTranslation: WordWithTranslationDTO = {
             ...word,
-            ...translationObj,
+            translations: officialTranslations,
           };
           onClose({ justClosed: false, created: false, wordId, word: wordWithTranslation });
         },
@@ -210,7 +204,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
 
   const viewTable = () => {
     const data = form.getValues();
-    const currentLangTranslation = data.translations.find((t) => t.lang === defaultTranslationLang);
+    const currentLangTranslations = data.translations.filter((t) => defaultTranslationLangs.includes(t.lang));
     setViewTableProps({
       helper,
       word: {
@@ -218,8 +212,7 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
         id: 1,
         userId: 0,
         variants: data.variants.map((v): BaseWordVariantDTO => ({ ...v, id: 1 })),
-        translation: currentLangTranslation?.translation ?? '',
-        advancedTranslation: currentLangTranslation?.advancedTranslation ?? null,
+        translations: currentLangTranslations,
       },
       onClose: closeViewTable,
     });
@@ -246,7 +239,11 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
       ) : (
         <FormProvider {...form}>
           <form onSubmit={handleSubmit}>
-            <ActualForm helper={helper} lang={form.getValues('lang')} defaultTranslationLang={defaultTranslationLang} />
+            <ActualForm
+              helper={helper}
+              lang={form.getValues('lang')}
+              defaultTranslationLangs={defaultTranslationLangs}
+            />
           </form>
         </FormProvider>
       )}
@@ -256,24 +253,24 @@ const OfficialWordFormModal: FC<OfficialWordFormModalProps> = ({
   );
 };
 
-const ActualForm: FC<{ helper: Helper; lang: string; defaultTranslationLang: string }> = ({
+const ActualForm: FC<{ helper: Helper; lang: string; defaultTranslationLangs: string[] }> = ({
   helper,
   lang,
-  defaultTranslationLang,
+  defaultTranslationLangs,
 }) => {
   return (
     <div>
-      <TitleEditor helper={helper} lang={lang} defaultTranslationLang={defaultTranslationLang} />
+      <TitleEditor helper={helper} lang={lang} defaultTranslationLangs={defaultTranslationLangs} />
       <TranslationsEditor helper={helper} wordLang={lang} />
       <VariantsEditor lang={lang} helper={helper} />
     </div>
   );
 };
 
-const TitleEditor: FC<{ helper: Helper; lang: string; defaultTranslationLang: string }> = ({
+const TitleEditor: FC<{ helper: Helper; lang: string; defaultTranslationLangs: string[] }> = ({
   helper,
   lang,
-  defaultTranslationLang,
+  defaultTranslationLangs,
 }) => {
   const { control, getValues, reset } = useFormContext<FormData>();
 
@@ -284,17 +281,20 @@ const TitleEditor: FC<{ helper: Helper; lang: string; defaultTranslationLang: st
       if (event.target !== wordValueRef.current?.input) return;
       let newFormData = getWholeWordFromPastedData(event.clipboardData);
       if (newFormData) {
-        if (!newFormData.translations.some((lang) => lang.lang === defaultTranslationLang)) {
+        const notCoveredLangs = defaultTranslationLangs.filter(
+          (trLang) => !newFormData!.translations.some((tr) => tr.lang === trLang),
+        );
+        if (notCoveredLangs.length > 0) {
           newFormData = {
             ...newFormData,
-            translations: newFormData.translations.concat([
-              {
-                lang: defaultTranslationLang,
+            translations: newFormData.translations.concat(
+              notCoveredLangs.map((trLang) => ({
+                lang: trLang,
                 translation: '',
                 advancedTranslation: null,
                 fieldUniqueId: Math.random().toString(),
-              },
-            ]),
+              })),
+            ),
           };
         }
         reset(newFormData);

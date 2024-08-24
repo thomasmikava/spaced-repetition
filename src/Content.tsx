@@ -9,10 +9,14 @@ import type {
   ContentTagAfterAnswer,
   ContentTagElement,
   ContentTagLike,
+  ContentTranslationLangSelector,
+  ContentUnderTranslationLang,
   ContentVoice,
 } from './content-types';
 import { useTestContext } from './contexts/testContext';
 import { Colors } from './functions/texts';
+import { useTranslationLangSettings } from './contexts/TranslationLangs';
+import { TranslationLangSelector } from './components/Lang/TranslationLangSelector';
 
 const renderContent = (
   content: string | number | null | undefined | AnyContent | (AnyContent | null | undefined)[],
@@ -141,6 +145,10 @@ const Content = memo(({ content }: { content: AnyContent | (AnyContent | null | 
       return <BeforeAnswer {...content} />;
     case 'expandable':
       return <Expandable {...content} />;
+    case 'under-translation-lang':
+      return <UnderTranslationLang {...content} />;
+    case 'translation-lang-selector':
+      return <CTranslationLangSelector {...content} />;
   }
 });
 
@@ -267,6 +275,19 @@ const Voice = ({ text, language, autoplay, size, style }: ContentVoice) => {
 const convertColor = (color: string) => {
   if (color.startsWith('_')) return Colors[color.slice(1) as never];
   return color;
+};
+
+const UnderTranslationLang = ({ getContent }: ContentUnderTranslationLang) => {
+  const { value, options } = useTranslationLangSettings();
+  if (value === null) return null;
+  const content = getContent(value, options);
+  return renderContent(content);
+};
+
+const CTranslationLangSelector = ({ style }: ContentTranslationLangSelector) => {
+  const { value, options, onChange } = useTranslationLangSettings();
+  if (value === null) return null;
+  return <TranslationLangSelector value={value} options={options} onChange={onChange} style={style} />;
 };
 
 export default Content;

@@ -13,7 +13,7 @@ export interface CourseFormData {
   title: string;
   description: string;
   langToLearn: string;
-  translationLang: string;
+  translationLangs: string[];
   isPublic: boolean;
   isOfficial: boolean;
 }
@@ -22,7 +22,7 @@ const emptyData: CourseFormData = {
   title: '',
   description: '',
   langToLearn: '',
-  translationLang: '',
+  translationLangs: [],
   isOfficial: false,
   isPublic: false,
 };
@@ -104,12 +104,12 @@ export const CourseForm: FC<CourseFormProps> = ({
           />
         </Form.Item>
 
-        <Form.Item label='Translation language' required validateStatus={errors.translationLang && 'error'}>
+        <Form.Item label='Translation language' required validateStatus={errors.translationLangs && 'error'}>
           <Controller
-            name='translationLang'
+            name='translationLangs'
             control={control}
-            defaultValue={defaultData.translationLang}
-            render={({ field }) => <Select options={translationLangOptions} {...field} />}
+            defaultValue={defaultData.translationLangs}
+            render={({ field }) => <Select options={translationLangOptions} {...field} mode='multiple' />}
           />
         </Form.Item>
 

@@ -10,13 +10,13 @@ import { ViewLineType, type ViewLine } from '../../database/card-types';
 import { transformToStandardCard } from '../../Pages/Review/useWords';
 import type { StandardCard } from '../../database/types';
 
-const DictionaryModal: FC<{ helper: Helper; wordId: number; onClose: () => void; translationLang: string }> = ({
+const DictionaryModal: FC<{ helper: Helper; wordId: number; onClose: () => void; translationLangs: string[] }> = ({
   helper,
   wordId,
   onClose,
-  translationLang,
+  translationLangs,
 }) => {
-  const { data: word } = useOneWord({ id: wordId, translationLang, onlyOfficialTranslation: false });
+  const { data: word } = useOneWord({ id: wordId, translationLangs, onlyOfficialTranslation: false });
   return <DictionaryLoadedModal onClose={onClose} word={word ?? null} helper={helper} />;
 };
 

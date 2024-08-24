@@ -11,7 +11,7 @@ const AddCoursePage = () => {
   const { mutate: createCourse, isPending } = useCreateNewCourse();
   const handleSubmit = (data: CourseFormData) => {
     createCourse(
-      { ...data, description: data.description || null },
+      { ...data, description: data.description || null, translationLangs: data.translationLangs.join(',') },
       { onSuccess: (data) => navigate(paths.app.course.editContent(data.id), { replace: true }) },
     );
   };

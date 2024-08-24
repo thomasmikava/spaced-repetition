@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { KeyboardEventHandler } from 'react';
 import {
   forwardRef,
   memo,
@@ -42,25 +41,28 @@ import {
   PlusOutlined,
   SettingFilled,
 } from '@ant-design/icons';
-import type { TranslationDTO, WordDTO, WordWithTranslationDTO } from '../../../api/controllers/words/words.schema';
+import type {
+  TranslationDTO,
+  TranslationObjDTO,
+  WordDTO,
+  WordWithTranslationDTO,
+} from '../../../api/controllers/words/words.schema';
 import { useSearchWords } from '../../../api/controllers/words/words.query';
 import { useDebounce } from 'use-debounce';
-import Select from '../../../ui/Select';
 import { useValidation } from './Form.validation';
 import React from 'react';
 import type { Helper } from '../../../functions/generate-card-content';
-import { useWordTypeChoices } from '../../../hooks/cards';
 import { mergeRefs } from 'react-merge-refs';
 import type { InputRef } from 'antd/es/input';
 import { as } from '../../../utils/common';
 import DictionaryModal from '../../../components/DictionaryModal';
 import type { ItemType } from 'antd/es/menu/interface';
 import { isNonNullable } from '../../../utils/array';
-import { pickKeys } from '../../../utils/object';
 import type { WordModalCloseArg } from '../../../components/OfficialWordFormModal/types';
 import OfficialWordFormModal from '../../../components/OfficialWordFormModal';
 import { Tooltip } from 'antd';
 import { useConfirmationModal } from '../../../ui/ConfirmationModal';
+import { areCustomTranslationsSameAsOfficial, fillLangs } from './utils';
 
 interface SearchWordInfo {
   fieldUniqueId: string;
@@ -69,9 +71,8 @@ interface SearchWordInfo {
   wordValue: string;
   wordDisplayType?: number;
   makeOfficial?: boolean;
-  word?: WordWithTranslationDTO;
-  translation: string;
-  advancedTranslation: WordWithTranslationDTO['advancedTranslation'];
+  word?: WordWithTranslationDTO & { officialTranslations?: TranslationDTO[] };
+  translations: { [lang in string]?: TranslationObjDTO };
   changed?: boolean;
   askedForChangeConfirmation?: boolean;
 }
@@ -97,7 +98,7 @@ interface Props {
   isSubmitting?: boolean;
   isCourseLevel: boolean;
   langToLearn: string;
-  translationLang: string;
+  translationLangs: string[];
   defaultData?: FormData;
   onSubmit: (data: FormData) => void;
   onCancel: () => void;
@@ -128,11 +129,11 @@ const ContentForm: FC<Props> = memo(
     langToLearn,
     onSubmit,
     onCancel,
-    translationLang,
+    translationLangs,
     helper,
     canManageOfficialWords,
   }) => {
-    const { resolver } = useValidation();
+    const { resolver } = useValidation(translationLangs);
     const form = useForm({
       shouldFocusError: true,
       defaultValues: defaultData,
@@ -170,11 +171,11 @@ const ContentForm: FC<Props> = memo(
       (): FormBaseInfo => ({
         langToLearn,
         isValidationStarted: isSubmitted,
-        translationLang,
+        translationLangs,
         handleSubmit,
         canManageOfficialWords,
       }),
-      [langToLearn, isSubmitted, translationLang, handleSubmit, canManageOfficialWords],
+      [langToLearn, isSubmitted, translationLangs, handleSubmit, canManageOfficialWords],
     );
 
     console.log('top level re-render');
@@ -196,7 +197,7 @@ ContentForm.displayName = 'ContentForm';
 
 interface FormBaseInfo {
   langToLearn: string;
-  translationLang: string;
+  translationLangs: string[];
   isValidationStarted: boolean;
   canManageOfficialWords: boolean;
   handleSubmit: () => Promise<void>;
@@ -216,8 +217,11 @@ interface FieldArrayRef {
 }
 
 export type AddNewWordInfo =
-  | { wordValue: string; translation?: string; word?: undefined }
-  | { word: WordDTO & { officialTranslations?: TranslationDTO[] }; customTranslation?: string };
+  | { wordValue: string; translations?: TranslationObjDTO[]; word?: undefined }
+  | {
+      word: WordDTO & { officialTranslations?: TranslationDTO[] };
+      customTranslations?: { [lang in string]?: TranslationObjDTO };
+    };
 
 export interface JSONPasteWords {
   type: 'internal-paste';
@@ -251,13 +255,14 @@ const FieldArray = memo(
       append(newLesson);
     }, [append]);
 
-    const translationLang = formBaseInfo.translationLang;
+    const translationLangs = formBaseInfo.translationLangs;
 
     const handleAddNewWord = useCallback(
       // eslint-disable-next-line sonarjs/cognitive-complexity
-      (values: AddNewWordInfo[] = [{ wordValue: '', translation: '' }]) => {
+      (values: AddNewWordInfo[] = [{ wordValue: '' }]) => {
         for (const value of values) {
-          const translationObj = value.word?.officialTranslations?.find((t) => t.lang === translationLang);
+          const officialTranslations =
+            value.word?.officialTranslations?.filter((t) => translationLangs.includes(t.lang)) || [];
           const newWord: WordInfo = value.word
             ? {
                 type: 'word',
@@ -265,11 +270,13 @@ const FieldArray = memo(
                 wordValue: value.word.value,
                 word: {
                   ...value.word,
-                  translation: translationObj?.translation,
-                  advancedTranslation: translationObj?.advancedTranslation ?? null,
+                  translations: officialTranslations,
                 },
-                translation: value.customTranslation ? value.customTranslation : translationObj?.translation ?? '',
-                advancedTranslation: value.customTranslation ? null : translationObj?.advancedTranslation ?? null,
+                translations: fillLangs(
+                  translationLangs,
+                  value.customTranslations ? Object.values(value.customTranslations) : [],
+                  officialTranslations,
+                ),
                 wordDisplayType:
                   value.word.mainType ?? (value.word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : value.word.type),
                 fieldUniqueId: Math.random().toString(),
@@ -278,14 +285,13 @@ const FieldArray = memo(
                 type: 'word',
                 subType: 'search-word',
                 wordValue: value.wordValue,
-                translation: value.translation ?? '',
-                advancedTranslation: null,
+                translations: fillLangs(translationLangs, value.translations),
                 fieldUniqueId: Math.random().toString(),
               };
           append(newWord);
         }
       },
-      [append, translationLang],
+      [append, translationLangs],
     );
 
     useImperativeHandle(
@@ -516,7 +522,6 @@ const SearchWord: FC<{
   helper,
 }) => {
   const searchValue = useWatch({ control, name: `${fieldKey}.wordValue` }) as string;
-  const wordDisplayType = useWatch({ control, name: `${fieldKey}.wordDisplayType` });
   const word = useWatch({ control, name: `${fieldKey}.word` });
   const isChanged = useWatch({ control, name: `${fieldKey}.changed` });
   const askedForChangeConfirmation = useWatch({ control, name: `${fieldKey}.askedForChangeConfirmation` });
@@ -532,8 +537,7 @@ const SearchWord: FC<{
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } = useSearchWords({
     lang: formBaseInfo.langToLearn,
     searchValue: finalSearchValue,
-    translationLang: formBaseInfo.translationLang,
-    wordType: wordDisplayType ?? undefined,
+    translationLangs: formBaseInfo.translationLangs,
     limit: 5,
   });
 
@@ -546,19 +550,19 @@ const SearchWord: FC<{
       setValue(fieldKey, {
         ...currentValue,
         word: suggestion,
-        translation: suggestion.translation ?? currentValue.translation,
-        advancedTranslation: suggestion.advancedTranslation ?? currentValue.advancedTranslation,
+        translations: fillLangs(formBaseInfo.translationLangs, suggestion.translations),
         wordValue: suggestion.value,
         wordDisplayType: suggestion.mainType ?? suggestion.type,
         changed: false,
       });
       lastWordRef.current = suggestion;
-      setFocus(`${fieldKey}.translation`);
+      const mainTranslationLang = formBaseInfo.translationLangs[0];
+      setFocus(`${fieldKey}.translations.${mainTranslationLang}.translation`);
     },
-    [fieldKey, setValue, getValues, setFocus],
+    [fieldKey, setValue, getValues, setFocus, formBaseInfo.translationLangs],
   );
 
-  const handleEnterClick: KeyboardEventHandler = (e) => {
+  const handleEnterClick = (e: React.KeyboardEvent, keyToFocus?: string) => {
     if (e.ctrlKey) {
       // continue to submit the form
       formBaseInfo.handleSubmit();
@@ -566,7 +570,11 @@ const SearchWord: FC<{
     }
     e.stopPropagation();
     e.preventDefault();
-    if (isLastChild) onAddNewWord?.();
+    if (keyToFocus) {
+      setFocus(keyToFocus as never);
+    } else if (isLastChild) {
+      onAddNewWord?.();
+    }
   };
 
   const { confirmationModalElement, openConfirmationModal } = useConfirmationModal();
@@ -595,7 +603,7 @@ const SearchWord: FC<{
       const onPaste = (event: ClipboardEvent) => {
         if (event.target !== wordValueRef.current?.input) return;
 
-        const newWords = getWordsFromPastedData(event.clipboardData);
+        const newWords = getWordsFromPastedData(event.clipboardData, formBaseInfo.translationLangs);
 
         if (newWords) {
           console.log('pasted words', newWords);
@@ -609,9 +617,7 @@ const SearchWord: FC<{
         document.removeEventListener('paste', onPaste);
       };
     }
-  }, [isLastChild, onAddNewWord, isEmptyWordValue, onRemove]);
-
-  const wordTypeChoices = useWordTypeChoices(formBaseInfo.langToLearn, helper) || [];
+  }, [isLastChild, onAddNewWord, isEmptyWordValue, onRemove, formBaseInfo.translationLangs]);
 
   return (
     <div className={styles.wordSearchContainer}>
@@ -656,44 +662,24 @@ const SearchWord: FC<{
             />
           </div>
           <div style={{ flex: 5 }}>
-            <Controller
-              name={`${fieldKey}.translation`}
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Input
-                  placeholder='translation'
-                  fullWidth
-                  {...field}
-                  onChange={
-                    !shouldAskForConfirmationWhenChanging
-                      ? field.onChange
-                      : (e) => {
-                          const newValue = e.target.value;
-                          notifyIfNecessary(() => field.onChange(newValue), `${fieldKey}.translation`);
-                        }
-                  }
-                  size='large'
-                  status={error ? 'error' : undefined}
-                  onEnterClick={handleEnterClick}
-                />
-              )}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <Controller
-              name={`${fieldKey}.wordDisplayType`}
-              control={control}
-              render={({ field }) => (
-                <Select<number>
-                  options={wordTypeChoices}
-                  {...field}
-                  allowClear
-                  style={{ width: '100%' }}
-                  placeholder='Choose type'
-                  size='large'
-                />
-              )}
-            />
+            {formBaseInfo.translationLangs.map((lang, idx) => (
+              <TranslationEditor
+                fieldKey={`${fieldKey}.translations.${lang}`}
+                control={control}
+                key={lang}
+                lang={lang}
+                displayLang={formBaseInfo.translationLangs.length > 1}
+                shouldAskForConfirmationWhenChanging={shouldAskForConfirmationWhenChanging}
+                isLastChild={idx === formBaseInfo.translationLangs.length - 1}
+                notifyIfNecessary={notifyIfNecessary}
+                onEnterClick={handleEnterClick}
+                nextLangFieldKey={
+                  idx === formBaseInfo.translationLangs.length - 1
+                    ? undefined
+                    : `${fieldKey}.translations.${formBaseInfo.translationLangs[idx + 1]}`
+                }
+              />
+            ))}
           </div>
         </div>
         <WordAdvancedActions
@@ -704,7 +690,9 @@ const SearchWord: FC<{
           helper={helper}
           handleOfficialWordChoose={handleChoose}
         />
-        {formBaseInfo.canManageOfficialWords && <OfficialityIcon control={control} fieldKey={fieldKey} />}
+        {formBaseInfo.canManageOfficialWords && (
+          <OfficialityIcon control={control} fieldKey={fieldKey} translationLangs={formBaseInfo.translationLangs} />
+        )}
         <MinusOutlined className={styles.clickableIcon} onClick={onRemove} />
       </div>
       {finalSearchValue && (
@@ -716,10 +704,65 @@ const SearchWord: FC<{
           isFetchingNextPage={isFetchingNextPage}
           handleChoose={handleChoose}
           helper={helper}
-          translationLang={formBaseInfo.translationLang}
+          translationLangs={formBaseInfo.translationLangs}
         />
       )}
       {confirmationModalElement}
+    </div>
+  );
+};
+
+interface TranslationEditorProps {
+  fieldKey: `children.${number}.translations.${string}`;
+  nextLangFieldKey: `children.${number}.translations.${string}` | undefined;
+  control: Control<LessonInfo, any>;
+  shouldAskForConfirmationWhenChanging: boolean;
+  lang: string;
+  displayLang: boolean;
+  isLastChild: boolean;
+  notifyIfNecessary: (fn: () => void, key: string) => void;
+  onEnterClick: (e: React.KeyboardEvent, keyToFocus?: string) => void;
+}
+
+const TranslationEditor: FC<TranslationEditorProps> = ({
+  fieldKey,
+  nextLangFieldKey,
+  control,
+  lang,
+  displayLang,
+  shouldAskForConfirmationWhenChanging,
+  isLastChild,
+  notifyIfNecessary,
+  onEnterClick,
+}) => {
+  return (
+    <div>
+      <Controller
+        name={`${fieldKey}.translation`}
+        control={control}
+        render={({ field, fieldState: { error } }) => (
+          <Input
+            placeholder={displayLang ? `${lang}: translation` : 'translation'}
+            fullWidth
+            {...field}
+            onChange={
+              !shouldAskForConfirmationWhenChanging
+                ? field.onChange
+                : (e) => {
+                    const newValue = e.target.value;
+                    notifyIfNecessary(() => field.onChange(newValue), `${fieldKey}.translation`);
+                  }
+            }
+            size='large'
+            status={error ? 'error' : undefined}
+            onEnterClick={(e) => {
+              const nextTranslationLangFieldKey = nextLangFieldKey ? `${nextLangFieldKey}.translation` : undefined;
+              onEnterClick(e, nextTranslationLangFieldKey);
+            }}
+          />
+        )}
+      />
+      {!isLastChild && <div style={{ height: 10 }} />}
     </div>
   );
 };
@@ -732,30 +775,34 @@ interface WordAdvancedActionsProps {
   handleOfficialWordChoose: (word: WordWithTranslationDTO) => void;
 }
 
-type A = SearchWordInfo & {
-  customTranslations: Pick<WordWithTranslationDTO, 'translation' | 'advancedTranslation'> | null;
+type WordSettingsData = SearchWordInfo & {
+  customTranslations: WordWithTranslationDTO['translations'] | null;
 };
 
 const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
   formBaseInfo,
   word,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   fieldKey,
   helper,
   handleOfficialWordChoose,
 }) => {
   const [isWordFormsModalOpen, setIsWordFormsModalOpen] = useState(false);
-  const [userWordData, setUserWordData] = useState<A>();
+  const [userWordData, setUserWordData] = useState<WordSettingsData>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { getValues } = useFormContext<LessonInfo>();
   const handleOfficialWordOpen = () => {
     const data = getValues(fieldKey);
     if (data.type !== 'word') return;
-    const areTranslationsIdentical =
-      !!word &&
-      data.translation === word.translation &&
-      JSON.stringify(word.advancedTranslation ?? null) === JSON.stringify(data.advancedTranslation ?? null);
+    const tr1 = Object.values(data.translations).filter(isNonNullable);
+    const areTranslationsIdentical = areCustomTranslationsSameAsOfficial(
+      tr1,
+      word?.translations,
+      formBaseInfo.translationLangs,
+    );
     setUserWordData({
       ...data,
-      customTranslations: areTranslationsIdentical ? null : pickKeys(data, 'translation', 'advancedTranslation'),
+      customTranslations: areTranslationsIdentical ? null : tr1,
     });
     setIsWordFormsModalOpen(true);
   };
@@ -792,7 +839,7 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
       </Dropdown>
       {isWordFormsModalOpen && (
         <OfficialWordFormModal
-          defaultTranslationLang={formBaseInfo.translationLang}
+          defaultTranslationLangs={formBaseInfo.translationLangs}
           wordId={word?.id}
           customTranslations={userWordData?.customTranslations ?? undefined}
           onClose={handleClose}
@@ -809,21 +856,22 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
 const OfficialityIcon: FC<{
   fieldKey: `children.${number}`;
   control: Control<LessonInfo, any>;
-}> = memo(({ control, fieldKey }) => {
+  translationLangs: string[];
+}> = memo(({ control, fieldKey, translationLangs }) => {
   const { setValue } = useFormContext<LessonInfo>();
   const word = useWatch({ control, name: `${fieldKey}.word` });
-  const translation = useWatch({ control, name: `${fieldKey}.translation` });
-  const advancedTranslation = useWatch({ control, name: `${fieldKey}.advancedTranslation` });
+  const translations = useWatch({ control, name: `${fieldKey}.translations` });
   const makeOfficial = useWatch({ control, name: `${fieldKey}.makeOfficial` });
 
   const status = (() => {
     if (!word && makeOfficial) return 'will-become-official';
     if (!word || !word.isOfficial) return 'not-official';
-    if (
-      translation === word.translation &&
-      JSON.stringify(advancedTranslation ?? null) === JSON.stringify(word.advancedTranslation ?? null)
-      // TODO: check word type as well
-    ) {
+    const areTranslationsIdentical = areCustomTranslationsSameAsOfficial(
+      translations,
+      word?.officialTranslations || word?.translations,
+      translationLangs,
+    );
+    if (areTranslationsIdentical) {
       return 'unchanged-official';
     }
     return 'changed-official';
@@ -880,11 +928,11 @@ type SuggestionProps = Pick<
 > & {
   handleChoose: (word: WordWithTranslationDTO) => void;
   helper: Helper;
-  translationLang: string;
+  translationLangs: string[];
 };
 
 const Suggestions: FC<SuggestionProps> = memo(
-  ({ data, status, handleChoose, hasNextPage, fetchNextPage, isFetchingNextPage, translationLang, helper }) => {
+  ({ data, status, handleChoose, hasNextPage, fetchNextPage, isFetchingNextPage, translationLangs, helper }) => {
     const areResultsFound = data && (data.pages.length > 0 || data.pages[0].words.length > 0);
 
     const [displayedWordId, setDisplayedWordId] = useState<number | null>(null);
@@ -899,16 +947,21 @@ const Suggestions: FC<SuggestionProps> = memo(
               {data.pages.map((page, index) => (
                 <React.Fragment key={index}>
                   {page.words.map((word) => (
-                    <button key={word.id} onClick={() => handleChoose(word)} className={styles.wordSuggestion}>
+                    <div key={word.id} onClick={() => handleChoose(word)} className={styles.wordSuggestion}>
                       <span>{word.value}</span>
-                      <span>{word.translation}</span>
-                      <span style={{ marginRight: 5, opacity: 0.5 }}>
-                        {helper.getCardType(word.type, word.lang)?.abbr}
-                      </span>
+                      <span className={styles.translationsContainer}>
+                        {word.translations.map((trans) => (
+                          <div key={trans.lang}>
+                            {trans.lang}: {trans.translation}
+                            {/* TODO: display flags for translations if translationLangs length is more than 1 */}
+                          </div>
+                        ))}
+                      </span>{' '}
+                      <span>{helper.getCardType(word.type, word.lang)?.abbr}</span>
                       <span onClick={(e) => e.stopPropagation()}>
                         <Button label={<BookOutlined />} variant='text' onClick={() => setDisplayedWordId(word.id)} />
                       </span>
-                    </button>
+                    </div>
                   ))}
                 </React.Fragment>
               ))}
@@ -919,12 +972,12 @@ const Suggestions: FC<SuggestionProps> = memo(
           </div>
         )}
 
-        {displayedWordId && !!translationLang && (
+        {displayedWordId && translationLangs.length > 0 && (
           <DictionaryModal
             wordId={displayedWordId}
             helper={helper}
             onClose={() => setDisplayedWordId(null)}
-            translationLang={translationLang}
+            translationLangs={translationLangs}
           />
         )}
       </div>
@@ -934,16 +987,20 @@ const Suggestions: FC<SuggestionProps> = memo(
 
 export { ContentForm };
 
-const getWordsFromPastedData = (clipboardData: DataTransfer | null): AddNewWordInfo[] | null => {
+const getWordsFromPastedData = (
+  clipboardData: DataTransfer | null,
+  translationLangs: string[],
+): AddNewWordInfo[] | null => {
   const tableData = getTableFromClipboard(clipboardData);
   if (tableData) {
-    console.log('tableData', tableData);
     const first2Cols = getFirstNNonEmptyColumns(tableData, 2, (v) => !v).filter((e) => e.some((e) => !!e));
     if (first2Cols.length === 0) return null;
 
+    const mainTranslationLang = translationLangs[0];
+
     return first2Cols.map((e) => ({
       wordValue: e[0],
-      translation: e[1],
+      translations: [{ lang: mainTranslationLang, translation: e[1], advancedTranslation: null }],
     }));
   }
 

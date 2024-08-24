@@ -6,7 +6,7 @@ export interface CourseDTO {
   title: string;
   description: string | null;
   langToLearn: string;
-  translationLang: string;
+  translationLangs: string;
   isPublic: boolean;
   isOfficial: boolean;
   isDeleted: boolean;
@@ -19,7 +19,7 @@ export interface CreateCourseReqDTO {
   title: string;
   description: string | null;
   langToLearn: string;
-  translationLang: string;
+  translationLangs: string;
   isPublic: boolean;
   isOfficial: boolean;
 }
@@ -32,7 +32,7 @@ export interface UpdateCourseReqDTO {
   title?: string;
   description?: string | null;
   langToLearn?: string;
-  translationLang?: string;
+  translationLangs: string;
   isPublic?: boolean;
   isOfficial?: boolean;
 }

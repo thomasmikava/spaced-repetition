@@ -14,6 +14,9 @@ import { useWords } from './useWords';
 import LoadingPage from '../Loading/LoadingPage';
 import { BookOutlined } from '@ant-design/icons/lib/icons';
 import { DictionaryLoadedModal } from '../../components/DictionaryModal';
+import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
+import { TranslationLangSelectorConnected } from '../../components/Lang/TranslationLangSelector';
+import styles from './styles.module.css';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless';
@@ -100,24 +103,35 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }
 
   const testMode = !isInAnswerReviewMode && !isView ? 'edit' : 'readonly';
 
+  const availableLangs = currentCard.record.card.translations.map((e) => e.lang);
+
   return (
     <div className='body' style={{ paddingTop: 10, paddingBottom: 10 }}>
-      <TestContextProvider key={questionNumber} mode={testMode} onResult={handleResult}>
-        <WithNextButton
-          onClick={onSubmit}
-          rest={
-            testMode === 'readonly' && currentCard && currentCard.record.card.variants.length > 1 ? (
-              <DictionaryIcon card={currentCard.record.card} helper={helper} />
-            ) : null
-          }
-        >
-          <ViewCard>
-            <form onSubmit={withNoEventAction(onSubmit)}>
-              <Content content={question.content} />
-            </form>
-          </ViewCard>
-        </WithNextButton>
-      </TestContextProvider>
+      <TranslationLangsProvider translationLangs={availableLangs}>
+        <TestContextProvider key={questionNumber} mode={testMode} onResult={handleResult}>
+          <WithNextButton
+            onClick={onSubmit}
+            rest={
+              testMode === 'readonly' && currentCard && currentCard.record.card.variants.length > 1 ? (
+                <DictionaryIcon card={currentCard.record.card} helper={helper} />
+              ) : null
+            }
+          >
+            <div>
+              {availableLangs.length > 0 && (
+                <div className={styles.transLangsContainer}>
+                  <TranslationLangSelectorConnected />
+                </div>
+              )}
+              <ViewCard>
+                <form onSubmit={withNoEventAction(onSubmit)}>
+                  <Content content={question.content} />
+                </form>
+              </ViewCard>
+            </div>
+          </WithNextButton>
+        </TestContextProvider>
+      </TranslationLangsProvider>
     </div>
   );
 };

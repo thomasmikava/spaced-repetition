@@ -17,7 +17,12 @@ const EditCoursePage = () => {
   const { mutate: updateCourse, isPending } = useUpdateCourse();
   const handleSubmit = (data: CourseFormData) => {
     updateCourse(
-      { id: courseId, ...data, description: data.description || null },
+      {
+        id: courseId,
+        ...data,
+        description: data.description || null,
+        translationLangs: data.translationLangs.join(','),
+      },
       { onSuccess: () => navigate(paths.app.course.page(courseId)) },
     );
   };
@@ -38,7 +43,7 @@ const EditCoursePage = () => {
           isOfficial: course.isOfficial,
           isPublic: course.isPublic,
           langToLearn: course.langToLearn,
-          translationLang: course.translationLang,
+          translationLangs: course.translationLangs.split(','),
         }}
         officialLangs={userData.adminLangs || undefined}
         submitLabel='Save'

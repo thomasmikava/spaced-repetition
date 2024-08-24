@@ -17,6 +17,16 @@ interface ContentParagraph {
   style?: React.CSSProperties;
 }
 
+export interface ContentTranslationLangSelector {
+  type: 'translation-lang-selector';
+  style?: React.CSSProperties;
+}
+
+export interface ContentUnderTranslationLang {
+  type: 'under-translation-lang';
+  getContent: (lang: string, langOptions: string[]) => AnyContent | null | undefined;
+}
+
 interface ContentHR {
   type: 'hr';
   style?: React.CSSProperties;
@@ -106,6 +116,8 @@ export interface ContentSection {
 export type AnyContent =
   | ContentHeader
   | ContentParagraph
+  | ContentTranslationLangSelector
+  | ContentUnderTranslationLang
   | ContentHR
   | ContentTagContainer
   | ContentText
