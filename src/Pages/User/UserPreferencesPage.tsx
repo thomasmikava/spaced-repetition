@@ -9,7 +9,7 @@ import { removeUndefinedValues } from '../../utils/object';
 
 const UserPreferencesPage = () => {
   const { data, isLoading } = useUserPreferences();
-  const { mutate } = useReplaceUserPreferences();
+  const { mutate, isPending } = useReplaceUserPreferences();
 
   const preferences = data?.result ?? null;
 
@@ -68,7 +68,7 @@ const UserPreferencesPage = () => {
 
   return (
     <div className='body'>
-      <UserPreferencesForm defaultData={defaultData} onSave={handleSave} />
+      <UserPreferencesForm defaultData={defaultData} onSave={handleSave} isSubmitting={isPending} />
     </div>
   );
 };

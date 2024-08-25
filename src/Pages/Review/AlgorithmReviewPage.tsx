@@ -20,6 +20,7 @@ import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 import { iterateAndModify } from '../../utils/object';
 import { useUserPreferences } from '../../api/controllers/users/users.query';
 import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
+import { calculatePreferences } from '../../functions/preferences';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless' | 'only-new';
@@ -39,10 +40,11 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
 
   const getQuestion = useLatestCallback((currentCard: CardWithProbability) => {
     if (!helper || !currentCard) return null;
+    const preferences = calculatePreferences(userPreferences, currentCard.record.card.lang);
     if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
         type: CardViewMode.groupView,
-        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, userPreferences),
+        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, preferences),
         record: currentCard.record,
       };
     } else if (
@@ -52,13 +54,13 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
     ) {
       return {
         type: CardViewMode.individualView,
-        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, userPreferences),
+        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, preferences),
         record: currentCard.record,
       };
     }
     return {
       type: CardViewMode.test,
-      content: getCardViewContent(currentCard.record, CardViewMode.test, helper, userPreferences),
+      content: getCardViewContent(currentCard.record, CardViewMode.test, helper, preferences),
       record: currentCard.record,
     };
   });

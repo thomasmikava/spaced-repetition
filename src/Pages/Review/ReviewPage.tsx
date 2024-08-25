@@ -19,6 +19,7 @@ import { TranslationLangSelectorConnected } from '../../components/Lang/Translat
 import styles from './styles.module.css';
 import { useUserPreferences } from '../../api/controllers/users/users.query';
 import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
+import { calculatePreferences } from '../../functions/preferences';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless' | 'only-new';
@@ -37,10 +38,11 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
 
   const question = useMemo(() => {
     if (!helper || !currentCard) return null;
+    const preferences = calculatePreferences(userPreferences, currentCard.record.card.lang);
     if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
         type: CardViewMode.groupView,
-        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, userPreferences),
+        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, preferences),
       };
     } else if (
       !currentCard.hasGroupViewMode &&
@@ -49,12 +51,12 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
     ) {
       return {
         type: CardViewMode.individualView,
-        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, userPreferences),
+        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, preferences),
       };
     }
     return {
       type: CardViewMode.test,
-      content: getCardViewContent(currentCard.record, CardViewMode.test, helper, userPreferences),
+      content: getCardViewContent(currentCard.record, CardViewMode.test, helper, preferences),
     };
   }, [currentCard, helper, userPreferences]);
 
