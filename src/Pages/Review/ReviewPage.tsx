@@ -17,15 +17,18 @@ import { DictionaryLoadedModal } from '../../components/DictionaryModal';
 import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 import { TranslationLangSelectorConnected } from '../../components/Lang/TranslationLangSelector';
 import styles from './styles.module.css';
+import { useUserPreferences } from '../../api/controllers/users/users.query';
+import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless';
   words: StandardCard[];
   isInsideLesson: boolean;
   helper: NonNullable<ReturnType<typeof useHelper>>;
+  userPreferences: UserPreferencesDTO | null;
 }
 
-const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
+const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, userPreferences }) => {
   const [reviewer] = useState(() => new Reviewer(words, helper, isInsideLesson, mode));
   const [questionNumber, setQuestionNumber] = useState(0);
 
@@ -37,7 +40,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }
     if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
         type: CardViewMode.groupView,
-        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, userPreferences),
       };
     } else if (
       !currentCard.hasGroupViewMode &&
@@ -46,14 +49,14 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }
     ) {
       return {
         type: CardViewMode.individualView,
-        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, userPreferences),
       };
     }
     return {
       type: CardViewMode.test,
-      content: getCardViewContent(currentCard.record, CardViewMode.test, helper),
+      content: getCardViewContent(currentCard.record, CardViewMode.test, helper, userPreferences),
     };
-  }, [currentCard, helper]);
+  }, [currentCard, helper, userPreferences]);
 
   const [isInAnswerReviewMode, setIsInAnswerReviewMode] = useState(false);
 
@@ -144,13 +147,18 @@ export const ReviewPageLoader = () => {
   const helper = useHelper();
 
   const { data: words, isLoading: areWordsLoading, isFetching } = useWords({ courseId, lessonId });
+  const {
+    data: userPreferences,
+    isLoading: arePreferencesLoading,
+    isFetching: isFetchingPreferences,
+  } = useUserPreferences();
 
-  const isLoading = !helper || areWordsLoading || isFetching;
+  const isLoading = !helper || areWordsLoading || isFetching || arePreferencesLoading || isFetchingPreferences;
   if (isLoading) {
     return <LoadingPage />;
   }
 
-  if (!words || !helper) return <div className='body'>Error...</div>;
+  if (!words || !helper || !userPreferences) return <div className='body'>Error...</div>;
 
   return (
     <ReviewPage
@@ -158,6 +166,7 @@ export const ReviewPageLoader = () => {
       words={words}
       helper={helper}
       isInsideLesson={!!courseId && !!lessonId}
+      userPreferences={userPreferences.result}
     />
   );
 };

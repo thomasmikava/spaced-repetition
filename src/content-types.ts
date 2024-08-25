@@ -90,6 +90,7 @@ export interface ContentInput {
   correctValues?: string[];
   fullWidth?: boolean;
   autoFocus?: boolean;
+  autoCheck?: boolean;
   isSubmit?: boolean;
   caseInsensitive?: boolean;
   audioProps?: Omit<ContentVoice, 'type'>;

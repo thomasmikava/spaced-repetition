@@ -48,3 +48,30 @@ export function objectMap<TValue, TResult>(
   }
   return ret;
 }
+
+export function iterateAndModify<T>(
+  obj: T,
+  modifyFn: (key: string, value: any, obj: Record<string, unknown>) => any,
+): T {
+  if (typeof obj !== 'object' || obj === null) return obj as T;
+  const result: Record<any, any> = {};
+
+  if (Array.isArray(obj)) {
+    return obj.map((value) => iterateAndModify(value, modifyFn)) as unknown as T;
+  }
+
+  const keys = Object.getOwnPropertyNames(obj);
+  for (const key of keys) {
+    const value = obj[key as never];
+
+    if (typeof value === 'object' && value !== null) {
+      // Recursively handle nested objects
+      result[key] = iterateAndModify(value, modifyFn);
+    } else {
+      // Modify value using the provided function or leave it as is
+      result[key] = modifyFn(key, value, obj as Record<string, unknown>);
+    }
+  }
+
+  return result as T;
+}

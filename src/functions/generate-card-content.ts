@@ -30,6 +30,7 @@ import { getArticle, getWithArticle, getWithSymbolArticle } from './texts';
 import type { WordUsageExampleDTO } from '../api/controllers/words/words.schema';
 import { getAttributeTransformer } from './transformers';
 import { ALL_LANGS, sortByLangs } from '../Pages/hooks/useTranslationLang';
+import type { UserGlobalPreferencesDTO, UserPreferencesDTO } from '../api/controllers/users/users.schema';
 
 const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyContent => {
   return {
@@ -261,10 +262,16 @@ const getPrefix = (
   return val + ' ';
 };
 
+const defaultGlobalPreferences: UserGlobalPreferencesDTO = {
+  autoSubmitCorrectAnswers: false,
+  testTypingTranslation: true,
+};
+
 export const getCardViewContent = (
   record: StandardTestableCard,
   mode: CardViewMode,
   helper: Helper,
+  preferences: UserPreferencesDTO | null,
 ): (AnyContent | null | undefined)[] => {
   const config = helper.getCardType(record.displayType, record.card.lang)?.configuration;
   // const mathcer = config?.variantGroups?.find((e) => e.id === record.groupMeta.matcherId)?.matcher;
@@ -292,7 +299,12 @@ export const getCardViewContent = (
   const viewLines = view?.lines ?? defaultLines;
   // debugger;
 
-  const { lineContents, mainAudioText } = viewLinesToContentLines(viewLines, helper, record);
+  const { lineContents, mainAudioText } = viewLinesToContentLines(
+    viewLines,
+    helper,
+    record,
+    preferences ? preferences.global : defaultGlobalPreferences, // TODO: get preferences for card language and merge it with global preferences and then with default preferences
+  );
 
   let audioText = mainAudioText ?? '';
   const audio = viewLines.find((e) => e.type === ViewLineType.Audio);
@@ -355,6 +367,7 @@ export const viewLinesToContentLines = (
   lines: ViewLine[],
   helper: Helper,
   record: Pick<StandardTestableCard, 'caseSensitive' | 'card' | 'variant' | 'groupMeta'>,
+  preferences: UserGlobalPreferencesDTO,
 ) => {
   const textStyle: React.CSSProperties = { textAlign: 'center', fontSize: 20, display: 'block' };
 
@@ -480,6 +493,7 @@ export const viewLinesToContentLines = (
             correctValues,
             audioPrefixObj ? getPrefix(audioPrefixObj, record.variant.attrs, record.card.lang, helper) : undefined,
           ),
+          autoCheck: preferences.autoSubmitCorrectAnswers,
         };
       case ViewLineType.AfterAnswer:
         return {

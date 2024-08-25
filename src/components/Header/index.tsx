@@ -17,6 +17,9 @@ const Header = () => {
   const gotoScriptsPage = () => {
     navigate(paths.admin.scripts());
   };
+  const gotoPreferencesPage = () => {
+    navigate(paths.user.preferences());
+  };
 
   return (
     <Layout.Header className={styles.header + ' ' + (!isSignedIn ? styles.inCenter : '')}>
@@ -32,6 +35,7 @@ const Header = () => {
             menu={{
               items: [
                 isAdmin ? { key: 's', label: 'Scripts', onClick: gotoScriptsPage } : null,
+                { key: 'pref', label: 'Preferences', onClick: gotoPreferencesPage },
                 { key: 'l', label: 'Log out', onClick: signOut },
               ],
             }}

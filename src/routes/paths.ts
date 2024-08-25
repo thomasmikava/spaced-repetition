@@ -36,4 +36,7 @@ export const paths = addPrefix('/')({
   admin: addPrefix('/admin')({
     scripts: '/scripts',
   }),
+  user: addPrefix('/user')({
+    preferences: '/preferences',
+  }),
 });

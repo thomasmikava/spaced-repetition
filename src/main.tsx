@@ -24,6 +24,7 @@ import { queryClient } from './utils/queries.ts';
 import ExploreCoursesPage from './Pages/Course/ExploreCoursesPage.tsx';
 import SearchPage from './Pages/Search/SearchPage.tsx';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import UserPreferencesPage from './Pages/User/UserPreferencesPage.tsx';
 
 (window as never as Record<string, unknown>).__MyApp = 'Spaced Repetition.';
 
@@ -137,6 +138,14 @@ const router = createBrowserRouter(
       element: (
         <PageGuard onlyAuth>
           <NewWordsPage />
+        </PageGuard>
+      ),
+    },
+    {
+      path: paths.user.preferences.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <UserPreferencesPage />
         </PageGuard>
       ),
     },

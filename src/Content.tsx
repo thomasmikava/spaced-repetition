@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cssModule from './App.module.css';
 import type {
@@ -190,16 +191,22 @@ const Input = ({
   isSubmit,
   audioProps,
   advancedAnswerChecker,
+  autoCheck,
 }: ContentInput) => {
   const { mode, useOnCheck } = useTestContext();
   const ref = useRef<HTMLInputElement>(null);
-  const lastResult = useOnCheck(inputId, () => {
-    const value = (ref.current?.value ?? '').trim();
-    const isCorrect =
+  const checkIfCorrect = (rawValue: string) => {
+    const value = rawValue.trim();
+    return (
       !!correctValues?.some((correctValue) => {
         if (caseInsensitive) return correctValue.toLocaleLowerCase() === value.toLocaleLowerCase();
         return correctValue === value;
-      }) || !!advancedAnswerChecker?.(value, { caseInsensitive });
+      }) || !!advancedAnswerChecker?.(value, { caseInsensitive })
+    );
+  };
+  const lastResult = useOnCheck(inputId, () => {
+    const value = (ref.current?.value ?? '').trim();
+    const isCorrect = checkIfCorrect(ref.current?.value ?? '');
     return { isCorrect, value };
   });
 
@@ -207,6 +214,18 @@ const Input = ({
     if (!audioProps) return undefined;
     return <Content content={{ type: 'voice', ...audioProps }} />;
   }, [audioProps]);
+
+  const handleAutoCheck = (e: KeyboardEvent) => {
+    const element = ref.current;
+    if (!element || !element.form || e.key === 'Control') return;
+    const isCorrect = checkIfCorrect(ref.current.value);
+    if (!isCorrect) return;
+    const submitEvent = new Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    });
+    element.form.dispatchEvent(submitEvent);
+  };
 
   return (
     <div className={cssModule.inputContainer + ' ' + (fullWidth ? cssModule.fullWidth : '')} style={containerStyle}>
@@ -223,6 +242,7 @@ const Input = ({
         spellCheck={false}
         autoCapitalize='none'
         readOnly={mode === 'readonly'}
+        onKeyUp={autoCheck ? handleAutoCheck : undefined}
       />
       {lastResult && lastResult.isCorrect && (
         <div className={cssModule.inputAnswer + ' ' + cssModule.inputCorrectAnswer}>
@@ -280,7 +300,7 @@ const convertColor = (color: string) => {
 const UnderTranslationLang = ({ getContent }: ContentUnderTranslationLang) => {
   const { value, options } = useTranslationLangSettings();
   if (value === null) return null;
-  const content = getContent(value, options);
+  const content = getContent?.(value, options);
   return renderContent(content);
 };
 

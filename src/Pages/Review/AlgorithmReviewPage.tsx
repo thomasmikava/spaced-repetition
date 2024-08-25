@@ -16,17 +16,22 @@ import { useLatestCallback } from '../../utils/hooks';
 import { useWords } from './useWords';
 import { CardTypeMapper } from '../../database/card-types';
 import LoadingPage from '../Loading/LoadingPage';
+import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
+import { iterateAndModify } from '../../utils/object';
+import { useUserPreferences } from '../../api/controllers/users/users.query';
+import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless';
   words: StandardCard[];
   isInsideLesson: boolean;
   helper: NonNullable<ReturnType<typeof useHelper>>;
+  userPreferences: UserPreferencesDTO | null;
 }
 
 const FAST_REVIEW = false;
 
-const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words }) => {
+const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, userPreferences }) => {
   const [mainKey, setMainKey] = useState(0);
   const [maxCards, setMaxCards] = useState(400);
 
@@ -37,7 +42,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
     if (currentCard.hasGroupViewMode && !currentCard.isViewedInGroup) {
       return {
         type: CardViewMode.groupView,
-        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, userPreferences),
         record: currentCard.record,
       };
     } else if (
@@ -47,13 +52,13 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
     ) {
       return {
         type: CardViewMode.individualView,
-        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper),
+        content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, userPreferences),
         record: currentCard.record,
       };
     }
     return {
       type: CardViewMode.test,
-      content: getCardViewContent(currentCard.record, CardViewMode.test, helper),
+      content: getCardViewContent(currentCard.record, CardViewMode.test, helper, userPreferences),
       record: currentCard.record,
     };
   });
@@ -74,11 +79,11 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
       cards.push(currentCard);
       const question = getQuestion(currentCard);
       if (!question) break;
-      question.content = JSON.parse(
-        JSON.stringify(question.content)
-          .replace(/"autoplay":true/g, '"autoplay":false')
-          .replace(/"autoFocus":true/g, '"autoFocus":false'),
-      );
+      question.content = iterateAndModify(question.content, (key, value, obj) => {
+        if (key === 'autoplay' && obj?.type === 'voice') return false;
+        if (key === 'autoFocus' && obj?.type === 'input') return false;
+        return value;
+      });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tagLength = (question as any).content?.[0]?.content?.[0]?.content?.length || 1; // TODO: it's very fragile strategy
       if (FAST_REVIEW) lastDate += 1000 + (tagLength - 1) * 1000;
@@ -138,34 +143,33 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
       entries.questions.map((question, index) => {
         const isView = question.type === CardViewMode.groupView || question.type === CardViewMode.individualView;
         const record = entries.cards[index];
+        const availableLangs = record.record.card.translations.map((x) => x.lang);
         return (
-          <form
-            onSubmit={withNoEventAction(handleResult(index))}
-            key={mainKey + '_' + index}
-            style={{ margin: '20px 0' }}
-          >
-            <TestContextProvider
-              mode={isView || typeof submitted[index] === 'boolean' ? 'readonly' : 'edit'}
-              onResult={(areAllCorrect) => changeCorrectness(index, !areAllCorrect, false)}
-            >
-              <div style={{ display: 'flex', marginBottom: 5 }}>
-                <span style={{ flex: 1 }}>#{index + 1}</span>
-                {record.historyRecord && <span>prob: {Math.floor(record.probability * 1000) / 10}%; </span>}
-                <span>due: {formatTime(record.reviewDue)}</span>
-                {record.historyRecord && (
-                  <span>
-                    Half: {formatTime(secondsUntilProbabilityIsHalf(record.historyRecord!.lastS ?? initialTestS))}
-                  </span>
-                )}
-                {!isView && (
-                  <button type='button' onClick={() => changeCorrectness(index, correctness[index])}>
-                    {correctness[index] === false ? 'Mark as correct' : 'Mark as wrong'}
-                  </button>
-                )}
-              </div>
-              {questionCards[index]}
-            </TestContextProvider>
-          </form>
+          <TranslationLangsProvider translationLangs={availableLangs} key={mainKey + '_' + index}>
+            <form onSubmit={withNoEventAction(handleResult(index))} style={{ margin: '20px 0' }}>
+              <TestContextProvider
+                mode={isView || typeof submitted[index] === 'boolean' ? 'readonly' : 'edit'}
+                onResult={(areAllCorrect) => changeCorrectness(index, !areAllCorrect, false)}
+              >
+                <div style={{ display: 'flex', marginBottom: 5 }}>
+                  <span style={{ flex: 1 }}>#{index + 1}</span>
+                  {record.historyRecord && <span>prob: {Math.floor(record.probability * 1000) / 10}%; </span>}
+                  <span>due: {formatTime(record.reviewDue)}</span>
+                  {record.historyRecord && (
+                    <span>
+                      Half: {formatTime(secondsUntilProbabilityIsHalf(record.historyRecord!.lastS ?? initialTestS))}
+                    </span>
+                  )}
+                  {!isView && (
+                    <button type='button' onClick={() => changeCorrectness(index, correctness[index])}>
+                      {correctness[index] === false ? 'Mark as correct' : 'Mark as wrong'}
+                    </button>
+                  )}
+                </div>
+                {questionCards[index]}
+              </TestContextProvider>
+            </form>
+          </TranslationLangsProvider>
         );
       }),
     [changeCorrectness, handleResult, correctness, entries.cards, questionCards, entries.questions, mainKey, submitted],
@@ -226,13 +230,18 @@ export const AlgorithmReviewPageLoader = () => {
   const helper = useHelper();
 
   const { data: words, isLoading: areWordsLoading } = useWords({ courseId, lessonId });
+  const {
+    data: userPreferences,
+    isLoading: arePreferencesLoading,
+    isFetching: isFetchingPreferences,
+  } = useUserPreferences();
 
-  const isLoading = !helper || areWordsLoading;
+  const isLoading = !helper || areWordsLoading || arePreferencesLoading || isFetchingPreferences;
   if (isLoading) {
     return <LoadingPage />;
   }
 
-  if (!words || !helper) return <div className='body'>Error...</div>;
+  if (!words || !helper || !userPreferences) return <div className='body'>Error...</div>;
 
   return (
     <AlgorithmReviewPage
@@ -240,6 +249,7 @@ export const AlgorithmReviewPageLoader = () => {
       words={words}
       helper={helper}
       isInsideLesson={!!courseId && !!lessonId}
+      userPreferences={userPreferences.result}
     />
   );
 };
