@@ -30,7 +30,7 @@ interface ReviewPageProps {
 }
 
 const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, userPreferences }) => {
-  const [reviewer] = useState(() => new Reviewer(words, helper, isInsideLesson, mode));
+  const [reviewer] = useState(() => new Reviewer(words, helper, userPreferences, isInsideLesson, mode));
   const [questionNumber, setQuestionNumber] = useState(0);
 
   const [currentCard, setCurrentCard] = useState(() => reviewer.getNextCard());

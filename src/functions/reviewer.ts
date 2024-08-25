@@ -1,8 +1,10 @@
 /* eslint-disable no-debugger */
 /* eslint-disable sonarjs/cognitive-complexity */
+import type { UserPreferencesDTO } from '../api/controllers/users/users.schema';
 import type { StandardCard } from '../database/types';
 import type { Helper } from './generate-card-content';
 import { generateTestableCards } from './generate-variants';
+import { calculatePreferences } from './preferences';
 import { PreviousReviews } from './previous-reviews';
 import type { StandardTestableCard, AnyReviewHistory } from './reviews';
 import {
@@ -52,6 +54,7 @@ export class Reviewer {
   constructor(
     cards: StandardCard[],
     helper: Helper,
+    private userPreferences: UserPreferencesDTO | null,
     private isInsideLesson: boolean,
     private mode: 'endless' | 'normal' | 'only-new' = 'normal',
     private avoidStorage = false,
@@ -59,7 +62,8 @@ export class Reviewer {
     this.prevReviews = new PreviousReviews(avoidStorage);
     this.allTestableCards = [];
     for (const card of cards) {
-      const testableCards = generateTestableCards(card, helper);
+      const preference = calculatePreferences(this.userPreferences, card.lang);
+      const testableCards = generateTestableCards(card, helper, preference);
       if (mode === 'only-new') {
         const hasAlreadySeen = testableCards.some((record) =>
           this.prevReviews.getCardHistory(record, CardViewMode.individualView),

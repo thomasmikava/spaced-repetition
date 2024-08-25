@@ -195,6 +195,7 @@ const Input = ({
 }: ContentInput) => {
   const { mode, useOnCheck } = useTestContext();
   const ref = useRef<HTMLInputElement>(null);
+  const submittedRef = useRef(false);
   const checkIfCorrect = (rawValue: string) => {
     const value = rawValue.trim();
     return (
@@ -217,7 +218,7 @@ const Input = ({
 
   const handleAutoCheck = (e: KeyboardEvent) => {
     const element = ref.current;
-    if (!element || !element.form || e.key === 'Control') return;
+    if (submittedRef.current || !element || !element.form || e.key === 'Control') return;
     const isCorrect = checkIfCorrect(ref.current.value);
     if (!isCorrect) return;
     const submitEvent = new Event('submit', {
@@ -225,6 +226,7 @@ const Input = ({
       cancelable: true,
     });
     element.form.dispatchEvent(submitEvent);
+    submittedRef.current = true;
   };
 
   return (

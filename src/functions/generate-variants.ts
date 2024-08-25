@@ -5,38 +5,21 @@ import type { CardTypeConfiguration, CategoryAttrsMatcher, SortBy, VariantGroup 
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
 import { isMatch } from '../utils/matcher';
 import type { Helper } from './generate-card-content';
+import type { Preferences } from './preferences';
 import type { StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
 import { getIsStandardFormFn } from './standard-forms';
 
-export function generateTestableCards(card: StandardCard, helper: Helper): StandardTestableCard[] {
+export function generateTestableCards(
+  card: StandardCard,
+  helper: Helper,
+  _preferences: Preferences,
+): StandardTestableCard[] {
   const config = helper.getCardType(card.type, card.lang)?.configuration ?? {};
 
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
-  const groups = divideVariantsInGroups(card, config);
-
-  if (config.groupPriorities) {
-    const groupPriorities = config.groupPriorities.find(
-      (e) =>
-        !e.cardMatcher ||
-        isMatch({ attrs: card.attributes ?? undefined, labels: card.labels ?? undefined }, e.cardMatcher),
-    );
-    if (groupPriorities) {
-      groups.sort((a, b) => {
-        const aIndex = groupPriorities.groupIds.indexOf(a.matcherId ?? '');
-        const bIndex = groupPriorities.groupIds.indexOf(b.matcherId ?? '');
-        if (aIndex === -1 && bIndex === -1) return 0;
-        if (aIndex === -1) return 1;
-        if (bIndex === -1) return -1;
-        return aIndex - bIndex;
-      });
-    }
-  }
-
-  const grandVariants = groups.map((group) =>
-    group.variants.map(
-      (variant): StandardCardVariant => ({ ...variant, attrs: { ...card.attributes, ...variant.attrs } }),
-    ),
-  );
+  const unsortedGroups = divideVariantsInGroups(card, config);
+  const groups = sortGroups(card, config, unsortedGroups);
+  const grandVariants = getNormalizedGroupVariants(card, groups);
   const allStandardizedVariants = grandVariants.flat(1);
 
   if (config && typeof config.maxNumOfGroups === 'number') {
@@ -107,6 +90,32 @@ export function generateTestableCards(card: StandardCard, helper: Helper): Stand
   return testable;
 }
 
+const getNormalizedGroupVariants = (card: StandardCard, groups: Group[]) =>
+  groups.map((group) =>
+    group.variants.map(
+      (variant): StandardCardVariant => ({ ...variant, attrs: { ...card.attributes, ...variant.attrs } }),
+    ),
+  );
+
+const sortGroups = (card: StandardCard, config: CardTypeConfiguration, groups: Group[]) => {
+  const groupPriorities = config.groupPriorities?.find(
+    (e) =>
+      !e.cardMatcher ||
+      isMatch({ attrs: card.attributes ?? undefined, labels: card.labels ?? undefined }, e.cardMatcher),
+  );
+  if (groupPriorities) {
+    groups.sort((a, b) => {
+      const aIndex = groupPriorities.groupIds.indexOf(a.matcherId ?? '');
+      const bIndex = groupPriorities.groupIds.indexOf(b.matcherId ?? '');
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+  }
+  return groups;
+};
+
 const isOneOfTheMatchers = (
   variant: StandardCardVariant,
   matchers: CategoryAttrsMatcher[] | undefined | null,
@@ -165,6 +174,8 @@ const divideVariantsInGroups = (card: StandardCard, config: CardTypeConfiguratio
   });
   return groups;
 };
+
+type Group = ReturnType<typeof divideVariantsInGroups>[0];
 
 const sortVariants = (sortStrategy: SortBy[], variants: StandardCardVariant[]): StandardCardVariant[] => {
   const compare = (a: StandardCardVariant, b: StandardCardVariant, strategyIndex: number = 0): number => {
