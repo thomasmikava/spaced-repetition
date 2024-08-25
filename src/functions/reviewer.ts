@@ -53,13 +53,19 @@ export class Reviewer {
     cards: StandardCard[],
     helper: Helper,
     private isInsideLesson: boolean,
-    private mode: 'endless' | 'normal' = 'normal',
+    private mode: 'endless' | 'normal' | 'only-new' = 'normal',
     private avoidStorage = false,
   ) {
     this.prevReviews = new PreviousReviews(avoidStorage);
     this.allTestableCards = [];
     for (const card of cards) {
       const testableCards = generateTestableCards(card, helper);
+      if (mode === 'only-new') {
+        const hasAlreadySeen = testableCards.some((record) =>
+          this.prevReviews.getCardHistory(record, CardViewMode.individualView),
+        );
+        if (hasAlreadySeen) continue; // skip the card if it has been reviewed before
+      }
       this.allTestableCards.push(...testableCards);
     }
     console.log('this.allTestableCards', this.allTestableCards);

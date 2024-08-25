@@ -86,7 +86,7 @@ interface SearchWordInfo {
   makeOfficial?: boolean;
   word?: WordWithTranslationDTO & { officialTranslations?: TranslationDTO[] };
   translations: { [lang in string]?: TranslationField };
-  changed?: boolean;
+  changed?: boolean | 'f'; // forcefully closed
   askedForChangeConfirmation?: boolean;
 }
 
@@ -538,8 +538,9 @@ const SearchWord: FC<{
 }) => {
   const searchValue = useWatch({ control, name: `${fieldKey}.wordValue` }) as string;
   const word = useWatch({ control, name: `${fieldKey}.word` });
-  const isChanged = useWatch({ control, name: `${fieldKey}.changed` });
+  const changeStatus = useWatch({ control, name: `${fieldKey}.changed` });
   const askedForChangeConfirmation = useWatch({ control, name: `${fieldKey}.askedForChangeConfirmation` });
+  const translationsRef = useRef<HTMLDivElement>(null);
 
   // const [isBlurred, setIsBlurred] = useState(true);
 
@@ -548,7 +549,7 @@ const SearchWord: FC<{
   const areSame = word?.value === searchValue;
   const [debouncedSearchValue] = useDebounce(searchValue, 300);
 
-  const finalSearchValue = areSame && !isChanged ? '' : debouncedSearchValue.trim();
+  const finalSearchValue = changeStatus === 'f' || (areSame && !changeStatus) ? '' : debouncedSearchValue.trim();
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } = useSearchWords({
     lang: formBaseInfo.langToLearn,
     searchValue: finalSearchValue,
@@ -634,6 +635,25 @@ const SearchWord: FC<{
     }
   }, [isLastChild, onAddNewWord, isEmptyWordValue, onRemove, formBaseInfo.translationLangs]);
 
+  useEffect(() => {
+    if (!translationsRef.current) return;
+    const divElement = translationsRef.current;
+    const onKeyDown = (event: Event) => {
+      const target = event.target as HTMLElement;
+      if (
+        target &&
+        target.tagName &&
+        (target.tagName.toLowerCase() === 'input' || target.tagName.toLowerCase() === 'textarea')
+      ) {
+        setValue(`${fieldKey}.changed`, 'f');
+      }
+    };
+    divElement.addEventListener('keydown', onKeyDown);
+    return () => {
+      divElement.removeEventListener('keydown', onKeyDown);
+    };
+  }, [fieldKey, setValue]);
+
   return (
     <div className={styles.wordSearchContainer}>
       <div className={styles.topPart}>
@@ -676,7 +696,7 @@ const SearchWord: FC<{
               )}
             />
           </div>
-          <div style={{ flex: 5 }}>
+          <div style={{ flex: 5 }} ref={translationsRef}>
             {formBaseInfo.translationLangs.map((lang, idx) => (
               <TranslationEditor
                 fieldKey={`${fieldKey}.translations.${lang}`}

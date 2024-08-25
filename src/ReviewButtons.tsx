@@ -44,14 +44,14 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
     return { dueReview: totalVariantReviews, uniqueCards: totalWordsReview };
   }, [wordIds]);
 
-  const handleReview = (endless: boolean) => {
-    navigate(paths.app.review({ courseId, lessonId, endless }));
+  const handleReview = (endless: boolean, onlyNewWords: boolean) => {
+    navigate(paths.app.review({ courseId, lessonId, endless, onlyNewWords }));
   };
 
   return (
     <div className={cssModule.buttonsContainer}>
-      <button onClick={() => handleReview(false)}>
-        Review{isLoading ? '...' : ''}
+      <button onClick={() => handleReview(false, false)}>
+        Train{isLoading ? '...' : ''}
         {!isLoading && dueReview > 0 && (
           <>
             : {`${dueReview} `}
@@ -59,6 +59,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
           </>
         )}
       </button>
+      <button onClick={() => handleReview(false, true)}>Learn New words</button>
     </div>
   );
 };

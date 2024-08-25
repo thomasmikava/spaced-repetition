@@ -21,7 +21,7 @@ import { useUserPreferences } from '../../api/controllers/users/users.query';
 import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
 
 interface ReviewPageProps {
-  mode: 'normal' | 'endless';
+  mode: 'normal' | 'endless' | 'only-new';
   words: StandardCard[];
   isInsideLesson: boolean;
   helper: NonNullable<ReturnType<typeof useHelper>>;
@@ -141,7 +141,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
 
 export const ReviewPageLoader = () => {
   const searchParams = new URL(window.location.href).searchParams;
-  const mode = !!searchParams.get('mode');
+  const mode = searchParams.get('mode');
   const courseId = !searchParams.get('courseId') ? undefined : +(searchParams.get('courseId') as string);
   const lessonId = !searchParams.get('lessonId') ? undefined : +(searchParams.get('lessonId') as string);
   const helper = useHelper();
@@ -162,7 +162,7 @@ export const ReviewPageLoader = () => {
 
   return (
     <ReviewPage
-      mode={mode ? 'endless' : 'normal'}
+      mode={mode === 'endless' || mode === 'only-new' ? mode : 'normal'}
       words={words}
       helper={helper}
       isInsideLesson={!!courseId && !!lessonId}

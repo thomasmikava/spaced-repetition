@@ -23,11 +23,22 @@ export const paths = addPrefix('/')({
       ),
     },
     review: withParams(
-      ({ courseId, lessonId, endless }: { courseId?: number; lessonId?: number; endless: boolean }) => {
+      ({
+        courseId,
+        lessonId,
+        endless,
+        onlyNewWords,
+      }: {
+        courseId?: number;
+        lessonId?: number;
+        endless: boolean;
+        onlyNewWords: boolean;
+      }) => {
         const params = [];
         if (courseId) params.push(`courseId=${courseId}`);
         if (lessonId) params.push(`lessonId=${lessonId}`);
         if (endless) params.push('mode=endless');
+        else if (onlyNewWords) params.push('mode=only-new');
         return params.length ? `/review?${params.join('&')}` : '/review';
       },
       '/review',
