@@ -7,7 +7,7 @@ export interface Preferences {
 
 const defaultPreferences: Preferences = {
   autoSubmitCorrectAnswers: false,
-  testTypingTranslation: true,
+  testTypingTranslation: false,
 };
 
 export const calculatePreferences = (preferences: UserPreferencesDTO | null, lang: string): Preferences => {

@@ -192,6 +192,7 @@ const Input = ({
   audioProps,
   advancedAnswerChecker,
   autoCheck,
+  shouldNotReplaceWithCorrectAnswer,
 }: ContentInput) => {
   const { mode, useOnCheck } = useTestContext();
   const ref = useRef<HTMLInputElement>(null);
@@ -228,13 +229,19 @@ const Input = ({
     element.form.dispatchEvent(submitEvent);
     submittedRef.current = true;
   };
+  const correctnessClassName =
+    shouldNotReplaceWithCorrectAnswer && lastResult
+      ? lastResult.isCorrect
+        ? cssModule.correctInputOutline
+        : cssModule.incorrectInputOutline
+      : '';
 
   return (
     <div className={cssModule.inputContainer + ' ' + (fullWidth ? cssModule.fullWidth : '')} style={containerStyle}>
       <input
         ref={ref}
         type={isSubmit ? 'submit' : 'text'}
-        className={cssModule.testInput + ' ' + (fullWidth ? cssModule.fullWidth : '')}
+        className={cssModule.testInput + ' ' + (fullWidth ? cssModule.fullWidth : '') + ' ' + correctnessClassName}
         id={'input.' + inputId}
         placeholder={placeholder}
         autoFocus={autoFocus}
@@ -246,13 +253,13 @@ const Input = ({
         readOnly={mode === 'readonly'}
         onKeyUp={autoCheck ? handleAutoCheck : undefined}
       />
-      {lastResult && lastResult.isCorrect && (
+      {lastResult && lastResult.isCorrect && !shouldNotReplaceWithCorrectAnswer && (
         <div className={cssModule.inputAnswer + ' ' + cssModule.inputCorrectAnswer}>
           <span>{correctValues?.join('/')}</span>
           {audio}
         </div>
       )}
-      {lastResult && !lastResult.isCorrect && (
+      {lastResult && !lastResult.isCorrect && !shouldNotReplaceWithCorrectAnswer && (
         <div className={cssModule.inputAnswer + ' ' + cssModule.inputIncorrectAnswer}>
           <span>{correctValues?.join('/')}</span>
           {audio}

@@ -4,6 +4,7 @@
 import type { CardTypeConfiguration, CategoryAttrsMatcher, SortBy, VariantGroup } from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
 import { isMatch } from '../utils/matcher';
+import { SPECIAL_VIEW_IDS } from './consts';
 import type { Helper } from './generate-card-content';
 import type { Preferences } from './preferences';
 import type { StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
@@ -12,7 +13,7 @@ import { getIsStandardFormFn } from './standard-forms';
 export function generateTestableCards(
   card: StandardCard,
   helper: Helper,
-  _preferences: Preferences,
+  preferences: Preferences,
 ): StandardTestableCard[] {
   const config = helper.getCardType(card.type, card.lang)?.configuration ?? {};
 
@@ -63,15 +64,15 @@ export function generateTestableCards(
       const variant = variants[i];
       testable.push({
         card: newCard,
-        type: card.type,
+        type: newCard.type,
         displayType,
         variant,
-        caseSensitive: helper.getCardType(displayType, card.lang)?.configuration?.caseSensitive ?? false,
+        caseSensitive: helper.getCardType(displayType, newCard.lang)?.configuration?.caseSensitive ?? false,
         initial: variant.category === 1,
         groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '').toLocaleLowerCase() : null,
         hasGroupViewMode,
         hasIndividualViewMode,
-        skipTest: shouldSkipTest(card, group.gr),
+        skipTest: shouldSkipTest(newCard, group.gr),
         testKey: 'ind-' + variant.id,
         groupMeta,
         groupLevel: lastGroupLevel + 1,
@@ -86,6 +87,13 @@ export function generateTestableCards(
     lastGroupLevel++;
     lastGroupKey = hasGroupViewMode ? ('gr-' + (group.matcherId || '')).toLocaleLowerCase() : null;
   });
+
+  if (preferences.testTypingTranslation) {
+    const invertedTranslation = getInvertedTestableCard(newCard, displayType, testable);
+    if (invertedTranslation) {
+      testable.splice(invertedTranslation.index + 1, 0, invertedTranslation.testableCard);
+    }
+  }
 
   return testable;
 }
@@ -201,4 +209,45 @@ const sortVariants = (sortStrategy: SortBy[], variants: StandardCardVariant[]): 
   };
 
   return variants.sort((a, b) => compare(a, b));
+};
+
+const getInvertedTestableCard = (
+  card: StandardTestableCard['card'],
+  displayType: number,
+  testable: StandardTestableCard[],
+): { testableCard: StandardTestableCard; index: number } | null => {
+  const invertedVariantIndex = testable.findIndex((v) => v.variant.category === 1);
+  if (invertedVariantIndex === -1) return null;
+  const invertedVariant = testable[invertedVariantIndex];
+  if (!invertedVariant) return null;
+  return {
+    testableCard: {
+      card,
+      type: card.type,
+      displayType,
+      variant: invertedVariant.variant,
+      caseSensitive: false,
+      initial: false,
+      groupViewKey: null,
+      hasGroupViewMode: false,
+      hasIndividualViewMode: false,
+      skipTest: false,
+      testKey: 'ind-t-' + invertedVariant.variant.id,
+      groupMeta: {
+        matcherId: null,
+        groupViewId: null,
+        indViewId: null,
+        testViewId: SPECIAL_VIEW_IDS.inverseTest,
+        variants: [invertedVariant.variant],
+        gr: null,
+        groupMetaArgs: undefined,
+      },
+      groupLevel: invertedVariant.groupLevel,
+      previousGroupViewKey: invertedVariant.previousGroupViewKey,
+      isStandardForm: false,
+      isGroupStandardForm: false,
+      forcefullySkipIfStandard: false,
+    },
+    index: invertedVariantIndex,
+  };
 };

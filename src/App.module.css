@@ -259,6 +259,13 @@
   border-radius: 7px;
 }
 
+.correctInputOutline {
+  border-color: #238923;
+}
+.incorrectInputOutline {
+  border-color: #cb3030;
+}
+
 .expandableTrigger {
   cursor: pointer;
   text-decoration: underline;

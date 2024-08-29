@@ -354,6 +354,10 @@ export type ViewLine =
       useArticleAsPrefix?: boolean;
       audioPrefix?: IfThenStatement<CategoryAttrsMatcher, AudioAffix | null> | AudioAffix | null;
       hashReplacer?: { attrId: IdType };
+      placeholder?: string;
+      skipAudio?: boolean;
+      shouldNotReplaceWithCorrectAnswer?: boolean;
+      useTranslationsAsValue?: boolean;
     }
   | {
       type: ViewLineType.Audio;

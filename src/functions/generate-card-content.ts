@@ -20,7 +20,7 @@ import type {
   StandardCardVariant,
   TranslationVariant,
 } from '../database/types';
-import { isNonNullable } from '../utils/array';
+import { isNonNullable, uniquelize } from '../utils/array';
 import { pickKeys } from '../utils/object';
 import { slashSplit } from '../utils/split';
 import { getConditionalOrRawValue, isMatch } from '../utils/matcher';
@@ -31,6 +31,8 @@ import type { WordUsageExampleDTO } from '../api/controllers/words/words.schema'
 import { getAttributeTransformer } from './transformers';
 import { ALL_LANGS, sortByLangs } from '../Pages/hooks/useTranslationLang';
 import type { Preferences } from './preferences';
+import { SPECIAL_VIEW_IDS } from './consts';
+import { generatePossibleAnswers } from './compare-answers';
 
 const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyContent => {
   return {
@@ -262,12 +264,42 @@ const getPrefix = (
   return val + ' ';
 };
 
-export const getCardViewContent = (
-  record: StandardTestableCard,
-  mode: CardViewMode,
-  helper: Helper,
-  preferences: Preferences,
-): (AnyContent | null | undefined)[] => {
+const getDefaultLines = (mode: CardViewMode, viewId: string | null | undefined): ViewLine[] => {
+  if (mode === CardViewMode.test && viewId === SPECIAL_VIEW_IDS.inverseTest) {
+    return [
+      { type: ViewLineType.CardValue, useForMainAudio: true },
+      { type: ViewLineType.NewLine },
+      {
+        type: ViewLineType.Input,
+        placeholder: 'type translation',
+        skipAudio: true,
+        shouldNotReplaceWithCorrectAnswer: true,
+        useTranslationsAsValue: true,
+      },
+      {
+        type: ViewLineType.AfterAnswer,
+        lines: [{ type: ViewLineType.Translation }, { type: ViewLineType.TranslationVariants }],
+      },
+    ];
+  }
+  if (mode === CardViewMode.test) {
+    return [
+      { type: ViewLineType.Translation },
+      { type: ViewLineType.Input },
+      { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+    ];
+  }
+
+  return [
+    { type: ViewLineType.Audio },
+    { type: ViewLineType.VariantValue, bigText: true },
+    { type: ViewLineType.Separator },
+    { type: ViewLineType.Translation },
+    { type: ViewLineType.TranslationVariants },
+  ];
+};
+
+const getViewLines = (record: StandardTestableCard, mode: CardViewMode, helper: Helper) => {
   const config = helper.getCardType(record.displayType, record.card.lang)?.configuration;
   // const mathcer = config?.variantGroups?.find((e) => e.id === record.groupMeta.matcherId)?.matcher;
   const myViewId =
@@ -277,22 +309,16 @@ export const getCardViewContent = (
         ? record.groupMeta.groupViewId
         : record.groupMeta.indViewId;
   const view = myViewId ? config?.views?.find((e) => e.id === myViewId) : undefined;
-  const defaultLines: ViewLine[] =
-    mode === CardViewMode.test
-      ? [
-          { type: ViewLineType.Translation },
-          { type: ViewLineType.Input },
-          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
-        ]
-      : [
-          { type: ViewLineType.Audio },
-          { type: ViewLineType.VariantValue, bigText: true },
-          { type: ViewLineType.Separator },
-          { type: ViewLineType.Translation },
-          { type: ViewLineType.TranslationVariants },
-        ];
-  const viewLines = view?.lines ?? defaultLines;
-  // debugger;
+  return view?.lines ?? getDefaultLines(mode, myViewId);
+};
+
+export const getCardViewContent = (
+  record: StandardTestableCard,
+  mode: CardViewMode,
+  helper: Helper,
+  preferences: Preferences,
+): (AnyContent | null | undefined)[] => {
+  const viewLines = getViewLines(record, mode, helper);
 
   const { lineContents, mainAudioText } = viewLinesToContentLines(viewLines, helper, record, preferences);
 
@@ -466,23 +492,39 @@ export const viewLinesToContentLines = (
         return { type: 'text', content: attrValues.join(line.separator ?? ', '), style: textStyle };
       case ViewLineType.Input:
         const displayValue2 = withArticle(record.variant.value, record.card.lang, helper, record.variant.attrs, line);
+        const getCorrectValues = (displayValue2: string, caseInsensitive: boolean) => {
+          if (!line.useTranslationsAsValue) return slashSplit(displayValue2);
+          const translations = record.card.translations;
+          return uniquelize(
+            translations.flatMap((e) =>
+              generatePossibleAnswers(e.translation, caseInsensitive).concat(
+                (e.advancedTranslation || []).flatMap((adv) =>
+                  generatePossibleAnswers(adv.translation, caseInsensitive),
+                ),
+              ),
+            ),
+          );
+        };
         const correctValues = slashSplit(displayValue2);
         const audioPrefixObj = getConditionalOrRawValue(line.audioPrefix, record.variant);
         return {
           type: 'input',
           inputId: '1',
-          placeholder: 'type',
+          placeholder: line.placeholder ?? 'type',
           fullWidth: true,
           autoFocus: true,
-          correctValues,
-          caseInsensitive: record.caseSensitive,
+          correctValues: getCorrectValues(displayValue2, record.caseSensitive),
+          caseInsensitive: !record.caseSensitive,
           advancedAnswerChecker: getAnswerChecker(displayValue2),
+          shouldNotReplaceWithCorrectAnswer: !!line.shouldNotReplaceWithCorrectAnswer,
           style: { textAlign: 'center' },
-          audioProps: prepareInputAudio(
-            record.card.lang,
-            correctValues,
-            audioPrefixObj ? getPrefix(audioPrefixObj, record.variant.attrs, record.card.lang, helper) : undefined,
-          ),
+          audioProps: line.skipAudio
+            ? undefined
+            : prepareInputAudio(
+                record.card.lang,
+                correctValues,
+                audioPrefixObj ? getPrefix(audioPrefixObj, record.variant.attrs, record.card.lang, helper) : undefined,
+              ),
           autoCheck: preferences.autoSubmitCorrectAnswers,
         };
       case ViewLineType.AfterAnswer:
