@@ -515,7 +515,7 @@ export const viewLinesToContentLines = (
           autoFocus: true,
           correctValues: getCorrectValues(displayValue2, record.caseSensitive),
           caseInsensitive: !record.caseSensitive,
-          advancedAnswerChecker: getAnswerChecker(displayValue2),
+          advancedAnswerChecker: line.useTranslationsAsValue ? undefined : getAnswerChecker(displayValue2),
           shouldNotReplaceWithCorrectAnswer: !!line.shouldNotReplaceWithCorrectAnswer,
           style: { textAlign: 'center' },
           audioProps: line.skipAudio

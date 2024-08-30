@@ -92,6 +92,9 @@ export function generateTestableCards(
     const invertedTranslation = getInvertedTestableCard(newCard, displayType, testable);
     if (invertedTranslation) {
       testable.splice(invertedTranslation.index + 1, 0, invertedTranslation.testableCard);
+      if (!invertedTranslation.invertedVariant.connectedTestKeys)
+        invertedTranslation.invertedVariant.connectedTestKeys = [];
+      invertedTranslation.invertedVariant.connectedTestKeys.push(invertedTranslation.testableCard.testKey);
     }
   }
 
@@ -215,7 +218,7 @@ const getInvertedTestableCard = (
   card: StandardTestableCard['card'],
   displayType: number,
   testable: StandardTestableCard[],
-): { testableCard: StandardTestableCard; index: number } | null => {
+): { testableCard: StandardTestableCard; index: number; invertedVariant: StandardTestableCard } | null => {
   const invertedVariantIndex = testable.findIndex((v) => v.variant.category === 1);
   if (invertedVariantIndex === -1) return null;
   const invertedVariant = testable[invertedVariantIndex];
@@ -233,6 +236,7 @@ const getInvertedTestableCard = (
       hasIndividualViewMode: false,
       skipTest: false,
       testKey: 'ind-t-' + invertedVariant.variant.id,
+      connectedTestKeys: [invertedVariant.testKey],
       groupMeta: {
         matcherId: null,
         groupViewId: null,
@@ -249,5 +253,6 @@ const getInvertedTestableCard = (
       forcefullySkipIfStandard: false,
     },
     index: invertedVariantIndex,
+    invertedVariant,
   };
 };

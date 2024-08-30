@@ -141,6 +141,10 @@ export class PreviousReviews {
     return getRecordUniqueKey({ wordId: card.card.id, sKey });
   }
 
+  private getTestSKey = (testKey: string) => {
+    return `${CardViewMode.test}@${testKey}`;
+  };
+
   private getSKey = (card: StandardTestableCard, mode: CardViewMode) => {
     if (mode === CardViewMode.test || mode === CardViewMode.individualView) {
       if (!card.testKey) return null;
@@ -188,6 +192,20 @@ export class PreviousReviews {
     this.history = history;
   };
 
+  getMaxS = (card: StandardTestableCard): number | undefined => {
+    if (!card.connectedTestKeys) return undefined;
+    const tests = card.connectedTestKeys
+      .map((key) => {
+        const fKey = getRecordUniqueKey({ wordId: card.card.id, sKey: this.getTestSKey(key) });
+        if (!fKey) return undefined;
+        const record = this.history[fKey];
+        return record?.lastS;
+      })
+      .filter(isNonNullable);
+    if (tests.length === 0) return undefined;
+    return tests.reduce((acc, cur) => Math.max(acc, cur), 0);
+  };
+
   saveCardResult = (
     card: StandardTestableCard,
     mode: CardViewMode,
@@ -233,9 +251,12 @@ export class PreviousReviews {
     } else {
       const isGroup = !!card.groupViewKey;
       const currentValue = history[key];
+
+      const maxConnectedTestS = this.getMaxS(card);
+
       if (currentValue) {
         const passedTime = dateInSec - currentValue.lastDate;
-        const newS = updateS(success, isGroup, currentValue.lastS ?? initialTestS, passedTime);
+        const newS = updateS(success, isGroup, currentValue.lastS ?? initialTestS, passedTime, maxConnectedTestS);
         const dueDate = willThereBeAnotherRepetition
           ? dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS)
           : null;
@@ -250,7 +271,7 @@ export class PreviousReviews {
           savedInDb: false,
         };
       } else {
-        const newS = updateS(success, isGroup, undefined, undefined);
+        const newS = updateS(success, isGroup, undefined, undefined, maxConnectedTestS);
         const dueDate = willThereBeAnotherRepetition
           ? dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS)
           : null;
@@ -279,6 +300,7 @@ const updateS = (
   isGroup: boolean,
   s: number | undefined,
   passedTimeInSeconds: number | undefined,
+  maxConnectedTestS: number | undefined,
   // eslint-disable-next-line sonarjs/cognitive-complexity
 ) => {
   if (!s && success) return initialTestS;
@@ -287,8 +309,12 @@ const updateS = (
 
   const newS = getRegularSAfterSuccess(isGroup, s, passedTimeInSeconds);
   const sBasedOnLastAnswerValue = getSBasedOnLastAnswer(s, passedTimeInSeconds ?? 0);
+  const sBasedOnConnectedVariants =
+    maxConnectedTestS && typeof maxConnectedTestS === 'number' && !isNaN(maxConnectedTestS)
+      ? (maxConnectedTestS * 2) / 3
+      : -Infinity;
 
-  return Math.min(maxS, Math.max(minS, newS, sBasedOnLastAnswerValue));
+  return Math.min(maxS, Math.max(minS, newS, sBasedOnLastAnswerValue, sBasedOnConnectedVariants));
 };
 
 const getSAfterIncorrectAnswer = (s: number) => {
@@ -356,7 +382,7 @@ function getFirstNS(n: number) {
   let passedTimeInSeconds = secondsUntilProbabilityIsHalf(currentS);
   const result = [passedTimeInSeconds];
   for (let i = 1; i < n; i++) {
-    currentS = updateS(true, false, currentS, passedTimeInSeconds);
+    currentS = updateS(true, false, currentS, passedTimeInSeconds, undefined);
     passedTimeInSeconds = secondsUntilProbabilityIsHalf(currentS);
     result.push(passedTimeInSeconds);
   }
@@ -368,7 +394,7 @@ function getFirstNSFast(n: number, multiplyBy2 = true) {
   let passedTimeInSeconds = 5;
   const result = [secondsUntilProbabilityIsHalf(currentS)];
   for (let i = 1; i < n; i++) {
-    currentS = updateS(true, false, currentS, passedTimeInSeconds);
+    currentS = updateS(true, false, currentS, passedTimeInSeconds, undefined);
     if (multiplyBy2) {
       passedTimeInSeconds *= 2;
       passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24 * 15);
@@ -383,7 +409,7 @@ function getFirstNSSlow(n: number) {
   let passedTimeInSeconds = 60 * 60 * 5;
   const result = [secondsUntilProbabilityIsHalf(currentS)];
   for (let i = 1; i < n; i++) {
-    currentS = updateS(true, false, currentS, passedTimeInSeconds);
+    currentS = updateS(true, false, currentS, passedTimeInSeconds, undefined);
     passedTimeInSeconds *= 2;
     passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24 * 15);
     result.push(secondsUntilProbabilityIsHalf(currentS));

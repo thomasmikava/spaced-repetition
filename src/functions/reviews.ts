@@ -1,27 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
 import type { VariantGroup } from '../database/card-types';
-import type {
-  Adjective,
-  AdjectiveDegree,
-  AdjectiveInflection,
-  Article,
-  CardType,
-  Case,
-  IdType,
-  Noun,
-  NounGender,
-  NounNumber,
-  Preposition,
-  Pronoun,
-  PronounFunction,
-  StandardCard,
-  StandardCardVariant,
-  Verb,
-  VerbConjugationVariant,
-  VerbMood,
-  VerbTense,
-} from '../database/types';
+import type { IdType, StandardCard, StandardCardVariant } from '../database/types';
 
 export function calculateHalfLifeCoefficient(halfLife: number) {
   return -halfLife / Math.log(0.5);
@@ -86,6 +66,7 @@ export type CardKeys = {
   groupViewKey: string | null;
   previousGroupViewKey?: string | null;
   groupLevel?: number;
+  connectedTestKeys?: string[];
 };
 export type GeneralTestableCard = CardKeys & {
   hasGroupViewMode: boolean;
@@ -95,84 +76,6 @@ export type GeneralTestableCard = CardKeys & {
   forcefullySkipIfStandard?: boolean;
   skipTest?: boolean;
 };
-
-export type VerbTestableCard = GeneralTestableCard & {
-  type: CardType.VERB;
-  card: Verb;
-} & (
-    | { initial: true }
-    | { initial: false; variant: { mood: VerbMood; tense: VerbTense; conjugation: VerbConjugationVariant } }
-  );
-export type NounTestableCard = GeneralTestableCard & {
-  type: CardType.NOUN;
-  card: Noun;
-} & ({ initial: true } | { initial: false; variant: { number: NounNumber; case: Case; value: string } });
-export type ArticleTestableCard = GeneralTestableCard & {
-  type: CardType.ARTICLE;
-  card: Article;
-} & ({ initial: true } | { initial: false; variant: { case: Case; value: string } });
-
-export type AdjectiveTestableCard = GeneralTestableCard & {
-  type: CardType.ADJECTIVE_ADVERB;
-  card: Adjective;
-} & (
-    | { initial: true; isInitialTrio: true; degree: AdjectiveDegree.Positiv; value: string }
-    | {
-        initial: false;
-        isInitialTrio: true;
-        degree: AdjectiveDegree.Komparativ | AdjectiveDegree.Superlativ;
-        value: string;
-      }
-    | {
-        initial: false;
-        isInitialTrio: false;
-        variant: {
-          case: Case;
-          gender: NounGender;
-          number: NounNumber;
-          degree: AdjectiveDegree;
-          inflection: AdjectiveInflection;
-          value: string;
-        };
-      }
-  );
-
-export type SingleTestableCard = GeneralTestableCard & {
-  type: null;
-  initial: true;
-  typeTag: string | null;
-  card: { type: CardType | null; value: string; uniqueValue?: string; translation: string; caseSensitive: boolean };
-};
-
-export type PrepositionTestableCard = GeneralTestableCard & {
-  type: CardType.PREPOSITION;
-  card: Preposition;
-  initial: true;
-};
-
-export type PronounTestableCard = GeneralTestableCard & {
-  type: CardType.PRONOUN;
-  card: Pronoun;
-} & {
-  initial: false;
-  function: PronounFunction;
-  variant: {
-    case: Case;
-    gender: NounGender | null;
-    number: NounNumber;
-    function: PronounFunction;
-    value: string;
-  };
-};
-
-export type AnyTestableCard =
-  | VerbTestableCard
-  | NounTestableCard
-  | ArticleTestableCard
-  | AdjectiveTestableCard
-  | SingleTestableCard
-  | PrepositionTestableCard
-  | PronounTestableCard;
 
 export interface StandardTestableCardGroupMeta {
   matcherId: string | null;
