@@ -192,17 +192,26 @@ export class PreviousReviews {
     this.history = history;
   };
 
-  getMaxS = (card: StandardTestableCard): number | undefined => {
+  convertConnectedKeysToTestKeys = (card: StandardTestableCard) => {
     if (!card.connectedTestKeys) return undefined;
-    const tests = card.connectedTestKeys
+    return card.connectedTestKeys
       .map((key) => {
-        const fKey = getRecordUniqueKey({ wordId: card.card.id, sKey: this.getTestSKey(key) });
-        if (!fKey) return undefined;
-        const record = this.history[fKey];
-        return record?.lastS;
+        return getRecordUniqueKey({ wordId: card.card.id, sKey: this.getTestSKey(key) });
       })
       .filter(isNonNullable);
-    if (tests.length === 0) return undefined;
+  };
+
+  getMaxS = (card: StandardTestableCard): number | undefined => {
+    const historyKeys = this.convertConnectedKeysToTestKeys(card);
+    const tests = historyKeys?.map((key) => this.history[key]?.lastS).filter(isNonNullable);
+    if (!tests || tests.length === 0) return undefined;
+    return tests.reduce((acc, cur) => Math.max(acc, cur), 0);
+  };
+
+  getMaxViewDate = (card: StandardTestableCard): number | undefined => {
+    const historyKeys = this.convertConnectedKeysToTestKeys(card);
+    const tests = historyKeys?.map((key) => this.history[key]?.lastDate).filter(isNonNullable);
+    if (!tests || tests.length === 0) return undefined;
     return tests.reduce((acc, cur) => Math.max(acc, cur), 0);
   };
 
@@ -212,6 +221,7 @@ export class PreviousReviews {
     success: boolean,
     willThereBeAnotherRepetition: boolean,
     date = Date.now(),
+    customNewS: number | undefined = undefined,
   ) => {
     const dateInSec = Math.floor(date / 1000);
     const sKey = this.getSKey(card, mode);
@@ -219,6 +229,7 @@ export class PreviousReviews {
     const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
     this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
+    const newS = customNewS ?? this.getNewS(card, mode, success, date);
 
     let newValue: AnyReviewHistory;
 
@@ -231,6 +242,7 @@ export class PreviousReviews {
           lastDate: dateInSec,
           corr: success ? currentValue.corr + 1 : currentValue.corr,
           rep: currentValue.rep + 1,
+          lastS: newS,
           savedInDb: false,
         };
       } else {
@@ -243,20 +255,16 @@ export class PreviousReviews {
           lc: success,
           lastDate: dateInSec,
           wordId: card.card.id,
-          lastS: null,
+          lastS: newS,
           dueDate: null,
           savedInDb: false,
         };
       }
     } else {
-      const isGroup = !!card.groupViewKey;
+      if (typeof newS !== 'number') throw new Error('new S must be number');
       const currentValue = history[key];
 
-      const maxConnectedTestS = this.getMaxS(card);
-
       if (currentValue) {
-        const passedTime = dateInSec - currentValue.lastDate;
-        const newS = updateS(success, isGroup, currentValue.lastS ?? initialTestS, passedTime, maxConnectedTestS);
         const dueDate = willThereBeAnotherRepetition
           ? dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS)
           : null;
@@ -271,14 +279,12 @@ export class PreviousReviews {
           savedInDb: false,
         };
       } else {
-        const newS = updateS(success, isGroup, undefined, undefined, maxConnectedTestS);
         const dueDate = willThereBeAnotherRepetition
           ? dateInSec + dueDateUntilProbabilityIsHalf(dateInSec, dateInSec, newS)
           : null;
         newValue = history[key] = {
           uniqueKey: key,
           sKey,
-          // viewMode: mode,
           lc: success,
           lastDate: dateInSec,
           corr: success ? 1 : 0,
@@ -293,6 +299,52 @@ export class PreviousReviews {
     this.history = history;
     return { newValue, key };
   };
+
+  getCurrentS = (card: StandardTestableCard, mode: CardViewMode) => {
+    const sKey = this.getSKey(card, mode);
+    if (!sKey) throw new Error('sKey is not defined');
+    const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
+
+    const currentValue = this.history[key];
+    if (currentValue) {
+      return currentValue.lastS ?? null;
+    } else {
+      return null;
+    }
+  };
+
+  getNewS = (card: StandardTestableCard, mode: CardViewMode, success: boolean, date = Date.now()) => {
+    const dateInSec = Math.floor(date / 1000);
+
+    const sKey = this.getSKey(card, mode);
+    if (!sKey) throw new Error('sKey is not defined');
+    const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
+
+    if (mode === CardViewMode.groupView || mode === CardViewMode.individualView) {
+      return null;
+    }
+
+    const isGroup = !!card.groupViewKey;
+    const currentValue = this.history[key];
+
+    const maxConnectedTestS = this.getMaxS(card);
+
+    if (currentValue) {
+      const updatedCorrectnessRatio = (success ? currentValue.corr + 1 : currentValue.corr) / (currentValue.rep + 1);
+      const passedTime = dateInSec - currentValue.lastDate;
+      return updateS(
+        success,
+        isGroup,
+        currentValue.lastS ?? initialTestS,
+        passedTime,
+        maxConnectedTestS,
+        updatedCorrectnessRatio,
+      );
+    } else {
+      const updatedCorrectnessRatio = success ? 1 : 0;
+      return updateS(success, isGroup, undefined, undefined, maxConnectedTestS, updatedCorrectnessRatio);
+    }
+  };
 }
 
 const updateS = (
@@ -301,20 +353,31 @@ const updateS = (
   s: number | undefined,
   passedTimeInSeconds: number | undefined,
   maxConnectedTestS: number | undefined,
+  correctnessRatio?: number,
   // eslint-disable-next-line sonarjs/cognitive-complexity
 ) => {
-  if (!s && success) return initialTestS;
+  const sBasedOnConnectedVariants = getSBasedOnConnectedVariants(maxConnectedTestS, correctnessRatio);
+
+  if (!s && success) return Math.max(initialTestS, sBasedOnConnectedVariants);
   else if (!s) return getSAfterIncorrectAnswer(initialTestS);
   if (!success) return getSAfterIncorrectAnswer(s);
 
   const newS = getRegularSAfterSuccess(isGroup, s, passedTimeInSeconds);
   const sBasedOnLastAnswerValue = getSBasedOnLastAnswer(s, passedTimeInSeconds ?? 0);
-  const sBasedOnConnectedVariants =
-    maxConnectedTestS && typeof maxConnectedTestS === 'number' && !isNaN(maxConnectedTestS)
-      ? (maxConnectedTestS * 2) / 3
-      : -Infinity;
 
-  return Math.min(maxS, Math.max(minS, newS, sBasedOnLastAnswerValue, sBasedOnConnectedVariants));
+  return Math.min(maxS, Math.max(minS, newS, sBasedOnLastAnswerValue));
+};
+
+const getSBasedOnConnectedVariants = (
+  maxConnectedTestS: number | undefined,
+  correctnessRatio: number | undefined,
+): number => {
+  return maxConnectedTestS &&
+    typeof maxConnectedTestS === 'number' &&
+    !isNaN(maxConnectedTestS) &&
+    typeof correctnessRatio === 'number'
+    ? ((maxConnectedTestS * 2) / 3) * correctnessRatio
+    : -Infinity;
 };
 
 const getSAfterIncorrectAnswer = (s: number) => {

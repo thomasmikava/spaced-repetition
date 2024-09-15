@@ -49,7 +49,7 @@ const HISTORY_ID_TO_OBSERVE = -4430;
 
 export class Reviewer {
   private allTestableCards: StandardTestableCard[];
-  private prevReviews: PreviousReviews;
+  prevReviews: PreviousReviews;
   // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
     cards: StandardCard[],
@@ -211,19 +211,27 @@ export class Reviewer {
         }) => {
           const lastGroupViewDate =
             record.groupViewKey && record.hasGroupViewMode ? groupsMetaData[groupGlobalKey]?.lastViewDate : undefined;
-          const lastNormalizedViewDate = lastGroupViewDate ?? historyRecord?.lastDate;
+          const connectedVariantsMaxLastViewDate = record.connectedTestKeys
+            ? this.prevReviews.getMaxViewDate(record)
+            : undefined;
+          const maxViewDate = Math.max(
+            lastGroupViewDate ?? -Infinity,
+            connectedVariantsMaxLastViewDate ?? -Infinity,
+            historyRecord?.lastDate ?? -Infinity,
+          );
+          const lastNormalizedViewDate = maxViewDate === -Infinity || isNaN(maxViewDate) ? undefined : maxViewDate;
           const probability =
-            historyRecord && lastNormalizedViewDate
+            lastNormalizedViewDate !== undefined
               ? calculateProbability(
                   Math.floor(currentDate / 1000) - lastNormalizedViewDate,
-                  historyRecord.lastS ?? initialTestS,
+                  historyRecord?.lastS ?? initialTestS,
                 )
               : 0;
           if (historyRecord?.id === HISTORY_ID_TO_OBSERVE) {
             debugger;
           }
           const reviewDue = historyRecord
-            ? getOptimalReviewDue(historyRecord, historyRecord.lastDate, lastNormalizedViewDate, currentDate)
+            ? getReviewDue(historyRecord, lastNormalizedViewDate, currentDate)
             : getFirstDue(
                 groupVewRecord,
                 individualViewRecord,
@@ -391,13 +399,20 @@ export class Reviewer {
     return topCard;
   };
 
-  markViewed = (card: CardWithProbability, mode: CardViewMode, success: boolean, currentDate = Date.now()) => {
+  markViewed = (
+    card: CardWithProbability,
+    mode: CardViewMode,
+    success: boolean,
+    currentDate = Date.now(),
+    newS: number | undefined = undefined,
+  ) => {
     const { newValue } = this.prevReviews.saveCardResult(
       card.record,
       mode,
       success,
       this.hasAnotherRepetition(card.record, mode, success),
       currentDate,
+      newS,
     );
     if (!this.avoidStorage) {
       addUpdatedItemsInStorage([getDbRecord(newValue)]);
@@ -418,6 +433,8 @@ export class Reviewer {
   };
 }
 
+export type ReviewerCard = NonNullable<ReturnType<Reviewer['getNextCard']>>;
+
 function getReviewDue(record: AnyReviewHistory, lastGroupViewDate: number | undefined, currentDateMS: number) {
   return dueDateUntilProbabilityIsHalf(
     lastGroupViewDate ?? record.lastDate,
@@ -430,15 +447,13 @@ function getFirstDue(
   groupRecord: AnyReviewHistory | undefined,
   individualRecord: AnyReviewHistory | undefined,
   hasGroupViewMode: boolean,
-  groupLastView: number | undefined,
+  lastDate: number | undefined,
   currentDateMS: number,
 ) {
   const mainRecord = hasGroupViewMode ? groupRecord : individualRecord;
-  if (!mainRecord) return DEFAULT_REVIEW_DUE;
-  if (hasGroupViewMode && groupLastView) {
-    return dueDateUntilProbabilityIsHalf(groupLastView, Math.floor(currentDateMS / 1000), initialViewS);
-  }
-  return dueDateUntilProbabilityIsHalf(mainRecord.lastDate, Math.floor(currentDateMS / 1000), initialViewS);
+  const lastReviewTime = lastDate ?? mainRecord?.lastDate;
+  if (typeof lastReviewTime !== 'number') return DEFAULT_REVIEW_DUE;
+  return dueDateUntilProbabilityIsHalf(lastReviewTime, Math.floor(currentDateMS / 1000), initialViewS);
 }
 
 function isCriticalToBeReviewed(probability: number, reviewDue: number) {
@@ -469,17 +484,4 @@ export const getCardViewMode = (a: CardWithProbability) => {
   } else {
     return CardViewMode.test;
   }
-};
-
-const getOptimalReviewDue = (
-  historyRecord: AnyReviewHistory,
-  lastDate: number,
-  groupViewMaxLastDate: number | undefined,
-  currentDateMS: number,
-) => {
-  const t1 = getReviewDue(historyRecord, lastDate, currentDateMS);
-  if (!groupViewMaxLastDate || groupViewMaxLastDate <= lastDate || 1 < 2) return t1;
-  const t2 = getReviewDue(historyRecord, groupViewMaxLastDate, currentDateMS);
-  if (t2 - t1 >= 240) return t1 + 120;
-  return Math.floor(t1 + t2 / 2);
 };

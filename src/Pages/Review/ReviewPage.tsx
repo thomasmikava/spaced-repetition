@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import Content from '../../Content';
 import { TestContextProvider } from '../../contexts/testContext';
 import type { StandardCard } from '../../database/types';
@@ -12,7 +12,7 @@ import cssModule from '../../App.module.css';
 import { useHelper } from '../hooks/text-helpers';
 import { useWords } from './useWords';
 import LoadingPage from '../Loading/LoadingPage';
-import { BookOutlined } from '@ant-design/icons/lib/icons';
+import { BookOutlined, SettingFilled } from '@ant-design/icons/lib/icons';
 import { DictionaryLoadedModal } from '../../components/DictionaryModal';
 import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 import { TranslationLangSelectorConnected } from '../../components/Lang/TranslationLangSelector';
@@ -20,6 +20,15 @@ import styles from './styles.module.css';
 import { useUserPreferences } from '../../api/controllers/users/users.query';
 import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
 import { calculatePreferences } from '../../functions/preferences';
+import Dropdown from 'antd/es/dropdown';
+import AntButton from 'antd/es/button';
+import type { ItemType } from 'antd/es/menu/interface';
+import { Checkbox } from '../../ui/Checkbox/Checkbox';
+import { isNonNullable } from '../../utils/array';
+import { useSnapshot } from 'valtio';
+import { settingsState } from '../../states/settings';
+import type { ControlRef } from './Controls';
+import { CardControls } from './Controls';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless' | 'only-new';
@@ -35,6 +44,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
 
   const [currentCard, setCurrentCard] = useState(() => reviewer.getNextCard());
   const [wasWrong, setWasWrong] = useState(false);
+  const controlRef = useRef<ControlRef>(null);
 
   const question = useMemo(() => {
     if (!helper || !currentCard) return null;
@@ -64,7 +74,8 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
 
   const gotoNextCard = () => {
     if (!currentCard || !question) return;
-    reviewer.markViewed(currentCard, question.type, !wasWrong);
+    const newS = controlRef.current?.getNewS();
+    reviewer.markViewed(currentCard, question.type, !wasWrong, undefined, newS);
     const nextCard = reviewer.getNextCard();
     setCurrentCard(nextCard);
     setIsInAnswerReviewMode(false);
@@ -109,6 +120,8 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
   const testMode = !isInAnswerReviewMode && !isView ? 'edit' : 'readonly';
 
   const availableLangs = currentCard.record.card.translations.map((e) => e.lang);
+  const shouldShowLangSwitcher = availableLangs.length > 1;
+  const shouldShowSwitcher = canGoToNextCard;
 
   return (
     <div className='body' style={{ paddingTop: 10, paddingBottom: 10 }}>
@@ -123,16 +136,20 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
             }
           >
             <div>
-              {availableLangs.length > 0 && (
-                <div className={styles.transLangsContainer}>
-                  <TranslationLangSelectorConnected />
-                </div>
-              )}
+              <TopPart shouldShowLangSwitcher={shouldShowLangSwitcher} shouldShowSwitcher={shouldShowSwitcher} />
               <ViewCard>
                 <form onSubmit={withNoEventAction(onSubmit)}>
                   <Content content={question.content} />
                 </form>
               </ViewCard>
+              <CardControls
+                ref={controlRef}
+                canChange={shouldShowSwitcher}
+                card={currentCard}
+                isCorrect={!wasWrong}
+                mode={question.type}
+                reviewer={reviewer}
+              />
             </div>
           </WithNextButton>
         </TestContextProvider>
@@ -140,6 +157,55 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
     </div>
   );
 };
+
+interface TopPartProps {
+  shouldShowLangSwitcher: boolean;
+  shouldShowSwitcher: boolean;
+}
+
+const TopPart: FC<TopPartProps> = memo(({ shouldShowLangSwitcher, shouldShowSwitcher }) => {
+  const langSwitcher = shouldShowLangSwitcher && (
+    <div className={styles.transLangsContainer}>
+      <TranslationLangSelectorConnected />
+    </div>
+  );
+  const settingsSnap = useSnapshot(settingsState);
+
+  const onToggle = () => {
+    settingsState.showControls = !settingsState.showControls;
+  };
+
+  const settingsItems: ItemType[] | null = [
+    shouldShowSwitcher
+      ? {
+          label: <Checkbox label='Show controls' checked={settingsSnap.showControls} onClick={onToggle} />,
+          key: 'control',
+        }
+      : null,
+  ].filter(isNonNullable);
+
+  const settings = settingsItems.length > 0 && (
+    <Dropdown
+      menu={{
+        items: settingsItems,
+      }}
+      placement='bottomLeft'
+    >
+      <AntButton>
+        <SettingFilled />
+      </AntButton>
+    </Dropdown>
+  );
+
+  if (!settings && !langSwitcher) return null;
+
+  return (
+    <div className={styles.topContainer}>
+      {settings}
+      {langSwitcher}
+    </div>
+  );
+});
 
 export const ReviewPageLoader = () => {
   const searchParams = new URL(window.location.href).searchParams;

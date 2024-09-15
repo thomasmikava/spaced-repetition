@@ -1,3 +1,50 @@
-.transLangsContainer {
+.topContainer {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 10px;
+}
+
+.transLangsContainer {
+}
+
+.controlsContainer {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.timeLineContainer {
+  display: flex;
+  gap: 20px;
+}
+
+.timeOptionsContainer {
+  display: flex;
+  gap: 10px;
+  color: white;
+}
+
+.option {
+  border: 1px solid #888888;
+  border-radius: 40px;
+  padding: 5px 10px;
+  color: white;
+  background-color: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.defaultOption {
+  text-decoration: underline;
+}
+
+.selected {
+  border-color: #52ceeb;
+  background: #0c6276;
+}
+
+.customTimesContainer {
+  display: flex;
+  gap: 20px;
 }
