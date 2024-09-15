@@ -27,3 +27,6 @@
 .selected {
   background: #0c6276;
 }
+.default.selected {
+  background: #707070;
+}

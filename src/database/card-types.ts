@@ -371,6 +371,7 @@ export type ViewLine =
 export type SortBy = { attrId: number; attrRecords: number[] };
 export interface VariantGroup {
   id: string;
+  name?: string;
   matcher: CategoryAttrsMatcher | null;
   skipTest?: boolean | { only1variant: boolean };
   skip?: boolean;

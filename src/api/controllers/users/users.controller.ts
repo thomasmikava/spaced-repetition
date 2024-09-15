@@ -6,7 +6,7 @@ class UserController {
   constructor(private readonly request: IRequest) {}
 
   replacePreferences = (data: ReplaceUserPreferencesReqDTO): Promise<void> => {
-    return this.request.patch('/user/preferences', data);
+    return this.request.put('/user/preferences', data);
   };
 
   getPreferences = (): Promise<GetUserPreferencesResDTO> => {

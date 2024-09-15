@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import styles from './styles.module.css';
 
-type Option<T> = { value: T; label: ReactNode; isDefault?: boolean };
+type Option<T> = { value: T; label: ReactNode };
 
 interface ChipsSwitchProps<T, AllowClear extends boolean> {
   options: Option<T>[];
@@ -11,7 +11,7 @@ interface ChipsSwitchProps<T, AllowClear extends boolean> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint
-export const ChipsSwitch = <T extends unknown, AllowClear extends boolean>({
+export const SectionSwitch = <T extends unknown, AllowClear extends boolean>({
   onChange,
   options,
   value,
@@ -28,7 +28,7 @@ export const ChipsSwitch = <T extends unknown, AllowClear extends boolean>({
     <div className={styles.chipsContainer}>
       {options.map((option, i) => {
         const isSelected = option.value === value;
-        const className = `${styles.chip} ${isSelected ? styles.selected : ''} ${option.isDefault ? styles.default : ''}`;
+        const className = `${styles.chip} ${isSelected ? styles.selected : ''}`;
         return (
           <button type='button' key={i} className={className} onClick={() => handleClick(option, isSelected)}>
             {option.label}

@@ -1,4 +1,4 @@
-import { array, boolean, object, string } from 'zod';
+import { array, boolean, object, record, string } from 'zod';
 import { useValidators } from '../../utils/useValidators';
 
 export const useValidation = () => {
@@ -8,6 +8,29 @@ export const useValidation = () => {
     autoSubmitCorrectAnswers: boolean().nullish(),
     testTypingTranslation: boolean().nullish(),
     askNonStandardVariants: boolean().nullish(),
+    translationAtBottom: boolean().nullish(),
+    hideRegularTranslationIfAdvanced: boolean().nullish(),
+  });
+
+  const UserLangCardGroupSettings = object({
+    hideGroup: boolean().nullish(),
+    askNonStandardVariants: boolean().nullish(),
+  });
+
+  const cardTypePreference = object({
+    hideGroups: boolean().nullish(),
+    askNonStandardVariants: boolean().nullish(),
+    groupOrder: array(string()).optional(),
+    groupSettings: array(
+      object({
+        group: string(),
+        preferences: UserLangCardGroupSettings,
+      }),
+    ).optional(),
+  });
+
+  const langPreference = singlePreference.extend({
+    cardTypeSettings: record(cardTypePreference.optional()).optional(),
   });
 
   return {
@@ -16,7 +39,7 @@ export const useValidation = () => {
       languages: array(
         object({
           lang: string(),
-          preferences: singlePreference,
+          preferences: langPreference,
         }),
       ),
     }),

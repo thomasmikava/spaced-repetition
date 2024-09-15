@@ -1,11 +1,20 @@
-import type { UserGlobalPreferencesDTO, UserPreferencesDTO } from '../api/controllers/users/users.schema';
+import type {
+  UserGlobalPreferencesDTO,
+  UserLangPreferencesDTO,
+  UserPreferencesDTO,
+} from '../api/controllers/users/users.schema';
 
-export type Preferences = Required<UserGlobalPreferencesDTO>;
+export type Preferences = Required<UserGlobalPreferencesDTO> & {
+  cardTypeSettings: UserLangPreferencesDTO['cardTypeSettings'];
+};
 
 export const defaultPreferences: Preferences = {
   autoSubmitCorrectAnswers: false,
   testTypingTranslation: false,
   askNonStandardVariants: true,
+  translationAtBottom: false,
+  hideRegularTranslationIfAdvanced: false,
+  cardTypeSettings: undefined,
 };
 
 export const calculatePreferences = (preferences: UserPreferencesDTO | null, lang: string): Preferences => {
@@ -27,5 +36,12 @@ export const calculatePreferences = (preferences: UserPreferencesDTO | null, lan
       langPref?.askNonStandardVariants ??
       globalPref.askNonStandardVariants ??
       defaultPreferences.askNonStandardVariants,
+    translationAtBottom:
+      langPref?.translationAtBottom ?? globalPref.translationAtBottom ?? defaultPreferences.translationAtBottom,
+    hideRegularTranslationIfAdvanced:
+      langPref?.hideRegularTranslationIfAdvanced ??
+      globalPref.hideRegularTranslationIfAdvanced ??
+      defaultPreferences.hideRegularTranslationIfAdvanced,
+    cardTypeSettings: langPref?.cardTypeSettings, // TODO: fill with default values
   };
 };
