@@ -5,7 +5,7 @@ import { UserPreferencesForm, type UserPreferencesFormData } from './UserPrefere
 import type { ReplaceUserPreferencesReqDTO } from '../../api/controllers/users/users.schema';
 import { useNavigate } from 'react-router-dom';
 import { paths } from '../../routes/paths';
-import { removeUndefinedValues } from '../../utils/object';
+import { removeNullableValues } from '../../utils/object';
 
 const UserPreferencesPage = () => {
   const { data, isLoading } = useUserPreferences();
@@ -36,26 +36,29 @@ const UserPreferencesPage = () => {
 
   const handleSave = (data: UserPreferencesFormData) => {
     console.log(data);
+    const perLang: ReplaceUserPreferencesReqDTO['perLang'] = Object.fromEntries(
+      data.languages
+        .filter((e) => !!e.lang)
+        .map(
+          ({ lang, preferences }) =>
+            [
+              lang,
+              removeNullableValues({
+                autoSubmitCorrectAnswers: preferences.autoSubmitCorrectAnswers,
+                testTypingTranslation: preferences.testTypingTranslation,
+                askNonStandardVariants: preferences.askNonStandardVariants,
+              }),
+            ] as const,
+        )
+        .filter((e) => Object.keys(e[1]).length > 0),
+    );
     const requestData: ReplaceUserPreferencesReqDTO = {
-      global: {
+      global: removeNullableValues({
         autoSubmitCorrectAnswers: data.global.autoSubmitCorrectAnswers,
         testTypingTranslation: data.global.testTypingTranslation,
-      },
-      perLang: Object.fromEntries(
-        data.languages
-          .filter((e) => !!e.lang)
-          .map(
-            ({ lang, preferences }) =>
-              [
-                lang,
-                removeUndefinedValues({
-                  autoSubmitCorrectAnswers: preferences.autoSubmitCorrectAnswers,
-                  testTypingTranslation: preferences.testTypingTranslation,
-                }),
-              ] as const,
-          )
-          .filter((e) => Object.keys(e[1]).length > 0),
-      ),
+        askNonStandardVariants: data.global.askNonStandardVariants,
+      }),
+      perLang,
     };
     mutate(requestData, {
       onSuccess: goToMainPage,

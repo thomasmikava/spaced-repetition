@@ -30,6 +30,21 @@ export function removeUndefinedValues<T extends {}>(obj: T): T {
   return obj2;
 }
 
+export function removeNullableValues<T extends {}>(
+  obj: T,
+): {
+  [key in keyof T]?: NonNullable<T[key]>;
+} {
+  const obj2 = { ...obj } as T;
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    if (obj2[key as never] === undefined || obj2[key as never] === null) {
+      delete obj2[key as never];
+    }
+  }
+  return obj2;
+}
+
 interface Dictionary<T> {
   [key: string]: T;
 }

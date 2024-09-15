@@ -1,0 +1,21 @@
+.preferencesContainer {
+}
+
+.pref {
+}
+
+.langSelect {
+  width: 100%;
+}
+
+.langHeader {
+  display: flex;
+  font-size: 20px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #757575;
+}
+
+.langContainer {
+  margin: 20px 0;
+}

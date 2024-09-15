@@ -3,11 +3,13 @@ import { z } from 'zod';
 export interface UserGlobalPreferencesDTO {
   autoSubmitCorrectAnswers?: boolean;
   testTypingTranslation?: boolean;
+  askNonStandardVariants?: boolean;
 }
 
 const UserGlobalPreferences = z.object({
   autoSubmitCorrectAnswers: z.boolean().optional(),
   testTypingTranslation: z.boolean().optional(),
+  askNonStandardVariants: z.boolean().optional(),
 });
 
 export interface UserPreferencesDTO {

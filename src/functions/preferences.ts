@@ -1,13 +1,11 @@
-import type { UserPreferencesDTO } from '../api/controllers/users/users.schema';
+import type { UserGlobalPreferencesDTO, UserPreferencesDTO } from '../api/controllers/users/users.schema';
 
-export interface Preferences {
-  autoSubmitCorrectAnswers: boolean;
-  testTypingTranslation: boolean;
-}
+export type Preferences = Required<UserGlobalPreferencesDTO>;
 
-const defaultPreferences: Preferences = {
+export const defaultPreferences: Preferences = {
   autoSubmitCorrectAnswers: false,
   testTypingTranslation: false,
+  askNonStandardVariants: true,
 };
 
 export const calculatePreferences = (preferences: UserPreferencesDTO | null, lang: string): Preferences => {
@@ -25,5 +23,9 @@ export const calculatePreferences = (preferences: UserPreferencesDTO | null, lan
       defaultPreferences.autoSubmitCorrectAnswers,
     testTypingTranslation:
       langPref?.testTypingTranslation ?? globalPref.testTypingTranslation ?? defaultPreferences.testTypingTranslation,
+    askNonStandardVariants:
+      langPref?.askNonStandardVariants ??
+      globalPref.askNonStandardVariants ??
+      defaultPreferences.askNonStandardVariants,
   };
 };

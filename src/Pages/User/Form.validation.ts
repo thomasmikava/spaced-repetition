@@ -5,8 +5,9 @@ export const useValidation = () => {
   const { createObjectResolver } = useValidators();
 
   const singlePreference = object({
-    autoSubmitCorrectAnswers: boolean().optional(),
-    testTypingTranslation: boolean().optional(),
+    autoSubmitCorrectAnswers: boolean().nullish(),
+    testTypingTranslation: boolean().nullish(),
+    askNonStandardVariants: boolean().nullish(),
   });
 
   return {
@@ -14,7 +15,7 @@ export const useValidation = () => {
       global: singlePreference,
       languages: array(
         object({
-          lang: string().nullable(),
+          lang: string(),
           preferences: singlePreference,
         }),
       ),

@@ -1,0 +1,29 @@
+.chipsContainer {
+  display: flex;
+}
+
+.chip {
+  cursor: pointer;
+  border: 1px solid white;
+  border-radius: 0px;
+  padding: 5px 10px;
+  background: transparent;
+  color: white;
+  border-right: none;
+  text-align: center;
+}
+
+.chip:last-of-type {
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  border-right: 1px solid;
+}
+
+.chip:first-of-type {
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+}
+
+.selected {
+  background: #0c6276;
+}
