@@ -8,7 +8,7 @@ export interface UserGlobalPreferencesDTO {
   hideRegularTranslationIfAdvanced?: boolean;
 }
 
-interface UserLangCardGroupSettingsDTO {
+export interface UserLangCardGroupSettingsDTO {
   hideGroup?: boolean;
   askNonStandardVariants?: boolean;
 }

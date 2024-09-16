@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DeleteOutlined, HolderOutlined } from '@ant-design/icons';
 import Form from 'antd/es/form';
-import { useState, type FC } from 'react';
+import { memo, useState, type FC } from 'react';
 import type { Control, UseFormWatch } from 'react-hook-form';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
-import { defaultPreferences } from '../../functions/preferences';
+import { calculatePreferences, defaultPreferences } from '../../functions/preferences';
 import { useLangToLearnOptions } from '../../hooks/langs';
 import Button from '../../ui/Button';
 import ChipsSwitch from '../../ui/ChipsSwitch';
@@ -16,6 +16,11 @@ import SectionSwitch from '../../ui/SectionSwitch';
 import { arrayToObject } from '../../utils/array';
 import Modal from 'antd/es/modal/Modal';
 import SortableList, { SortableItem } from 'react-easy-sort';
+import { convertFormDataToUserPreferences } from './convert';
+
+type Required<T> = {
+  [P in keyof T]-?: NonNullable<T[P]>;
+};
 
 interface SinglePreference {
   autoSubmitCorrectAnswers?: boolean | null;
@@ -30,12 +35,16 @@ interface LangCardGroupSettings {
   askNonStandardVariants?: boolean | null;
 }
 
+type RequiredGroupSettings = Required<LangCardGroupSettings>;
+
 export interface CardTypeSettingsDTO {
   hideGroups?: boolean;
   askNonStandardVariants?: boolean;
   groupOrder?: string[];
   groupSettings?: { group: string; preferences: LangCardGroupSettings }[];
 }
+
+type RequiredCardTypePref = Required<Omit<CardTypeSettingsDTO, 'groupSettings' | 'groupOrder'>>;
 
 export interface LangPreference extends SinglePreference {
   cardTypeSettings?: Record<`x${string}`, CardTypeSettingsDTO | undefined>; // x is added in the key so that object is created instead of array when use hook deals with dynamic creation
@@ -83,7 +92,7 @@ export const UserPreferencesForm = ({ defaultData, onSave, isSubmitting }: Props
       <div>
         <Preferences fieldKey='global' control={control} defaultValues={defaultPreferences} />
 
-        <Languages control={control} defaultValues={defaultPreferences} watch={watch} />
+        <Languages control={control} watch={watch} />
 
         <br />
 
@@ -105,7 +114,7 @@ interface PreferencesProps {
   defaultValues: RequiredPref;
 }
 
-const Preferences: FC<PreferencesProps> = ({ fieldKey, control, defaultValues }) => {
+const Preferences: FC<PreferencesProps> = memo(({ fieldKey, control, defaultValues }) => {
   return (
     <div className={styles.preferencesContainer}>
       <div className={styles.pref}>
@@ -157,24 +166,21 @@ const Preferences: FC<PreferencesProps> = ({ fieldKey, control, defaultValues })
       </div>
     </div>
   );
-};
+});
 
 interface LanguagesProps {
   control: Control<UserPreferencesFormData, any>;
-  defaultValues: RequiredPref;
   watch: UseFormWatch<UserPreferencesFormData>;
 }
 
-const Languages: FC<LanguagesProps> = ({ control, watch, defaultValues }) => {
+const Languages: FC<LanguagesProps> = ({ control, watch }) => {
   const learnLangOptions = useLangToLearnOptions();
 
   const globalPreferences = watch('global');
-  const parentPreferences = (() => {
-    const val = { ...defaultValues };
-    Object.entries(globalPreferences).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) (val as Record<string, unknown>)[key] = value;
-    });
-    return val;
+  const parentPreferences = ((): RequiredPref => {
+    const randomLangId = 'xLang';
+    const converted = convertFormDataToUserPreferences({ global: globalPreferences, languages: [] });
+    return calculatePreferences(converted, randomLangId);
   })();
 
   const { append, fields, remove } = useFieldArray({ control, name: 'languages' });
@@ -203,6 +209,7 @@ const Languages: FC<LanguagesProps> = ({ control, watch, defaultValues }) => {
             defaultValues={parentPreferences}
             fieldKey={`languages.${index}`}
             onRemove={() => remove(index)}
+            watch={watch}
           />
         ))}
       </div>
@@ -217,6 +224,7 @@ interface LangPreferenceProps {
   defaultValues: RequiredPref;
   fieldKey: `languages.${number}`;
   onRemove: () => void;
+  watch: UseFormWatch<UserPreferencesFormData>;
 }
 
 const LangPreference: FC<LangPreferenceProps> = ({
@@ -226,6 +234,7 @@ const LangPreference: FC<LangPreferenceProps> = ({
   fieldKey,
   defaultValues,
   onRemove,
+  watch,
 }) => {
   return (
     <div className={styles.langContainer}>
@@ -237,7 +246,14 @@ const LangPreference: FC<LangPreferenceProps> = ({
       </div>
       <div>
         <Preferences fieldKey={`${fieldKey}.preferences`} control={control} defaultValues={defaultValues} />
-        <CardTypePreferences lang={lang} fieldKey={`${fieldKey}.preferences.cardTypeSettings`} control={control} />
+        <CardTypePreferences
+          lang={lang}
+          fieldKey={`${fieldKey}.preferences.cardTypeSettings`}
+          parentPreferencesFieldKey={`${fieldKey}.preferences`}
+          control={control}
+          defaultValues={defaultValues}
+          watch={watch}
+        />
       </div>
     </div>
   );
@@ -246,11 +262,31 @@ const LangPreference: FC<LangPreferenceProps> = ({
 interface CardTypePreferencesProps {
   lang: string;
   fieldKey: `languages.${number}.preferences.cardTypeSettings`;
+  parentPreferencesFieldKey: `languages.${number}.preferences`;
   control: Control<UserPreferencesFormData, any>;
+  defaultValues: RequiredPref;
+  watch: UseFormWatch<UserPreferencesFormData>;
 }
 
-const CardTypePreferences: FC<CardTypePreferencesProps> = ({ lang, control, fieldKey }) => {
+const CardTypePreferences: FC<CardTypePreferencesProps> = ({
+  lang,
+  control,
+  fieldKey,
+  watch,
+  parentPreferencesFieldKey,
+  defaultValues,
+}) => {
   const availableCardTypes = cardTypeRecordLocalizations.filter((e) => e.lang === lang && !!e.configuration);
+
+  const langCustomPreferences = watch(parentPreferencesFieldKey);
+  const parentPreferences = (() => {
+    const converted = convertFormDataToUserPreferences({
+      global: defaultValues,
+      languages: [{ lang, preferences: langCustomPreferences }],
+    });
+    return calculatePreferences(converted, lang);
+  })();
+
   const [selectedCardType, setSelectedCardType] = useState<number | null>(null);
   const config = selectedCardType
     ? availableCardTypes.find((e) => e.cardTypeRecordId === selectedCardType)?.configuration
@@ -276,6 +312,10 @@ const CardTypePreferences: FC<CardTypePreferencesProps> = ({ lang, control, fiel
           groups={config.variantGroups
             ?.filter((e) => e.id !== 'init' && e.id !== 'skip')
             .map((e) => ({ value: e.id, label: e.name ?? e.id }))}
+          defaultValues={parentPreferences.cardTypeSettings['unknown']}
+          globalPreferences={defaultValues}
+          langPreferences={langCustomPreferences}
+          watch={watch}
         />
       )}
     </div>
@@ -284,12 +324,23 @@ const CardTypePreferences: FC<CardTypePreferencesProps> = ({ lang, control, fiel
 
 interface SingleCardTypePreferencesProps {
   fieldKey: `languages.${number}.preferences.cardTypeSettings.x${string}`;
+  watch: UseFormWatch<UserPreferencesFormData>;
   control: Control<UserPreferencesFormData, any>;
   groups: { value: string; label: string }[] | undefined;
+  defaultValues: RequiredCardTypePref;
+  globalPreferences: RequiredPref;
+  langPreferences: LangPreference;
 }
 
-const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({ control, fieldKey, groups }) => {
-  // TODO: get default values somehow
+const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({
+  control,
+  watch,
+  fieldKey,
+  groups,
+  defaultValues,
+  globalPreferences,
+  langPreferences,
+}) => {
   return (
     <div className={styles.preferencesContainer}>
       <div className={styles.pref}>
@@ -297,7 +348,7 @@ const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({ control
           <Controller
             name={`${fieldKey}.hideGroups`}
             control={control}
-            render={({ field }) => <YesNo field={field} defaultValue={false} />}
+            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.hideGroups} />}
           />
         </Form.Item>
       </div>
@@ -306,7 +357,7 @@ const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({ control
           <Controller
             name={`${fieldKey}.askNonStandardVariants`}
             control={control}
-            render={({ field }) => <YesNo field={field} defaultValue={true} />}
+            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.askNonStandardVariants} />}
           />
         </Form.Item>
       </div>
@@ -321,7 +372,17 @@ const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({ control
           </Form.Item>
         </div>
       )}
-      {groups && <Groups control={control} fieldKey={`${fieldKey}.groupSettings`} groups={groups} />}
+      {groups && (
+        <Groups
+          control={control}
+          fieldKey={`${fieldKey}.groupSettings`}
+          groups={groups}
+          globalPreferences={globalPreferences}
+          langPreferences={langPreferences}
+          watch={watch}
+          parentPreferencesFieldKey={fieldKey}
+        />
+      )}
     </div>
   );
 };
@@ -368,10 +429,22 @@ const GroupVariants: FC<GroupVariantsProps> = ({ value, onChange, groups }) => {
 
 interface GroupsProps {
   fieldKey: `languages.${number}.preferences.cardTypeSettings.x${string}.groupSettings`;
+  parentPreferencesFieldKey: `languages.${number}.preferences.cardTypeSettings.x${string}`;
   control: Control<UserPreferencesFormData, any>;
   groups: { value: string; label: string }[];
+  globalPreferences: RequiredPref;
+  langPreferences: LangPreference;
+  watch: UseFormWatch<UserPreferencesFormData>;
 }
-const Groups: FC<GroupsProps> = ({ control, fieldKey, groups }) => {
+const Groups: FC<GroupsProps> = ({
+  control,
+  fieldKey,
+  groups,
+  globalPreferences,
+  langPreferences,
+  parentPreferencesFieldKey,
+  watch,
+}) => {
   const { append, fields, remove } = useFieldArray({ control, name: fieldKey });
   const items = fields as never as CardTypeSettingsDTO['groupSettings'];
 
@@ -379,6 +452,24 @@ const Groups: FC<GroupsProps> = ({ control, fieldKey, groups }) => {
     const has = items?.some((e) => e.group === groupId);
     if (!has) append({ group: groupId, preferences: {} });
   };
+
+  const someCardTypeSettingsId1 = 'c';
+  const someCardTypeSettingsId2 = `x${someCardTypeSettingsId1}`;
+
+  const cardTypeSettings = watch(parentPreferencesFieldKey);
+  const parentPreferences = (() => {
+    const randomLangId = 'xLang';
+    const converted = convertFormDataToUserPreferences({
+      global: globalPreferences,
+      languages: [
+        {
+          lang: randomLangId,
+          preferences: { ...langPreferences, cardTypeSettings: { [someCardTypeSettingsId2]: cardTypeSettings } },
+        },
+      ],
+    });
+    return calculatePreferences(converted, randomLangId);
+  })();
 
   return (
     <div>
@@ -398,6 +489,7 @@ const Groups: FC<GroupsProps> = ({ control, fieldKey, groups }) => {
             control={control}
             fieldKey={`${fieldKey}.${index}`}
             onRemove={() => remove(index)}
+            defaultValues={parentPreferences.cardTypeSettings[someCardTypeSettingsId1].groupSettings['unknown']}
           />
         ))}
       </div>
@@ -411,9 +503,10 @@ interface GroupPreferenceProps {
   control: Control<UserPreferencesFormData, any>;
   fieldKey: `languages.${number}.preferences.cardTypeSettings.x${string}.groupSettings.${number}`;
   onRemove: () => void;
+  defaultValues: RequiredGroupSettings;
 }
 
-const GroupPreference: FC<GroupPreferenceProps> = ({ groupName, control, fieldKey, onRemove }) => {
+const GroupPreference: FC<GroupPreferenceProps> = ({ groupName, control, fieldKey, onRemove, defaultValues }) => {
   return (
     <div className={styles.langContainer}>
       <div className={styles.langHeader}>
@@ -423,7 +516,7 @@ const GroupPreference: FC<GroupPreferenceProps> = ({ groupName, control, fieldKe
         </span>
       </div>
       <div>
-        <GroupPreferencesInputs fieldKey={`${fieldKey}.preferences`} control={control} />
+        <GroupPreferencesInputs fieldKey={`${fieldKey}.preferences`} control={control} defaultValues={defaultValues} />
       </div>
     </div>
   );
@@ -432,9 +525,10 @@ const GroupPreference: FC<GroupPreferenceProps> = ({ groupName, control, fieldKe
 interface GroupPreferencesInputsProps {
   fieldKey: `languages.${number}.preferences.cardTypeSettings.x${string}.groupSettings.${number}.preferences`;
   control: Control<UserPreferencesFormData, any>;
+  defaultValues: RequiredGroupSettings;
 }
 
-const GroupPreferencesInputs: FC<GroupPreferencesInputsProps> = ({ control, fieldKey }) => {
+const GroupPreferencesInputs: FC<GroupPreferencesInputsProps> = ({ control, fieldKey, defaultValues }) => {
   return (
     <div className={styles.preferencesContainer}>
       <div className={styles.pref}>
@@ -442,7 +536,7 @@ const GroupPreferencesInputs: FC<GroupPreferencesInputsProps> = ({ control, fiel
           <Controller
             name={`${fieldKey}.askNonStandardVariants`}
             control={control}
-            render={({ field }) => <YesNo field={field} defaultValue={true} />}
+            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.askNonStandardVariants} />}
           />
         </Form.Item>
       </div>
