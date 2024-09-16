@@ -96,7 +96,8 @@ export class Reviewer {
     };
   };
 
-  private calculateProbabilities = (currentDate = Date.now()) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private calculateProbabilities = (currentDate = Date.now(), _qOrder = 0) => {
     const askedCards = this.prevReviews.getCurrentSessionCardsCount();
     const lastCards = this.prevReviews.getHistoryForLastPeriod(
       askedCards <= 15 ? LAST_PERIOD_TO_CONSIDER_SMALL : LAST_PERIOD_TO_CONSIDER,
@@ -214,12 +215,8 @@ export class Reviewer {
           const connectedVariantsMaxLastViewDate = record.connectedTestKeys
             ? this.prevReviews.getMaxViewDate(record)
             : undefined;
-          const maxViewDate = Math.max(
-            lastGroupViewDate ?? -Infinity,
-            connectedVariantsMaxLastViewDate ?? -Infinity,
-            historyRecord?.lastDate ?? -Infinity,
-          );
-          const lastNormalizedViewDate = maxViewDate === -Infinity || isNaN(maxViewDate) ? undefined : maxViewDate;
+          const maxViewDate = getMaxDate(connectedVariantsMaxLastViewDate, historyRecord?.lastDate);
+          const lastNormalizedViewDate = getMaxDate(lastGroupViewDate, maxViewDate);
           const probability =
             lastNormalizedViewDate !== undefined
               ? calculateProbability(
@@ -231,7 +228,7 @@ export class Reviewer {
             debugger;
           }
           const reviewDue = historyRecord
-            ? getReviewDue(historyRecord, lastNormalizedViewDate, currentDate)
+            ? getOptimalReviewDue(historyRecord, maxViewDate as number, lastNormalizedViewDate, currentDate)
             : getFirstDue(
                 groupVewRecord,
                 individualViewRecord,
@@ -369,7 +366,7 @@ export class Reviewer {
     const qOrder = this.prevReviews.getCurrentSessionCardsCount() + 1;
     console.log('#q', qOrder);
 
-    const { probabilities: sorted, removableDueDatesCardKeys } = this.calculateProbabilities(currentDate);
+    const { probabilities: sorted, removableDueDatesCardKeys } = this.calculateProbabilities(currentDate, qOrder);
     if (removableDueDatesCardKeys) {
       this.prevReviews.removeDueDates(removableDueDatesCardKeys);
     }
@@ -387,12 +384,16 @@ export class Reviewer {
       (topCardViewType === CardViewMode.groupView || topCardViewType === CardViewMode.individualView)
     ) {
       // only prioritize next cards of lower group-level in case user is inside the specific lesson
-      const newSorted = sorted.filter(
-        (e) => e.viewMode === CardViewMode.groupView || e.viewMode === CardViewMode.individualView,
-      );
-      newSorted.sort((a, b) => {
-        if (a.groupLevel !== b.groupLevel) return (a.groupLevel ?? 0) - (b.groupLevel ?? 0);
-        return 0;
+      const minViewGroupLevel = sorted
+        .filter((e) => {
+          const viewMode = getCardViewMode(e);
+          return viewMode === CardViewMode.groupView || viewMode === CardViewMode.individualView;
+        })
+        .map((e) => e.groupLevel)
+        .reduce((a, b) => Math.min(a, b), Infinity);
+      const newSorted = sorted.filter((e) => {
+        const viewMode = getCardViewMode(e);
+        return viewMode === CardViewMode.test || e.groupLevel === minViewGroupLevel;
       });
       if (newSorted[0]) return newSorted[0];
     }
@@ -484,4 +485,27 @@ export const getCardViewMode = (a: CardWithProbability) => {
   } else {
     return CardViewMode.test;
   }
+};
+
+const getOptimalReviewDue = (
+  historyRecord: AnyReviewHistory,
+  lastDate: number,
+  groupViewMaxLastDate: number | undefined,
+  currentDateMS: number,
+) => {
+  const t1 = getReviewDue(historyRecord, lastDate, currentDateMS);
+  if (!groupViewMaxLastDate || groupViewMaxLastDate <= lastDate) return t1;
+  const t2 = getReviewDue(historyRecord, groupViewMaxLastDate, currentDateMS);
+  if (t2 - t1 >= 240) return t1 + 120;
+  return Math.floor(t1 + t2 / 2);
+};
+
+const getMaxDate = (...dates: (number | undefined | null)[]) => {
+  let maxDate = undefined;
+  for (const date of dates) {
+    if (typeof date === 'number' && (maxDate === undefined || date > maxDate)) {
+      maxDate = date;
+    }
+  }
+  return maxDate;
 };

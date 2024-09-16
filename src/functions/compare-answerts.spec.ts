@@ -1,7 +1,7 @@
 import { generatePossibleAnswers } from './compare-answers';
 
 const comparePartialAnswer = (fullAnswer: string, userInput: string): boolean => {
-  const possibleAnswers = generatePossibleAnswers(fullAnswer, true);
+  const possibleAnswers = generatePossibleAnswers(fullAnswer, true, 'en');
 
   return possibleAnswers.includes(userInput);
 };

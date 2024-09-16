@@ -170,7 +170,7 @@ const Preferences: FC<PreferencesProps> = memo(({ fieldKey, control, defaultValu
         </Form.Item>
       </div>
       <div className={styles.pref}>
-        <Form.Item label='Show translations after input'>
+        <Form.Item label='Translations position during test'>
           <Controller
             name={`${fieldKey}.transPos`}
             control={control}

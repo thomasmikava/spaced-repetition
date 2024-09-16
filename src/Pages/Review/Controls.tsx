@@ -172,8 +172,8 @@ const CustomOptionModal: FC<{
 };
 
 const getDateOptions = (
-  isCorrect: boolean,
-  currentS: number | null,
+  _isCorrect: boolean,
+  _currentS: number | null,
   newS: number,
   beforeCount: number,
   afterCount: number,
