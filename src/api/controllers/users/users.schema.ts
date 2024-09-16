@@ -1,10 +1,16 @@
 import { z } from 'zod';
 
+export enum TranslationPosition {
+  top = 't',
+  bottom = 'b',
+  split = 's',
+}
+
 export interface UserGlobalPreferencesDTO {
   autoSubmitCorrectAnswers?: boolean;
   testTypingTranslation?: boolean;
   askNonStandardVariants?: boolean;
-  translationAtBottom?: boolean;
+  transPos?: TranslationPosition;
   hideRegularTranslationIfAdvanced?: boolean;
 }
 
@@ -28,7 +34,7 @@ const UserGlobalPreferences = z.object({
   autoSubmitCorrectAnswers: z.boolean().optional(),
   testTypingTranslation: z.boolean().optional(),
   askNonStandardVariants: z.boolean().optional(),
-  translationAtBottom: z.boolean().optional(),
+  transPos: z.enum([TranslationPosition.top, TranslationPosition.bottom, TranslationPosition.split]).optional(),
   hideRegularTranslationIfAdvanced: z.boolean().optional(),
 });
 

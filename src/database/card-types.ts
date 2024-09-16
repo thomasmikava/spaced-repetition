@@ -81,6 +81,9 @@ export enum ViewLineType {
   Section,
 }
 
+export const INIT_GROUP_ID = 'init';
+export const SKIP_GROUP_ID = 'skip';
+
 type ColumnBasicType =
   | { type: 'variantMatcher'; matcher: CategoryAttrsMatcher; children: (ColumnBasicType | ColumnConditionalType)[] }
   | { type: 'value' }
@@ -371,7 +374,12 @@ export type ViewLine =
 export type SortBy = { attrId: number; attrRecords: number[] };
 export interface VariantGroup {
   id: string;
-  name?: string;
+  name?:
+    | string
+    | {
+        attrs: IdType[];
+        separator?: string;
+      };
   matcher: CategoryAttrsMatcher | null;
   skipTest?: boolean | { only1variant: boolean };
   skip?: boolean;
@@ -425,7 +433,7 @@ const caseSortBy: SortBy = {
 const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
     variantGroups: [
-      { id: 'init', matcher: { category: 1 } },
+      { id: INIT_GROUP_ID, matcher: { category: 1 } },
       ...cartesianProduct(
         [VerbMood.Indikativ, VerbMood.Konjunktiv, VerbMood.Imperativ],
         [
@@ -467,7 +475,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
             : {}) satisfies Partial<VariantGroup>),
         }),
       ),
-      { id: 'skip', matcher: null, skip: true },
+      { id: SKIP_GROUP_ID, matcher: null, skip: true },
     ],
     views: [
       {
@@ -642,7 +650,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 }, indViewId: 'init-view', testViewId: 'init-test' },
+      { id: INIT_GROUP_ID, matcher: { category: 1 }, indViewId: 'init-view', testViewId: 'init-test' },
       {
         id: 'sng',
         matcher: {
@@ -663,7 +671,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         testViewId: 'gr-test',
         sortBy: [caseSortBy],
       },
-      { id: 'skip', matcher: null, skip: true },
+      { id: SKIP_GROUP_ID, matcher: null, skip: true },
     ],
     views: [
       {
@@ -792,9 +800,9 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 } },
-      { id: 'comp', matcher: { category: 2 } },
-      { id: 'super', matcher: { category: 3 } },
+      { id: INIT_GROUP_ID, matcher: { category: 1 } },
+      { id: 'comp', matcher: { category: 2 }, name: 'Komparativ' },
+      { id: 'super', matcher: { category: 3 }, name: 'Superlativ' },
       // `${variant.degree}.${variant.inflection}.${gender}`
       ...cartesianProduct(
         [AdjectiveDegree.Positiv, AdjectiveDegree.Komparativ, AdjectiveDegree.Superlativ],
@@ -814,7 +822,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         testViewId: 'gr-test',
         skipIfStandard: true,
       })),
-      { id: 'skip', matcher: null, skip: true },
+      { id: SKIP_GROUP_ID, matcher: null, skip: true },
     ],
     views: [
       {
@@ -909,12 +917,12 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 }, indViewId: 'init', testViewId: 'init-test' },
+      { id: INIT_GROUP_ID, matcher: { category: 1 }, indViewId: 'init', testViewId: 'init-test' },
       { id: 'rest', matcher: { category: null }, groupViewId: 'gr-view', testViewId: 'gr-test' },
     ],
     views: [
       {
-        id: 'init',
+        id: INIT_GROUP_ID,
         lines: [
           { type: ViewLineType.Audio },
           { type: ViewLineType.VariantValue, bigText: true },
@@ -982,7 +990,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 }, skipTest: { only1variant: false } },
+      { id: INIT_GROUP_ID, matcher: { category: 1 }, skipTest: { only1variant: false } },
       ...cartesianProduct([PronounFunction.Declanation], [NounNumber.singular, NounNumber.plural]).map(
         ([func, number]): VariantGroup => ({
           id: `f${AttributeMapper.FUNCTION.records[func]}-n${AttributeMapper.NUMBER.records[number]}`,
@@ -1058,10 +1066,10 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
     maxAllowedNonStandardForms: 4,
   },
   [CardTypeMapper.PREPOSITION]: {
-    variantGroups: [{ id: 'init', matcher: { category: 1 }, indViewId: 'init', testViewId: 'init-test' }],
+    variantGroups: [{ id: INIT_GROUP_ID, matcher: { category: 1 }, indViewId: 'init', testViewId: 'init-test' }],
     views: [
       {
-        id: 'init',
+        id: INIT_GROUP_ID,
         lines: [
           { type: ViewLineType.Audio },
           { type: ViewLineType.VariantValue, bigText: true },
@@ -1108,9 +1116,10 @@ const getFrenchTensesByMood = (mood: VerbMood): VerbTense[] => {
 const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
   [CardTypeMapper.VERB]: {
     variantGroups: [
-      { id: 'init', matcher: { category: 1 } },
+      { id: INIT_GROUP_ID, matcher: { category: 1 } },
       {
         id: `forms`,
+        name: 'Formes',
         matcher: {
           category: null,
           attrs: {
@@ -1142,7 +1151,7 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           skipIfStandard: true,
         }),
       ),
-      { id: 'skip', matcher: null, skip: true },
+      { id: SKIP_GROUP_ID, matcher: null, skip: true },
     ],
     views: [
       {
@@ -1376,7 +1385,7 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 }, indViewId: 'init-view', testViewId: 'init-test' },
+      { id: INIT_GROUP_ID, matcher: { category: 1 }, indViewId: 'init-view', testViewId: 'init-test' },
       {
         id: 'plural',
         matcher: {
@@ -1387,7 +1396,7 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         testViewId: 'init-test',
         skipIfStandard: true,
       },
-      { id: 'skip', matcher: null, skip: true },
+      { id: SKIP_GROUP_ID, matcher: null, skip: true },
     ],
     views: [
       {
@@ -1451,11 +1460,22 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     variantGroups: [
-      { id: 'init', matcher: { category: 1 } },
-      { id: 'comp', matcher: { category: 2 }, skipIfStandard: true },
-      { id: 'super', matcher: { category: 3 }, skipIfStandard: true },
+      { id: INIT_GROUP_ID, matcher: { category: 1 } },
+      {
+        id: 'comp',
+        matcher: { category: 2 },
+        skipIfStandard: true,
+        name: { attrs: [AttributeMapper.DEGREE.records[AdjectiveDegree.Komparativ]] },
+      },
+      {
+        id: 'super',
+        matcher: { category: 3 },
+        skipIfStandard: true,
+        name: { attrs: [AttributeMapper.DEGREE.records[AdjectiveDegree.Superlativ]] },
+      },
       {
         id: `rest`,
+        name: 'Reste',
         matcher: {
           category: null,
           attrs: {
@@ -1484,7 +1504,7 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           },
         ],
       },
-      { id: 'skip', matcher: null, skip: true },
+      { id: SKIP_GROUP_ID, matcher: null, skip: true },
     ],
     views: [
       {

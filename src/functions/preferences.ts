@@ -1,9 +1,10 @@
-import type {
-  UserCardTypeSettingsDTO,
-  UserGlobalPreferencesDTO,
-  UserLangCardGroupSettingsDTO,
-  UserLangPreferencesDTO,
-  UserPreferencesDTO,
+import {
+  TranslationPosition,
+  type UserCardTypeSettingsDTO,
+  type UserGlobalPreferencesDTO,
+  type UserLangCardGroupSettingsDTO,
+  type UserLangPreferencesDTO,
+  type UserPreferencesDTO,
 } from '../api/controllers/users/users.schema';
 
 type LangCardGroupPreferences = Required<UserLangCardGroupSettingsDTO>;
@@ -40,7 +41,7 @@ export const defaultPreferences: Preferences = {
   autoSubmitCorrectAnswers: false,
   testTypingTranslation: false,
   askNonStandardVariants: true,
-  translationAtBottom: false,
+  transPos: TranslationPosition.split,
   hideRegularTranslationIfAdvanced: false,
   cardTypeSettings,
 };
@@ -64,8 +65,7 @@ export const calculatePreferences = (preferences: UserPreferencesDTO | null, lan
       langPref?.askNonStandardVariants ??
       globalPref.askNonStandardVariants ??
       defaultPreferences.askNonStandardVariants,
-    translationAtBottom:
-      langPref?.translationAtBottom ?? globalPref.translationAtBottom ?? defaultPreferences.translationAtBottom,
+    transPos: langPref?.transPos ?? globalPref.transPos ?? defaultPreferences.transPos,
     hideRegularTranslationIfAdvanced:
       langPref?.hideRegularTranslationIfAdvanced ??
       globalPref.hideRegularTranslationIfAdvanced ??

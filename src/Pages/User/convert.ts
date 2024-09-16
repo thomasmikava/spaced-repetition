@@ -15,7 +15,7 @@ export const convertUserPreferencesToFormData = (
     testTypingTranslation: preferences?.global.testTypingTranslation ?? undefined,
     askNonStandardVariants: preferences?.global.askNonStandardVariants ?? undefined,
     hideRegularTranslationIfAdvanced: preferences?.global.hideRegularTranslationIfAdvanced ?? undefined,
-    translationAtBottom: preferences?.global.translationAtBottom ?? undefined,
+    transPos: preferences?.global.transPos ?? undefined,
   },
   languages: Object.entries(preferences?.perLang ?? {}).map(
     ([lang, preferences]): UserPreferencesFormData['languages'][number] => ({
@@ -25,7 +25,7 @@ export const convertUserPreferencesToFormData = (
         testTypingTranslation: preferences?.testTypingTranslation ?? undefined,
         askNonStandardVariants: preferences?.askNonStandardVariants ?? undefined,
         hideRegularTranslationIfAdvanced: preferences?.hideRegularTranslationIfAdvanced ?? undefined,
-        translationAtBottom: preferences?.translationAtBottom ?? undefined,
+        transPos: preferences?.transPos ?? undefined,
         cardTypeSettings: preferences?.cardTypeSettings
           ? objectMap(
               preferences.cardTypeSettings,
@@ -63,7 +63,7 @@ export const convertFormDataToUserPreferences = (data: UserPreferencesFormData) 
               autoSubmitCorrectAnswers: preferences.autoSubmitCorrectAnswers,
               testTypingTranslation: preferences.testTypingTranslation,
               askNonStandardVariants: preferences.askNonStandardVariants,
-              translationAtBottom: preferences.translationAtBottom,
+              transPos: preferences.transPos,
               hideRegularTranslationIfAdvanced: preferences.hideRegularTranslationIfAdvanced,
               cardTypeSettings: convertCardTypeSettings(preferences.cardTypeSettings),
             }),
@@ -76,7 +76,7 @@ export const convertFormDataToUserPreferences = (data: UserPreferencesFormData) 
       autoSubmitCorrectAnswers: data.global.autoSubmitCorrectAnswers,
       testTypingTranslation: data.global.testTypingTranslation,
       askNonStandardVariants: data.global.askNonStandardVariants,
-      translationAtBottom: data.global.translationAtBottom,
+      transPos: data.global.transPos,
       hideRegularTranslationIfAdvanced: data.global.hideRegularTranslationIfAdvanced,
     }),
     perLang,

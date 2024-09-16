@@ -11,12 +11,15 @@ import ChipsSwitch from '../../ui/ChipsSwitch';
 import Select from '../../ui/Select';
 import { useValidation } from './Form.validation';
 import styles from './styles.module.css';
-import { cardTypeRecordLocalizations } from '../../database/card-types';
+import type { VariantGroup } from '../../database/card-types';
+import { cardTypeRecordLocalizations, INIT_GROUP_ID, SKIP_GROUP_ID } from '../../database/card-types';
 import SectionSwitch from '../../ui/SectionSwitch';
-import { arrayToObject } from '../../utils/array';
+import { arrayToObject, isNonNullable } from '../../utils/array';
 import Modal from 'antd/es/modal/Modal';
 import SortableList, { SortableItem } from 'react-easy-sort';
 import { convertFormDataToUserPreferences } from './convert';
+import type { Helper } from '../../functions/generate-card-content';
+import { TranslationPosition } from '../../api/controllers/users/users.schema';
 
 type Required<T> = {
   [P in keyof T]-?: NonNullable<T[P]>;
@@ -26,7 +29,7 @@ interface SinglePreference {
   autoSubmitCorrectAnswers?: boolean | null;
   testTypingTranslation?: boolean | null;
   askNonStandardVariants?: boolean | null;
-  translationAtBottom?: boolean;
+  transPos?: TranslationPosition;
   hideRegularTranslationIfAdvanced?: boolean;
 }
 
@@ -59,9 +62,10 @@ interface Props {
   defaultData: UserPreferencesFormData;
   onSave: (data: UserPreferencesFormData) => void;
   isSubmitting?: boolean;
+  helper: Helper;
 }
 
-export const UserPreferencesForm = ({ defaultData, onSave, isSubmitting }: Props) => {
+export const UserPreferencesForm = ({ defaultData, onSave, isSubmitting, helper }: Props) => {
   const { resolver } = useValidation();
   const {
     handleSubmit,
@@ -92,7 +96,7 @@ export const UserPreferencesForm = ({ defaultData, onSave, isSubmitting }: Props
       <div>
         <Preferences fieldKey='global' control={control} defaultValues={defaultPreferences} />
 
-        <Languages control={control} watch={watch} />
+        <Languages control={control} watch={watch} helper={helper} />
 
         <br />
 
@@ -145,15 +149,6 @@ const Preferences: FC<PreferencesProps> = memo(({ fieldKey, control, defaultValu
         </Form.Item>
       </div>
       <div className={styles.pref}>
-        <Form.Item label='Show translations after input'>
-          <Controller
-            name={`${fieldKey}.translationAtBottom`}
-            control={control}
-            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.translationAtBottom} />}
-          />
-        </Form.Item>
-      </div>
-      <div className={styles.pref}>
         <Form.Item label='Hide main translation if advanced translations are given'>
           <Controller
             name={`${fieldKey}.hideRegularTranslationIfAdvanced`}
@@ -164,6 +159,15 @@ const Preferences: FC<PreferencesProps> = memo(({ fieldKey, control, defaultValu
           />
         </Form.Item>
       </div>
+      <div className={styles.pref}>
+        <Form.Item label='Show translations after input'>
+          <Controller
+            name={`${fieldKey}.transPos`}
+            control={control}
+            render={({ field }) => <TranslationPositionSelector field={field} defaultValue={defaultValues.transPos} />}
+          />
+        </Form.Item>
+      </div>
     </div>
   );
 });
@@ -171,9 +175,10 @@ const Preferences: FC<PreferencesProps> = memo(({ fieldKey, control, defaultValu
 interface LanguagesProps {
   control: Control<UserPreferencesFormData, any>;
   watch: UseFormWatch<UserPreferencesFormData>;
+  helper: Helper;
 }
 
-const Languages: FC<LanguagesProps> = ({ control, watch }) => {
+const Languages: FC<LanguagesProps> = ({ control, helper, watch }) => {
   const learnLangOptions = useLangToLearnOptions();
 
   const globalPreferences = watch('global');
@@ -210,6 +215,7 @@ const Languages: FC<LanguagesProps> = ({ control, watch }) => {
             fieldKey={`languages.${index}`}
             onRemove={() => remove(index)}
             watch={watch}
+            helper={helper}
           />
         ))}
       </div>
@@ -225,6 +231,7 @@ interface LangPreferenceProps {
   fieldKey: `languages.${number}`;
   onRemove: () => void;
   watch: UseFormWatch<UserPreferencesFormData>;
+  helper: Helper;
 }
 
 const LangPreference: FC<LangPreferenceProps> = ({
@@ -235,6 +242,7 @@ const LangPreference: FC<LangPreferenceProps> = ({
   defaultValues,
   onRemove,
   watch,
+  helper,
 }) => {
   return (
     <div className={styles.langContainer}>
@@ -253,6 +261,7 @@ const LangPreference: FC<LangPreferenceProps> = ({
           control={control}
           defaultValues={defaultValues}
           watch={watch}
+          helper={helper}
         />
       </div>
     </div>
@@ -265,8 +274,32 @@ interface CardTypePreferencesProps {
   parentPreferencesFieldKey: `languages.${number}.preferences`;
   control: Control<UserPreferencesFormData, any>;
   defaultValues: RequiredPref;
+  helper: Helper;
   watch: UseFormWatch<UserPreferencesFormData>;
 }
+
+const useGroupOptions = (variantGroups: VariantGroup[] | undefined, lang: string, helper: Helper) => {
+  return variantGroups
+    ?.filter((e) => e.id !== INIT_GROUP_ID && e.id !== SKIP_GROUP_ID)
+    .map((e) => {
+      if (e.skip) return null;
+      let name = '';
+      if (!!e.name && typeof e.name === 'object') {
+        name = e.name.attrs
+          .map((attrId) => helper.getAttributeRecord(attrId, lang)?.name)
+          .filter(isNonNullable)
+          .join(e.name.separator ?? ' ');
+      } else if (typeof e.name === 'undefined' && !!e.matcher && !!e.matcher.attrs) {
+        name = Object.values(e.matcher.attrs)
+          .map((attrId) => (typeof attrId === 'number' ? helper.getAttributeRecord(attrId, lang)?.name : null))
+          .filter(isNonNullable)
+          .join(', ');
+      } else name = e.name ?? '';
+      if (e.name !== '' && name === '') name = e.id;
+      return { value: e.id, label: name };
+    })
+    .filter(isNonNullable);
+};
 
 const CardTypePreferences: FC<CardTypePreferencesProps> = ({
   lang,
@@ -275,6 +308,7 @@ const CardTypePreferences: FC<CardTypePreferencesProps> = ({
   watch,
   parentPreferencesFieldKey,
   defaultValues,
+  helper,
 }) => {
   const availableCardTypes = cardTypeRecordLocalizations.filter((e) => e.lang === lang && !!e.configuration);
 
@@ -291,6 +325,9 @@ const CardTypePreferences: FC<CardTypePreferencesProps> = ({
   const config = selectedCardType
     ? availableCardTypes.find((e) => e.cardTypeRecordId === selectedCardType)?.configuration
     : undefined;
+
+  const groups = useGroupOptions(config?.variantGroups ?? [], lang, helper);
+
   if (availableCardTypes.length === 0) return null;
   return (
     <div>
@@ -309,9 +346,7 @@ const CardTypePreferences: FC<CardTypePreferencesProps> = ({
           key={selectedCardType}
           fieldKey={`${fieldKey}.x${selectedCardType}`}
           control={control}
-          groups={config.variantGroups
-            ?.filter((e) => e.id !== 'init' && e.id !== 'skip')
-            .map((e) => ({ value: e.id, label: e.name ?? e.id }))}
+          groups={groups}
           defaultValues={parentPreferences.cardTypeSettings['unknown']}
           globalPreferences={defaultValues}
           langPreferences={langCustomPreferences}
@@ -361,18 +396,20 @@ const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({
           />
         </Form.Item>
       </div>
-      {groups && (
+      {groups && groups.length > 1 && (
         <div className={styles.pref}>
           <Form.Item label='Group order'>
             <Controller
               name={`${fieldKey}.groupOrder`}
               control={control}
-              render={({ field }) => <GroupVariants value={field.value} onChange={field.onChange} groups={groups} />}
+              render={({ field }) => (
+                <GroupVariantsOrder value={field.value} onChange={field.onChange} groups={groups} />
+              )}
             />
           </Form.Item>
         </div>
       )}
-      {groups && (
+      {groups && groups.length > 0 && (
         <Groups
           control={control}
           fieldKey={`${fieldKey}.groupSettings`}
@@ -387,13 +424,13 @@ const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({
   );
 };
 
-interface GroupVariantsProps {
+interface GroupVariantsOrderProps {
   value: string[] | null | undefined;
   onChange: (values: string[] | undefined) => void;
   groups: { value: string; label: string }[];
 }
 
-const GroupVariants: FC<GroupVariantsProps> = ({ value, onChange, groups }) => {
+const GroupVariantsOrder: FC<GroupVariantsOrderProps> = ({ value, onChange, groups }) => {
   const groupByValue = arrayToObject(groups, 'value');
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   return (
@@ -636,6 +673,43 @@ const YesNo: FC<YesNoProps> = ({ field, defaultValue }) => {
           isDefault: true,
         },
         { value: false, label: 'No' },
+      ]}
+      value={field.value ?? null}
+      onChange={field.onChange}
+    />
+  );
+};
+
+interface TranslationPositionSelectorProps {
+  field: {
+    onChange: (value: TranslationPosition | null) => void;
+    value: TranslationPosition | null | undefined;
+  };
+  defaultValue: TranslationPosition;
+}
+
+const PositionToLabel: Record<TranslationPosition, string> = {
+  [TranslationPosition.top]: 'Top',
+  [TranslationPosition.bottom]: 'Bottom',
+  [TranslationPosition.split]: 'Split',
+};
+
+const TranslationPositionSelector: FC<TranslationPositionSelectorProps> = ({ field, defaultValue }) => {
+  return (
+    <ChipsSwitch
+      options={[
+        { value: TranslationPosition.top, label: PositionToLabel[TranslationPosition.top] },
+        {
+          value: null,
+          label: (
+            <span
+              style={{ minWidth: 94, display: 'block' }}
+            >{`Default: ${PositionToLabel[defaultValue] ?? 'unset'}`}</span>
+          ),
+          isDefault: true,
+        },
+        { value: TranslationPosition.bottom, label: PositionToLabel[TranslationPosition.bottom] },
+        { value: TranslationPosition.split, label: PositionToLabel[TranslationPosition.split] },
       ]}
       value={field.value ?? null}
       onChange={field.onChange}

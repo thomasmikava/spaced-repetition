@@ -1,5 +1,6 @@
-import { array, boolean, object, record, string } from 'zod';
+import { array, boolean, object, record, string, enum as zodEnum } from 'zod';
 import { useValidators } from '../../utils/useValidators';
+import { TranslationPosition } from '../../api/controllers/users/users.schema';
 
 export const useValidation = () => {
   const { createObjectResolver } = useValidators();
@@ -8,7 +9,7 @@ export const useValidation = () => {
     autoSubmitCorrectAnswers: boolean().nullish(),
     testTypingTranslation: boolean().nullish(),
     askNonStandardVariants: boolean().nullish(),
-    translationAtBottom: boolean().nullish(),
+    transPos: zodEnum([TranslationPosition.top, TranslationPosition.bottom, TranslationPosition.split]).nullish(),
     hideRegularTranslationIfAdvanced: boolean().nullish(),
   });
 

@@ -6,10 +6,12 @@ import { paths } from '../../routes/paths';
 import LoadingPage from '../Loading/LoadingPage';
 import { convertFormDataToUserPreferences, convertUserPreferencesToFormData } from './convert';
 import { UserPreferencesForm, type UserPreferencesFormData } from './UserPreferencesForm';
+import { useHelper } from '../hooks/text-helpers';
 
 const UserPreferencesPage = () => {
   const { data, isLoading } = useUserPreferences();
   const { mutate, isPending } = useReplaceUserPreferences();
+  const helper = useHelper();
 
   const preferences = data?.result ?? null;
 
@@ -30,13 +32,13 @@ const UserPreferencesPage = () => {
     });
   };
 
-  if (isLoading) return <LoadingPage />;
+  if (isLoading || !helper) return <LoadingPage />;
 
   if (!data) return <div>Error</div>;
 
   return (
     <div className='body'>
-      <UserPreferencesForm defaultData={defaultData} onSave={handleSave} isSubmitting={isPending} />
+      <UserPreferencesForm defaultData={defaultData} onSave={handleSave} isSubmitting={isPending} helper={helper} />
     </div>
   );
 };
