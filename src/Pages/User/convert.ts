@@ -16,6 +16,7 @@ export const convertUserPreferencesToFormData = (
     askNonStandardVariants: preferences?.global.askNonStandardVariants ?? undefined,
     hideRegularTranslationIfAdvanced: preferences?.global.hideRegularTranslationIfAdvanced ?? undefined,
     transPos: preferences?.global.transPos ?? undefined,
+    hideForms: preferences?.global.hideForms ?? undefined,
   },
   languages: Object.entries(preferences?.perLang ?? {}).map(
     ([lang, preferences]): UserPreferencesFormData['languages'][number] => ({
@@ -26,11 +27,12 @@ export const convertUserPreferencesToFormData = (
         askNonStandardVariants: preferences?.askNonStandardVariants ?? undefined,
         hideRegularTranslationIfAdvanced: preferences?.hideRegularTranslationIfAdvanced ?? undefined,
         transPos: preferences?.transPos ?? undefined,
+        hideForms: preferences?.hideForms ?? undefined,
         cardTypeSettings: preferences?.cardTypeSettings
           ? objectMap(
               preferences.cardTypeSettings,
               (v): CardTypeSettingsDTO => ({
-                hideGroups: v?.hideGroups ?? undefined,
+                hideForms: v?.hideForms ?? undefined,
                 askNonStandardVariants: v?.askNonStandardVariants ?? undefined,
                 groupOrder: v?.groupOrder ?? undefined,
                 groupSettings: v?.groupSettings
@@ -66,6 +68,7 @@ export const convertFormDataToUserPreferences = (data: UserPreferencesFormData) 
               transPos: preferences.transPos,
               hideRegularTranslationIfAdvanced: preferences.hideRegularTranslationIfAdvanced,
               cardTypeSettings: convertCardTypeSettings(preferences.cardTypeSettings),
+              hideForms: preferences.hideForms,
             }),
           ] as const,
       )
@@ -78,6 +81,7 @@ export const convertFormDataToUserPreferences = (data: UserPreferencesFormData) 
       askNonStandardVariants: data.global.askNonStandardVariants,
       transPos: data.global.transPos,
       hideRegularTranslationIfAdvanced: data.global.hideRegularTranslationIfAdvanced,
+      hideForms: data.global.hideForms,
     }),
     perLang,
   };
@@ -115,7 +119,7 @@ const convertCardTypeSettings = (
           [
             cardType.slice(1), // remove 'x' prefix
             removeNullableValues({
-              hideGroups: preferences?.hideGroups,
+              hideForms: preferences?.hideForms,
               askNonStandardVariants: preferences?.askNonStandardVariants,
               groupOrder: preferences?.groupOrder,
               groupSettings: preferences?.groupSettings ? convertGroupSettings(preferences.groupSettings) : undefined,

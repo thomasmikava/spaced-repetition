@@ -101,12 +101,13 @@ function generatePossibleAnswersHelper(str: string): string[] {
   return possibleAnswers;
 }
 
-export const generatePossibleAnswers = (str: string, caseInsensitive: boolean): string[] => {
+export const generatePossibleAnswers = (str: string, caseInsensitive: boolean, lang: string): string[] => {
   const strs = str.trim().split(/[;\n]/);
   const array: string[] = [];
   for (const s of strs) {
     const arr = generatePossibleAnswersHelper(s.trim());
-    for (const el of arr) {
+    const extendedAnswers = extendArray(arr, lang);
+    for (const el of extendedAnswers) {
       if (!el) continue;
       const trimmed = el.trim();
       if (!trimmed) continue;
@@ -118,3 +119,24 @@ export const generatePossibleAnswers = (str: string, caseInsensitive: boolean): 
   return array;
 };
 (window as never as Record<string, unknown>).generatePossibleAnswers = generatePossibleAnswers;
+
+const extendArray = (array: string[], lang: string): string[] => {
+  if (lang === 'en') return array.map(extendEnglishAnswers).flat();
+  return array;
+};
+
+const extendEnglishAnswers = (str: string): string | string[] => {
+  if (str.startsWith('to ') || str.startsWith('To ')) {
+    return [str, str.slice(3)];
+  }
+  if (str.startsWith('a ') || str.startsWith('A ')) {
+    return [str, str.slice(2)];
+  }
+  if (str.startsWith('an ') || str.startsWith('An ')) {
+    return [str, str.slice(3)];
+  }
+  if (str.startsWith('the ') || str.startsWith('The ')) {
+    return [str, str.slice(4)];
+  }
+  return str;
+};

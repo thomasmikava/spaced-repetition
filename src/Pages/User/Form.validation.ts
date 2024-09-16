@@ -11,6 +11,7 @@ export const useValidation = () => {
     askNonStandardVariants: boolean().nullish(),
     transPos: zodEnum([TranslationPosition.top, TranslationPosition.bottom, TranslationPosition.split]).nullish(),
     hideRegularTranslationIfAdvanced: boolean().nullish(),
+    hideForms: boolean().nullish(),
   });
 
   const UserLangCardGroupSettings = object({
@@ -19,7 +20,7 @@ export const useValidation = () => {
   });
 
   const cardTypePreference = object({
-    hideGroups: boolean().nullish(),
+    hideForms: boolean().nullish(),
     askNonStandardVariants: boolean().nullish(),
     groupOrder: array(string()).optional(),
     groupSettings: array(

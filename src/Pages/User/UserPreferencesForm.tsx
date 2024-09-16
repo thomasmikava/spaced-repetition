@@ -31,6 +31,7 @@ interface SinglePreference {
   askNonStandardVariants?: boolean | null;
   transPos?: TranslationPosition;
   hideRegularTranslationIfAdvanced?: boolean;
+  hideForms?: boolean | null;
 }
 
 interface LangCardGroupSettings {
@@ -41,7 +42,7 @@ interface LangCardGroupSettings {
 type RequiredGroupSettings = Required<LangCardGroupSettings>;
 
 export interface CardTypeSettingsDTO {
-  hideGroups?: boolean;
+  hideForms?: boolean;
   askNonStandardVariants?: boolean;
   groupOrder?: string[];
   groupSettings?: { group: string; preferences: LangCardGroupSettings }[];
@@ -145,6 +146,15 @@ const Preferences: FC<PreferencesProps> = memo(({ fieldKey, control, defaultValu
             name={`${fieldKey}.askNonStandardVariants`}
             control={control}
             render={({ field }) => <YesNo field={field} defaultValue={defaultValues.askNonStandardVariants} />}
+          />
+        </Form.Item>
+      </div>
+      <div className={styles.pref}>
+        <Form.Item label='Hide all forms (conjugations, cases...)'>
+          <Controller
+            name={`${fieldKey}.hideForms`}
+            control={control}
+            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.hideForms} />}
           />
         </Form.Item>
       </div>
@@ -379,11 +389,11 @@ const SingleCardTypePreferences: FC<SingleCardTypePreferencesProps> = ({
   return (
     <div className={styles.preferencesContainer}>
       <div className={styles.pref}>
-        <Form.Item label='Hide'>
+        <Form.Item label='Hide forms'>
           <Controller
-            name={`${fieldKey}.hideGroups`}
+            name={`${fieldKey}.hideForms`}
             control={control}
-            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.hideGroups} />}
+            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.hideForms} />}
           />
         </Form.Item>
       </div>
@@ -569,6 +579,15 @@ const GroupPreferencesInputs: FC<GroupPreferencesInputsProps> = ({ control, fiel
   return (
     <div className={styles.preferencesContainer}>
       <div className={styles.pref}>
+        <Form.Item label='Hide group'>
+          <Controller
+            name={`${fieldKey}.hideGroup`}
+            control={control}
+            render={({ field }) => <YesNo field={field} defaultValue={defaultValues.hideGroup} />}
+          />
+        </Form.Item>
+      </div>
+      <div className={styles.pref}>
         <Form.Item label='Test me in irregular forms'>
           <Controller
             name={`${fieldKey}.askNonStandardVariants`}
@@ -640,11 +659,13 @@ const GroupSort: FC<GroupSortProps> = ({ onCancel, defaultValue, options, onAppr
           className={styles.groupsSortContainer}
           draggedItemClassName={styles.dragged}
         >
-          {sortedOptions.map((item) => (
+          {sortedOptions.map((item, i) => (
             <SortableItem key={item.value}>
               <div className={styles.groupItem}>
                 <HolderOutlined />
-                <span>{item.label}</span>
+                <span>
+                  {i + 1}. {item.label}
+                </span>
               </div>
             </SortableItem>
           ))}

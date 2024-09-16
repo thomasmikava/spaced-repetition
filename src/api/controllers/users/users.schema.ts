@@ -12,6 +12,7 @@ export interface UserGlobalPreferencesDTO {
   askNonStandardVariants?: boolean;
   transPos?: TranslationPosition;
   hideRegularTranslationIfAdvanced?: boolean;
+  hideForms?: boolean;
 }
 
 export interface UserLangCardGroupSettingsDTO {
@@ -20,7 +21,7 @@ export interface UserLangCardGroupSettingsDTO {
 }
 
 export interface UserCardTypeSettingsDTO {
-  hideGroups?: boolean;
+  hideForms?: boolean;
   askNonStandardVariants?: boolean;
   groupOrder?: string[];
   groupSettings?: Record<string, UserLangCardGroupSettingsDTO | undefined>;
@@ -36,6 +37,7 @@ const UserGlobalPreferences = z.object({
   askNonStandardVariants: z.boolean().optional(),
   transPos: z.enum([TranslationPosition.top, TranslationPosition.bottom, TranslationPosition.split]).optional(),
   hideRegularTranslationIfAdvanced: z.boolean().optional(),
+  hideForms: z.boolean().optional(),
 });
 
 const UserLangCardGroupSettings = z.object({
@@ -44,7 +46,7 @@ const UserLangCardGroupSettings = z.object({
 });
 
 const UserCardTypeSettings = UserGlobalPreferences.extend({
-  hideGroups: z.boolean().optional(),
+  hideForms: z.boolean().optional(),
   askNonStandardVariants: z.boolean().optional(),
   groupOrder: z.array(z.string()).optional(),
   groupSettings: z.record(UserLangCardGroupSettings).optional(),

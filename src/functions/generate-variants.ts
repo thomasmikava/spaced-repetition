@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { CardTypeConfiguration, CategoryAttrsMatcher, SortBy, VariantGroup } from '../database/card-types';
+import {
+  INIT_GROUP_ID,
+  type CardTypeConfiguration,
+  type CategoryAttrsMatcher,
+  type SortBy,
+  type VariantGroup,
+} from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
 import { isMatch } from '../utils/matcher';
 import { SPECIAL_VIEW_IDS } from './consts';
@@ -19,7 +25,9 @@ export function generateTestableCards(
 
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
   const unsortedGroups = divideVariantsInGroups(card, config);
-  const groups = sortGroups(card, config, unsortedGroups);
+  const cardTypePreferences = preferences.cardTypeSettings[card.type];
+  const userSortLogic = cardTypePreferences.groupOrder;
+  const groups = sortGroups(card, config, unsortedGroups, userSortLogic);
   const grandVariants = getNormalizedGroupVariants(card, groups);
   const allStandardizedVariants = grandVariants.flat(1);
 
@@ -36,6 +44,8 @@ export function generateTestableCards(
   let lastGroupKey: string | undefined | null = undefined;
   const isStandardForm = getIsStandardFormFn(card, allStandardizedVariants);
   groups.forEach((group, groupIndex) => {
+    const groupPreferences = cardTypePreferences.groupSettings[group.matcherId ?? '__default'];
+    if (groupPreferences.hideGroup) return;
     const variants = grandVariants[groupIndex];
     // debugger;
     const standardness = variants.map((variant) => isStandardForm(variant));
@@ -49,6 +59,7 @@ export function generateTestableCards(
 
     const hasGroupViewMode = variants.length > 1 || !!group.gr?.forcefullyGroup;
     const hasIndividualViewMode = !hasGroupViewMode;
+    const shouldSkipIfNotInitial = !groupPreferences.askNonStandardVariants || groupPreferences.hideGroup;
     // TODO: go through all tags and set default tags as well
     const groupMeta: StandardTestableCardGroupMeta = {
       matcherId: group.matcherId,
@@ -72,7 +83,7 @@ export function generateTestableCards(
         groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '').toLocaleLowerCase() : null,
         hasGroupViewMode,
         hasIndividualViewMode,
-        skipTest: shouldSkipTest(newCard, group.gr),
+        skipTest: shouldSkipTest(newCard, group.gr) || (shouldSkipIfNotInitial && variant.category !== 1),
         testKey: 'ind-' + variant.id,
         groupMeta,
         groupLevel: lastGroupLevel + 1,
@@ -108,16 +119,22 @@ const getNormalizedGroupVariants = (card: StandardCard, groups: Group[]) =>
     ),
   );
 
-const sortGroups = (card: StandardCard, config: CardTypeConfiguration, groups: Group[]) => {
+const sortGroups = (
+  card: StandardCard,
+  config: CardTypeConfiguration,
+  groups: Group[],
+  userSortLogic: string[] | undefined,
+) => {
   const groupPriorities = config.groupPriorities?.find(
     (e) =>
       !e.cardMatcher ||
       isMatch({ attrs: card.attributes ?? undefined, labels: card.labels ?? undefined }, e.cardMatcher),
   );
-  if (groupPriorities) {
+  const groupIds = userSortLogic ? [INIT_GROUP_ID, ...userSortLogic] : null ?? groupPriorities?.groupIds ?? [];
+  if (groupIds) {
     groups.sort((a, b) => {
-      const aIndex = groupPriorities.groupIds.indexOf(a.matcherId ?? '');
-      const bIndex = groupPriorities.groupIds.indexOf(b.matcherId ?? '');
+      const aIndex = groupIds.indexOf(a.matcherId ?? '');
+      const bIndex = groupIds.indexOf(b.matcherId ?? '');
       if (aIndex === -1 && bIndex === -1) return 0;
       if (aIndex === -1) return 1;
       if (bIndex === -1) return -1;

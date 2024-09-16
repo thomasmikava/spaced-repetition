@@ -6,11 +6,12 @@ import {
   type UserLangPreferencesDTO,
   type UserPreferencesDTO,
 } from '../api/controllers/users/users.schema';
+import { INIT_GROUP_ID } from '../database/card-types';
 
 type LangCardGroupPreferences = Required<UserLangCardGroupSettingsDTO>;
 
 interface CardTypePreferences {
-  hideGroups: boolean;
+  hideForms: boolean;
   askNonStandardVariants: boolean;
   groupOrder?: string[];
   groupSettings: Record<string, LangCardGroupPreferences>;
@@ -29,7 +30,7 @@ const cardTypeSettings: Preferences['cardTypeSettings'] = new Proxy(
   {},
   {
     get: (): CardTypePreferences => ({
-      hideGroups: false,
+      hideForms: false,
       askNonStandardVariants: true,
       groupOrder: undefined,
       groupSettings,
@@ -43,6 +44,7 @@ export const defaultPreferences: Preferences = {
   askNonStandardVariants: true,
   transPos: TranslationPosition.split,
   hideRegularTranslationIfAdvanced: false,
+  hideForms: false,
   cardTypeSettings,
 };
 
@@ -70,6 +72,7 @@ export const calculatePreferences = (preferences: UserPreferencesDTO | null, lan
       langPref?.hideRegularTranslationIfAdvanced ??
       globalPref.hideRegularTranslationIfAdvanced ??
       defaultPreferences.hideRegularTranslationIfAdvanced,
+    hideForms: langPref?.hideForms ?? globalPref.hideForms ?? defaultPreferences.hideForms,
     cardTypeSettings: calculateCardTypePreferences(globalPref, langPref),
   };
 };
@@ -90,7 +93,7 @@ const calculateCardTypePreferences = (
         const langCardTypePref = langPref?.cardTypeSettings?.[cardType];
         const def = defaultPreferences.cardTypeSettings[cardType];
         return {
-          hideGroups: langCardTypePref?.hideGroups ?? def.hideGroups,
+          hideForms: langCardTypePref?.hideForms ?? langPref?.hideForms ?? globalPref.hideForms ?? def.hideForms,
           askNonStandardVariants:
             langCardTypePref?.askNonStandardVariants ??
             langPref?.askNonStandardVariants ??
@@ -120,7 +123,12 @@ const calculateGroupSettings = (
         const langGroupPref = langCardTypePref?.groupSettings?.[group];
         const defGroupSettings = groupSettings[group];
         return {
-          hideGroup: langGroupPref?.hideGroup ?? langCardTypePref?.hideGroups ?? defGroupSettings.hideGroup,
+          hideGroup:
+            langGroupPref?.hideGroup ??
+            (prop !== INIT_GROUP_ID
+              ? langCardTypePref?.hideForms ?? langPref?.hideForms ?? globalPref.hideForms
+              : undefined) ??
+            defGroupSettings.hideGroup,
           askNonStandardVariants:
             langGroupPref?.askNonStandardVariants ??
             langCardTypePref?.askNonStandardVariants ??

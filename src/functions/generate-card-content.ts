@@ -33,6 +33,7 @@ import { ALL_LANGS, sortByLangs } from '../Pages/hooks/useTranslationLang';
 import type { Preferences } from './preferences';
 import { SPECIAL_VIEW_IDS } from './consts';
 import { generatePossibleAnswers } from './compare-answers';
+import { TranslationPosition } from '../api/controllers/users/users.schema';
 
 const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyContent => {
   return {
@@ -49,7 +50,7 @@ const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyConte
           }
         : undefined,
     ],
-    style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+    style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 20 },
   };
 };
 
@@ -284,9 +285,12 @@ const getDefaultLines = (mode: CardViewMode, viewId: string | null | undefined):
   }
   if (mode === CardViewMode.test) {
     return [
-      { type: ViewLineType.Translation },
-      { type: ViewLineType.Input },
-      { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+      {
+        type: ViewLineType.Trio,
+        trans: { type: ViewLineType.Translation },
+        input: { type: ViewLineType.Input },
+        transVariants: { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+      },
     ];
   }
 
@@ -437,6 +441,12 @@ export const viewLinesToContentLines = (
                 ? sortByLangs(record.card.translations, langOptions)
                 : record.card.translations.filter((e) => e.lang === lang);
             if (translations.length === 0) return null;
+            if (preferences.hideRegularTranslationIfAdvanced) {
+              const advancedTranslations = translations.filter(
+                (e) => e.advancedTranslation && e.advancedTranslation.length,
+              );
+              if (advancedTranslations.length) return null;
+            }
             const displayValues = translations.map((translation) =>
               withArticle(translation.translation, record.card.lang, helper, record.variant.attrs, line),
             );
@@ -480,6 +490,15 @@ export const viewLinesToContentLines = (
             };
           },
         };
+      case ViewLineType.Trio: {
+        if (preferences.transPos === TranslationPosition.top) {
+          return [mapLine(line.trans), mapLine(line.transVariants), mapLine(line.input)].flat();
+        }
+        if (preferences.transPos === TranslationPosition.bottom) {
+          return [mapLine(line.input), mapLine(line.trans), mapLine(line.transVariants)].flat();
+        }
+        return [mapLine(line.trans), mapLine(line.input), mapLine(line.transVariants)].flat();
+      }
       case ViewLineType.AttrRecordValues:
         const attrs = (line.customAttrRecords ?? record.variant.attrs) || {};
         const attrValueIds = line.attrs.map((attrId) => attrs[attrId]);
@@ -497,9 +516,9 @@ export const viewLinesToContentLines = (
           const translations = record.card.translations;
           return uniquelize(
             translations.flatMap((e) =>
-              generatePossibleAnswers(e.translation, caseInsensitive).concat(
+              generatePossibleAnswers(e.translation, caseInsensitive, e.lang).concat(
                 (e.advancedTranslation || []).flatMap((adv) =>
-                  generatePossibleAnswers(adv.translation, caseInsensitive),
+                  generatePossibleAnswers(adv.translation, caseInsensitive, e.lang),
                 ),
               ),
             ),

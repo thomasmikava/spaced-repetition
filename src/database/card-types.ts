@@ -70,6 +70,7 @@ export enum ViewLineType {
   VariantValue,
   AttrRecordValues,
   Translation,
+  Trio,
   TranslationVariants,
   TranslationLangSelector,
   Table,
@@ -331,20 +332,47 @@ type ViewLineCardValueLike = {
   useArticleAsPrefix?: boolean;
 };
 
+type ViewTranslation = {
+  type: ViewLineType.Translation;
+  /** Include the text that it's a translation */
+  includeLegend?: boolean;
+  includeArticleSymbol?: boolean;
+};
+
+type ViewTranslationVariants = {
+  type: ViewLineType.TranslationVariants;
+  partiallyHiddenBeforeAnswer?: boolean;
+};
+
 type ViewLineCardTranslationLike =
-  | {
-      type: ViewLineType.Translation;
-      /** Include the text that it's a translation */
-      includeLegend?: boolean;
-      includeArticleSymbol?: boolean;
-    }
-  | { type: ViewLineType.TranslationVariants; partiallyHiddenBeforeAnswer?: boolean }
+  | ViewTranslation
+  | ViewTranslationVariants
   | { type: ViewLineType.TranslationLangSelector };
+
+type ViewInput = {
+  type: ViewLineType.Input;
+  useArticleAsPrefix?: boolean;
+  prefix?: { type: 'text'; text: string };
+  audioPrefix?: IfThenStatement<CategoryAttrsMatcher, AudioAffix | null> | AudioAffix | null;
+  hashReplacer?: { attrId: IdType };
+  placeholder?: string;
+  skipAudio?: boolean;
+  shouldNotReplaceWithCorrectAnswer?: boolean;
+  useTranslationsAsValue?: boolean;
+};
+
+type ViewTrio = {
+  type: ViewLineType.Trio;
+  trans: ViewTranslation;
+  input: ViewInput;
+  transVariants: ViewTranslationVariants;
+};
 
 export type ViewLine =
   | { type: ViewLineType.Separator | ViewLineType.NewLine }
   | ViewLineCardValueLike
   | ViewLineCardTranslationLike
+  | ViewTrio
   | {
       type: ViewLineType.AttrRecordValues;
       attrs: IdType[];
@@ -352,16 +380,7 @@ export type ViewLine =
       customAttrRecords?: StandardCardAttributes;
     }
   | ViewTableLine
-  | {
-      type: ViewLineType.Input;
-      useArticleAsPrefix?: boolean;
-      audioPrefix?: IfThenStatement<CategoryAttrsMatcher, AudioAffix | null> | AudioAffix | null;
-      hashReplacer?: { attrId: IdType };
-      placeholder?: string;
-      skipAudio?: boolean;
-      shouldNotReplaceWithCorrectAnswer?: boolean;
-      useTranslationsAsValue?: boolean;
-    }
+  | ViewInput
   | {
       type: ViewLineType.Audio;
       useArticleAsPrefix?: boolean;
@@ -687,9 +706,12 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       {
         id: 'init-test',
         lines: [
-          { type: ViewLineType.Translation },
-          { type: ViewLineType.Input, useArticleAsPrefix: true },
-          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          {
+            type: ViewLineType.Trio,
+            trans: { type: ViewLineType.Translation },
+            input: { type: ViewLineType.Input, useArticleAsPrefix: true },
+            transVariants: { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          },
         ],
       },
       {
@@ -947,9 +969,12 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       {
         id: 'gr-test',
         lines: [
-          { type: ViewLineType.Translation },
-          { type: ViewLineType.Input },
-          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          {
+            type: ViewLineType.Trio,
+            trans: { type: ViewLineType.Translation },
+            input: { type: ViewLineType.Input },
+            transVariants: { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          },
           { type: ViewLineType.AfterAnswer, lines: [{ type: ViewLineType.Separator }] },
           GermanGroupTables.ARTICLE,
         ],
@@ -1055,9 +1080,12 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       {
         id: 'gr-test',
         lines: [
-          { type: ViewLineType.Translation, includeArticleSymbol: true, includeLegend: true },
-          { type: ViewLineType.Input },
-          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          {
+            type: ViewLineType.Trio,
+            trans: { type: ViewLineType.Translation, includeArticleSymbol: true, includeLegend: true },
+            input: { type: ViewLineType.Input },
+            transVariants: { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          },
           { type: ViewLineType.AfterAnswer, lines: [{ type: ViewLineType.Separator }] },
           { type: ViewLineType.AfterAnswerDropdown, lines: [GermanGroupTables.PRONOUN] },
         ],
@@ -1083,6 +1111,28 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.TranslationVariants },
           { type: ViewLineType.NewLine },
           { type: ViewLineType.Input },
+        ],
+      },
+    ],
+  },
+};
+
+const EnglishCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> = {
+  [CardTypeMapper.VERB]: {
+    variantGroups: [
+      { id: INIT_GROUP_ID, matcher: { category: 1 }, testViewId: 'init-test' },
+      { id: SKIP_GROUP_ID, matcher: null, skip: true },
+    ],
+    views: [
+      {
+        id: 'init-test',
+        lines: [
+          {
+            type: ViewLineType.Trio,
+            trans: { type: ViewLineType.Translation },
+            input: { type: ViewLineType.Input, prefix: { type: 'text', text: 'to ' } },
+            transVariants: { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          },
         ],
       },
     ],
@@ -1412,9 +1462,12 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       {
         id: 'init-test',
         lines: [
-          { type: ViewLineType.Translation },
-          { type: ViewLineType.Input, useArticleAsPrefix: true },
-          { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          {
+            type: ViewLineType.Trio,
+            trans: { type: ViewLineType.Translation },
+            input: { type: ViewLineType.Input, useArticleAsPrefix: true },
+            transVariants: { type: ViewLineType.TranslationVariants, partiallyHiddenBeforeAnswer: true },
+          },
         ],
       },
     ],
@@ -1715,6 +1768,7 @@ export const cardTypeRecordLocalizations: CardTypeRecordLocalization[] = [
     abbr: 'v.',
     name: 'Verb',
     cardDisplayName: 'Verb',
+    configuration: EnglishCardTypeConfigurationMapper[CardTypeMapper.VERB],
   },
   {
     lang: 'en',
