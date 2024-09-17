@@ -228,9 +228,25 @@ const rounder = (element: Item): Item => {
 
 const CardControls = memo(
   forwardRef<ControlRef, Props>((props, ref) => {
+    const [shouldShow, setShouldShow] = useState(false);
     const settingsSnap = useSnapshot(settingsState);
 
-    if (!props.canChange || !settingsSnap.showControls) return null;
+    const shouldRender = !!props.canChange && !!settingsSnap.showControls;
+
+    useEffect(() => {
+      let timer: number | null;
+      if (shouldRender) {
+        timer = setTimeout(() => {
+          setShouldShow(true); // in case of incorrect answer, we first get isCorrect=true and then isCorrect=false, so to not render twice we need wait a bit
+        }, 0);
+      } else {
+        setShouldShow(false);
+        timer = null;
+      }
+      if (timer !== null) return () => clearTimeout(timer);
+    }, [shouldRender]);
+
+    if (!shouldRender || !shouldShow) return null;
     return (
       <CardControlsInner
         ref={ref}

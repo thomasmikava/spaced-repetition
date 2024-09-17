@@ -159,7 +159,7 @@ const LessonPage = () => {
                     ? null
                     : closestDueDate <= 0
                       ? 'Ready'
-                      : 'In ' + formatTime(closestDueDate),
+                      : formatTime(closestDueDate),
                 style: { opacity: closestDueDate <= 10 ? 1 : undefined, textAlign: 'right' },
               },
               {

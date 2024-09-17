@@ -72,7 +72,7 @@ function generatePossibleAnswersHelper(str: string): string[] {
       }
       i = closingIndex;
       start = str.slice(0, closingIndex);
-    } else if (str[i] === '.' || str[i] === ',' || str[i] === '/') {
+    } else if (str[i] === '.' || str[i] === ',' || str[i] === '/' || str[i] === ';') {
       // stop symbols
       const firstPart = str.slice(0, i);
       // const secondPart = str.slice(i + 1);
@@ -105,7 +105,7 @@ export const generatePossibleAnswers = (str: string, caseInsensitive: boolean, l
   const strs = str.trim().split(/[;\n]/);
   const array: string[] = [];
   for (const s of strs) {
-    const arr = generatePossibleAnswersHelper(s.trim());
+    const arr = generatePossibleAnswersHelper(s.trim()).map((e) => e.trim());
     const extendedAnswers = extendArray(arr, lang);
     for (const el of extendedAnswers) {
       if (!el) continue;

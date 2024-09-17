@@ -45,7 +45,7 @@ export interface CardWithProbability {
   groupLevel: number;
 }
 
-const HISTORY_ID_TO_OBSERVE = -4430;
+const HISTORY_ID_TO_OBSERVE = -4416;
 
 export class Reviewer {
   private allTestableCards: StandardTestableCard[];
@@ -116,7 +116,7 @@ export class Reviewer {
     );
 
     type GroupMeta = {
-      lastViewDate: number;
+      lastViewDate: number | undefined;
       numOfCards: number;
       numOfTestableCards: number;
       numOfTestedCards: number;
@@ -159,7 +159,7 @@ export class Reviewer {
         const willBeTested = this.hasAnotherRepetition(record, CardViewMode.test, historyRecord?.lc);
         if (record.groupViewKey) {
           const groupRecord: GroupMeta = groupsMetaData[groupGlobalKey] || {
-            lastViewDate: 0,
+            lastViewDate: undefined,
             numOfCards: 0,
             numOfTestedCards: 0,
             numOfTestableCards: 0,
@@ -176,13 +176,13 @@ export class Reviewer {
           const lastViewDate = historyRecord
             ? historyRecord.lastDate
             : (groupVewRecord ?? individualViewRecord)?.lastDate;
-          if (lastViewDate) {
-            groupRecord.lastViewDate = Math.max(lastViewDate, groupRecord.lastViewDate);
+          if (typeof lastViewDate === 'number') {
+            groupRecord.lastViewDate = getMaxDate(lastViewDate, groupRecord.lastViewDate);
           }
           groupsMetaData[groupGlobalKey] = groupRecord;
         } else if (record.initial) {
           groupsMetaData[groupGlobalKey] = {
-            lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate ?? 0,
+            lastViewDate: historyRecord?.lastDate ?? individualViewRecord?.lastDate,
             numOfCards: 1,
             numOfTestableCards: willBeTested ? 1 : 0,
             numOfTestedCards: willBeTested && historyRecord ? 1 : 0,
