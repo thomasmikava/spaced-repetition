@@ -2,6 +2,7 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { UserPreferencesDTO } from '../api/controllers/users/users.schema';
 import type { StandardCard } from '../database/types';
+import { uniquelize } from '../utils/array';
 import type { Helper } from './generate-card-content';
 import { generateTestableCards } from './generate-variants';
 import { calculatePreferences } from './preferences';
@@ -16,6 +17,7 @@ import {
   MAX_NUM_OF_GROUP_VIEW_CARDS,
   MAX_NUM_OF_VIEW_CARDS,
   REVIEW_MAX_DUE,
+  REVIEW_MAX_DUE_FOR_HIGH_PROB,
   calculateProbability,
   dueDateUntilProbabilityIsHalf,
   getRecordUniqueKey,
@@ -43,9 +45,10 @@ export interface CardWithProbability {
   isBlockedByPreviousGroup: boolean;
   reviewDue: number;
   groupLevel: number;
+  dueDate: number;
 }
 
-const HISTORY_ID_TO_OBSERVE = -4416;
+const HISTORY_ID_TO_OBSERVE = -2876;
 
 export class Reviewer {
   private allTestableCards: StandardTestableCard[];
@@ -98,6 +101,7 @@ export class Reviewer {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private calculateProbabilities = (currentDate = Date.now(), _qOrder = 0) => {
+    const currentDateInS = Math.floor(currentDate / 1000);
     const askedCards = this.prevReviews.getCurrentSessionCardsCount();
     const lastCards = this.prevReviews.getHistoryForLastPeriod(
       askedCards <= 15 ? LAST_PERIOD_TO_CONSIDER_SMALL : LAST_PERIOD_TO_CONSIDER,
@@ -299,6 +303,7 @@ export class Reviewer {
               ? probability
               : calculateViewCoefficient(groupVewRecord, individualViewRecord, record.hasGroupViewMode, currentDate),
             reviewDue: finalReviewDue,
+            dueDate: currentDateInS + finalReviewDue,
             isTested,
             wasLastTestCorrect: historyRecord?.lc,
             willBeTested,
@@ -362,6 +367,34 @@ export class Reviewer {
     };
   };
 
+  private getHistoryFlaws = (reviewCards: ReviewerCard[]) => {
+    const wordsIndex = this.prevReviews.getWordsIndex();
+    const historyIdToRecord: Record<number, ReviewerCard | undefined> = {};
+    for (const record of reviewCards) {
+      if (record.historyRecord && typeof record.historyRecord.id === 'number') {
+        historyIdToRecord[record.historyRecord.id] = record;
+      }
+    }
+
+    const updates: { hId: number; dueDate: number | null }[] = [];
+
+    const allWordIds = uniquelize(this.allTestableCards.map((e) => e.card.id));
+    for (const wordId of allWordIds) {
+      const wordHistoryObjects = wordsIndex[wordId];
+      if (!wordHistoryObjects) continue;
+      for (const hist of wordHistoryObjects) {
+        if (typeof hist.id !== 'number') continue;
+        const variantRecord = historyIdToRecord[hist.id];
+        const dueDate = variantRecord ? variantRecord.dueDate : null;
+        if (areDueDatesSame(hist, dueDate)) continue;
+        updates.push({ hId: hist.id, dueDate });
+      }
+    }
+    debugger;
+    if (updates.length > 0) console.log('updates', updates);
+    return updates;
+  };
+
   getNextCard = (currentDate = Date.now()) => {
     const qOrder = this.prevReviews.getCurrentSessionCardsCount() + 1;
     console.log('#q', qOrder);
@@ -369,6 +402,16 @@ export class Reviewer {
     const { probabilities: sorted, removableDueDatesCardKeys } = this.calculateProbabilities(currentDate, qOrder);
     if (removableDueDatesCardKeys) {
       this.prevReviews.removeDueDates(removableDueDatesCardKeys);
+    }
+    if (qOrder) {
+      const flaws = this.getHistoryFlaws(sorted);
+      this.prevReviews.fixDueDates(flaws);
+    } else if (this.prevViewedCard && this.prevViewedCard.record.connectedTestKeys) {
+      const connectedCards = sorted.filter((e) =>
+        this.prevViewedCard!.record.connectedTestKeys!.includes(e.record.testKey),
+      );
+      const flaws = this.getHistoryFlaws(connectedCards);
+      this.prevReviews.fixDueDates(flaws);
     }
     console.log(sorted.slice(0, 100), sorted.length);
     const topCard = sorted[0];
@@ -400,6 +443,7 @@ export class Reviewer {
     return topCard;
   };
 
+  private prevViewedCard: CardWithProbability | undefined = undefined;
   markViewed = (
     card: CardWithProbability,
     mode: CardViewMode,
@@ -407,6 +451,7 @@ export class Reviewer {
     currentDate = Date.now(),
     newS: number | undefined = undefined,
   ) => {
+    this.prevViewedCard = card;
     const { newValue } = this.prevReviews.saveCardResult(
       card.record,
       mode,
@@ -462,7 +507,8 @@ function isCriticalToBeReviewed(probability: number, reviewDue: number) {
 }
 
 function isReadyToBeReviewed(probability: number, reviewDue: number) {
-  return probability <= 0.55 || reviewDue <= REVIEW_MAX_DUE;
+  if (probability <= 0.5 || reviewDue <= REVIEW_MAX_DUE) return true;
+  return probability <= 0.55 && reviewDue <= REVIEW_MAX_DUE_FOR_HIGH_PROB;
 }
 
 function calculateViewCoefficient(
@@ -508,4 +554,12 @@ const getMaxDate = (...dates: (number | undefined | null)[]) => {
     }
   }
   return maxDate;
+};
+
+const areDueDatesSame = (hist: AnyReviewHistory, dueDate: number | null) => {
+  if (hist.dueDate === null || dueDate === null) return hist.dueDate === dueDate;
+
+  const diff = Math.abs(hist.dueDate - dueDate);
+  const THRESHOLD = 60;
+  return diff <= THRESHOLD;
 };

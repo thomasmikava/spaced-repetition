@@ -23,7 +23,8 @@ export const initialTestS = calculateHalfLifeCoefficient(90); // after 120 secon
 export const initialViewS = calculateHalfLifeCoefficient(80);
 export const minS = calculateHalfLifeCoefficient(30);
 export const maxS = calculateHalfLifeCoefficient(60 * 60 * 24 * 60); // 60 days
-export const REVIEW_MAX_DUE = 5 * 60;
+export const REVIEW_MAX_DUE = 5 * 60; // 5 minutes
+export const REVIEW_MAX_DUE_FOR_HIGH_PROB = 60 * 60; // 1 hour
 
 export const MAX_NUM_OF_VIEW_CARDS = 2;
 export const MAX_NUM_OF_GROUP_VIEW_CARDS = 1;

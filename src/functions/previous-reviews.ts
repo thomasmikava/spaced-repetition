@@ -1,6 +1,6 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { MinimalReviewRecordDTO, ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
-import { isNonNullable } from '../utils/array';
+import { arrayToObject, isNonNullable } from '../utils/array';
 import { formatTime } from '../utils/time';
 import { globalHistory } from './history';
 import type { AllCardsReviewHistory, AnyReviewHistory, CardKeys, StandardTestableCard } from './reviews';
@@ -58,6 +58,10 @@ export class PreviousReviews {
       return newRecord;
     }
     return record;
+  };
+
+  getWordsIndex = () => {
+    return this.getWordsIndexObject(this.history);
   };
 
   getClosestDueDate = (wordId: number) => {
@@ -189,6 +193,28 @@ export class PreviousReviews {
       }
     }
 
+    this.history = history;
+  };
+
+  fixDueDates = (updates: { hId: number; dueDate: number | null }[]) => {
+    if (updateS.length === 0) return;
+    const historyIdToKey = arrayToObject(Object.entries(this.history), ([key, value]) => ({
+      key: value?.id ?? '',
+      value: key,
+    }));
+    const history = { ...this.history };
+
+    for (const update of updates) {
+      const key = historyIdToKey[update.hId];
+      if (!key) continue;
+      const record = this.history[key];
+      if (!record) continue;
+      history[key] = {
+        ...record,
+        dueDate: update.dueDate,
+        savedInDb: false,
+      };
+    }
     this.history = history;
   };
 
