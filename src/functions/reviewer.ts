@@ -423,7 +423,7 @@ export class Reviewer {
     }
     const topCardViewType = getCardViewMode(topCard);
     if (
-      this.isInsideLesson &&
+      (this.isInsideLesson || this.mode === 'only-new') &&
       (topCardViewType === CardViewMode.groupView || topCardViewType === CardViewMode.individualView)
     ) {
       // only prioritize next cards of lower group-level in case user is inside the specific lesson
