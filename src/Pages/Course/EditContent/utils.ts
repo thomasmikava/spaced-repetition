@@ -1,5 +1,6 @@
-import type { TranslationObjDTO } from '../../../api/controllers/words/words.schema';
+import type { TranslationObjDTO, WordUsageExampleDTO } from '../../../api/controllers/words/words.schema';
 import { isNonNullable } from '../../../utils/array';
+import { removeKeys } from '../../../utils/object';
 import type { TranslationField } from './Form';
 
 export const fillLangs = (
@@ -50,7 +51,11 @@ export const areTranslationsEqual = (a: TranslationObjDTO, b: TranslationObjDTO)
       if (arr1[i].schema !== arr2[i].schema) {
         return false;
       }
-      if (JSON.stringify(arr1[i].examples) !== JSON.stringify(arr2[i].examples)) {
+      if (
+        JSON.stringify(arr1[i].examples ? arr1[i].examples!.map(stripExampleFields) : undefined) !==
+        JSON.stringify(arr2[i].examples)
+      ) {
+        // TODO: make comparison faster by traversing
         return false;
       }
       if (JSON.stringify(arr1[i].attrs) !== JSON.stringify(arr2[i].attrs)) {
@@ -59,6 +64,10 @@ export const areTranslationsEqual = (a: TranslationObjDTO, b: TranslationObjDTO)
     }
   }
   return true;
+};
+
+const stripExampleFields = (obj: WordUsageExampleDTO & { fieldUniqueId?: string }) => {
+  return removeKeys(obj, 'fieldUniqueId');
 };
 
 const sortByLang = (a: TranslationObjDTO, b: TranslationObjDTO) => a.lang.localeCompare(b.lang);
