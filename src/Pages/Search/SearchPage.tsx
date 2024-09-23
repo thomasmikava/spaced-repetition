@@ -80,6 +80,8 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
       });
   }, [areResultsFound, data, helper, status]);
 
+  const areLanguagesSelected = !!langToLearn && !!translationLang;
+
   return (
     <div className='body' style={{ justifyContent: 'flex-start', padding: 10 }}>
       <TranslationLangsProvider translationLangs={translationLang}>
@@ -113,7 +115,13 @@ const SearchPage: FC<{ helper: Helper }> = ({ helper }) => {
           {wordTypeChoices && (
             <>
               <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 5 }}>
-                <Input fullWidth placeholder='Type word' onChange={(e) => setInput(e.target.value)} value={input} />
+                <Input
+                  fullWidth
+                  placeholder='Type word'
+                  onChange={(e) => setInput(e.target.value)}
+                  value={input}
+                  autoFocus={areLanguagesSelected}
+                />
               </div>
 
               <div style={{ width: '100%', marginTop: 5 }}>

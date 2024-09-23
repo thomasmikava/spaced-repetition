@@ -8,7 +8,7 @@ import type {
   ContentVoice,
 } from '../content-types';
 import { AttributeMapper } from '../database/attributes';
-import type { AudioAffix, ViewLine } from '../database/card-types';
+import type { AudioAffix, CategoryAttrsMatcher, ViewLine } from '../database/card-types';
 import { ViewLineType, type CardTypeRecord } from '../database/card-types';
 import type {
   Attribute,
@@ -383,6 +383,25 @@ const withArticle = (
   return newWord;
 };
 
+const findVariant = (
+  allStandardizedVariants: StandardCardVariant[],
+  matcher: CategoryAttrsMatcher | CategoryAttrsMatcher[],
+  currentVariant?: StandardCardVariant,
+): StandardCardVariant | undefined => {
+  if (Array.isArray(matcher)) {
+    // find first match
+    for (const singleMatcher of matcher) {
+      const foundVariant = findVariant(allStandardizedVariants, singleMatcher, currentVariant);
+      if (foundVariant) return foundVariant;
+    }
+    return undefined;
+  } else {
+    return allStandardizedVariants.find((e) =>
+      isMatch<{ category?: IdType | null; attrs?: StandardCardAttributes | null }>(e, matcher, currentVariant),
+    );
+  }
+};
+
 export const viewLinesToContentLines = (
   lines: ViewLine[],
   helper: Helper,
@@ -414,13 +433,7 @@ export const viewLinesToContentLines = (
       }
       case ViewLineType.CustomCardValue: {
         if (!line.matcher) return null;
-        const cardVariant = record.card.allStandardizedVariants.find((e) =>
-          isMatch<{ category?: IdType | null; attrs?: StandardCardAttributes | null }>(
-            e,
-            line.matcher!,
-            record.variant,
-          ),
-        );
+        const cardVariant = findVariant(record.card.allStandardizedVariants, line.matcher, record.variant);
         if (!cardVariant) return null;
         const displayValue = withArticle(cardVariant.value, record.card.lang, helper, cardVariant.attrs, line);
         if (line.useForMainAudio)
@@ -680,7 +693,7 @@ export const viewLinesToContentLines = (
                         {
                           type: 'voice',
                           language: record.card.lang,
-                          text: getColumnsFromRow(row as string[], column.values).join(' '),
+                          text: prepareTextForAudio(getColumnsFromRow(row as string[], column.values).join(' ')),
                           autoplay: false,
                           size: 'mini',
                         },

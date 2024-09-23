@@ -134,7 +134,7 @@ const calculateGroupSettings = (
             langCardTypePref?.askNonStandardVariants ??
             langPref?.askNonStandardVariants ??
             globalPref.askNonStandardVariants ??
-            defGroupSettings.hideGroup,
+            defGroupSettings.askNonStandardVariants,
         };
       },
     },

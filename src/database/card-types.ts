@@ -323,7 +323,7 @@ export type AudioAffix = { type: 'attr'; attrId: IdType; splitIndex?: number } |
 
 type ViewLineCardValueLike = {
   type: ViewLineType.CardValue | ViewLineType.VariantValue | ViewLineType.CustomCardValue;
-  matcher?: CategoryAttrsMatcher; // required in case of ViewLineType.CustomCardValue
+  matcher?: CategoryAttrsMatcher | CategoryAttrsMatcher[]; // required in case of ViewLineType.CustomCardValue
   prefix?: { type: 'text'; text: string };
   bigText?: boolean;
   useForMainAudio?: boolean;
@@ -463,37 +463,39 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           VerbTense.Futur1,
           VerbTense.Futur2,
         ],
-      ).map(
-        ([mood, tense]): VariantGroup => ({
-          id: `m${AttributeMapper.MOOD.records[mood]}-t${AttributeMapper.TENSE.records[tense]}`,
-          matcher: {
-            category: null,
-            attrs: {
-              [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
-              [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense],
+      )
+        .filter(([mood, tense]) => mood !== VerbMood.Imperativ || tense === VerbTense.Präsens)
+        .map(
+          ([mood, tense]): VariantGroup => ({
+            id: `m${AttributeMapper.MOOD.records[mood]}-t${AttributeMapper.TENSE.records[tense]}`,
+            matcher: {
+              category: null,
+              attrs: {
+                [AttributeMapper.MOOD.id]: AttributeMapper.MOOD.records[mood],
+                [AttributeMapper.TENSE.id]: AttributeMapper.TENSE.records[tense],
+              },
             },
-          },
-          groupMetaArgs: { mood: AttributeMapper.MOOD.records[mood], tense: AttributeMapper.TENSE.records[tense] },
-          groupViewId: 'gr',
-          testViewId: 'gr-test',
-          forcefullyGroup: true,
-          ...((mood === VerbMood.Indikativ && tense === VerbTense.Präsens
-            ? {
-                skipStandardVariantsMatchers: [
-                  {
-                    attrs: {
-                      [AttributeMapper.PRONOUN.id]: [
-                        AttributeMapper.PRONOUN.records[VerbPronoun.wir],
-                        AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
-                        AttributeMapper.PRONOUN.records[VerbPronoun.sie_Sie],
-                      ],
+            groupMetaArgs: { mood: AttributeMapper.MOOD.records[mood], tense: AttributeMapper.TENSE.records[tense] },
+            groupViewId: 'gr',
+            testViewId: 'gr-test',
+            forcefullyGroup: true,
+            ...((mood === VerbMood.Indikativ && tense === VerbTense.Präsens
+              ? {
+                  skipStandardVariantsMatchers: [
+                    {
+                      attrs: {
+                        [AttributeMapper.PRONOUN.id]: [
+                          AttributeMapper.PRONOUN.records[VerbPronoun.wir],
+                          AttributeMapper.PRONOUN.records[VerbPronoun.ihr],
+                          AttributeMapper.PRONOUN.records[VerbPronoun.sie_Sie],
+                        ],
+                      },
                     },
-                  },
-                ],
-              }
-            : {}) satisfies Partial<VariantGroup>),
-        }),
-      ),
+                  ],
+                }
+              : {}) satisfies Partial<VariantGroup>),
+          }),
+        ),
       { id: SKIP_GROUP_ID, matcher: null, skip: true },
     ],
     views: [
@@ -641,7 +643,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
         .map((el, ind, arr) => (ind < arr.length - 1 ? [el, { type: ViewLineType.NewLine } as ViewLine] : [el]))
         .flat(1),
     ],
-    maxNumOfGroups: 3,
+    // maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,
   },
   [CardTypeMapper.NOUN]: {
@@ -863,7 +865,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
           { type: ViewLineType.Audio },
           {
             type: ViewLineType.CustomCardValue,
-            matcher: { category: { $not: null }, attrs: { [AttributeMapper.DEGREE.id]: SELF_REF } },
+            matcher: [{ category: { $not: null }, attrs: { [AttributeMapper.DEGREE.id]: SELF_REF } }, { category: 1 }],
             useForMainAudio: true,
             includeArticleSymbol: true,
             paragraph: true,

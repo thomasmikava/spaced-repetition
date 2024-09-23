@@ -390,7 +390,6 @@ export class Reviewer {
         updates.push({ hId: hist.id, dueDate });
       }
     }
-    debugger;
     if (updates.length > 0) console.log('updates', updates);
     return updates;
   };
@@ -401,7 +400,7 @@ export class Reviewer {
 
     const { probabilities: sorted, removableDueDatesCardKeys } = this.calculateProbabilities(currentDate, qOrder);
     if (removableDueDatesCardKeys) {
-      this.prevReviews.removeDueDates(removableDueDatesCardKeys);
+      this.prevReviews.removeDueDates(removableDueDatesCardKeys); // TODO: is this even necessary?
     }
     if (qOrder) {
       const flaws = this.getHistoryFlaws(sorted);
