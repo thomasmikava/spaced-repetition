@@ -14,6 +14,8 @@ import Button from '../../../ui/Button';
 import type {
   Control,
   FieldError,
+  UseFieldArrayInsert,
+  UseFieldArrayReplace,
   UseFormGetValues,
   UseFormSetFocus,
   UseFormSetValue,
@@ -33,6 +35,7 @@ import Input from '../../../ui/Input';
 import Dropdown from 'antd/es/dropdown';
 import {
   BookOutlined,
+  BranchesOutlined,
   DeleteOutlined,
   EditOutlined,
   GlobalOutlined,
@@ -154,6 +157,7 @@ const ContentForm: FC<Props> = memo(
     });
     const {
       formState: { isSubmitted, isDirty },
+      getValues,
     } = form;
 
     const handleCancel = () => {
@@ -196,7 +200,13 @@ const ContentForm: FC<Props> = memo(
     return (
       <FormProvider {...form}>
         <form onSubmit={handleSubmit}>
-          <FieldArray fieldKey='children' isCourseLevel={isCourseLevel} formBaseInfo={formBaseInfo} helper={helper} />
+          <FieldArray
+            fieldKey='children'
+            isCourseLevel={isCourseLevel}
+            formBaseInfo={formBaseInfo}
+            helper={helper}
+            getValues={getValues}
+          />
           <div style={{ gap: 10, display: 'flex', marginTop: 10 }}>
             <Button label='Cancel' variant='default' onClick={handleCancel} />
             <Button label='Save' type='submit' variant='primary' loading={isSubmitting} />
@@ -222,6 +232,8 @@ interface FieldArrayProps {
   formBaseInfo: FormBaseInfo;
   helper: Helper;
   onAddNewWord?: (newWords?: AddNewWordInfo[]) => void;
+  getValues: UseFormGetValues<FormData>;
+  fieldParentData?: FieldParentData;
 }
 
 interface FieldArrayRef {
@@ -241,120 +253,161 @@ export interface JSONPasteWords {
   words: AddNewWordInfo[];
 }
 
+type FieldParentData = {
+  insert: UseFieldArrayInsert<FormData, 'children' | `children.${number}.children`>;
+  replace: UseFieldArrayReplace<FormData, 'children' | `children.${number}.children`>;
+};
+
 const FieldArray = memo(
-  forwardRef<FieldArrayRef, FieldArrayProps>(({ fieldKey, isCourseLevel, formBaseInfo, onAddNewWord, helper }, ref) => {
-    const { control } = useFormContext<FormData>();
+  forwardRef<FieldArrayRef, FieldArrayProps>(
+    ({ fieldKey, isCourseLevel, formBaseInfo, onAddNewWord, helper, getValues, fieldParentData }, ref) => {
+      const { control } = useFormContext<FormData>();
 
-    const { fields, append, remove } = useFieldArray({
-      control,
-      name: fieldKey,
-    });
+      const { fields, append, remove, insert, replace } = useFieldArray({
+        control,
+        name: fieldKey,
+      });
+      const fieldParentDataForChildren: FieldParentData = { insert, replace };
 
-    const handleAddNewLesson = useCallback(() => {
-      const newLesson: LessonInfo = {
-        type: 'lesson',
-        title: '',
-        description: '',
-        children: [
-          // {
-          //   type: 'word',
-          //   subType: 'search-word',
-          //   wordValue: '',
-          //   fieldUniqueId: Math.random().toString(),
-          // },
-        ],
-        fieldUniqueId: Math.random().toString(),
-      };
-      append(newLesson);
-    }, [append]);
+      const handleAddNewLesson = useCallback(() => {
+        const newLesson: LessonInfo = {
+          type: 'lesson',
+          title: '',
+          description: '',
+          children: [
+            // {
+            //   type: 'word',
+            //   subType: 'search-word',
+            //   wordValue: '',
+            //   fieldUniqueId: Math.random().toString(),
+            // },
+          ],
+          fieldUniqueId: Math.random().toString(),
+        };
+        append(newLesson);
+      }, [append]);
 
-    const translationLangs = formBaseInfo.translationLangs;
+      const translationLangs = formBaseInfo.translationLangs;
 
-    const handleAddNewWord = useCallback(
-      // eslint-disable-next-line sonarjs/cognitive-complexity
-      (values: AddNewWordInfo[] = [{ wordValue: '' }]) => {
-        for (const value of values) {
-          const officialTranslations =
-            value.word?.officialTranslations?.filter((t) => translationLangs.includes(t.lang)) || [];
-          const newWord: WordInfo = value.word
-            ? {
-                type: 'word',
-                subType: 'search-word',
-                wordValue: value.word.value,
-                word: {
-                  ...value.word,
-                  translations: officialTranslations,
-                },
-                translations: addFieldIdsToTranslationObject(
-                  fillLangs(
-                    translationLangs,
-                    value.customTranslations ? Object.values(value.customTranslations) : [],
-                    officialTranslations,
+      const handleAddNewWord = useCallback(
+        // eslint-disable-next-line sonarjs/cognitive-complexity
+        (values: AddNewWordInfo[] = [{ wordValue: '' }]) => {
+          for (const value of values) {
+            const officialTranslations =
+              value.word?.officialTranslations?.filter((t) => translationLangs.includes(t.lang)) || [];
+            const newWord: WordInfo = value.word
+              ? {
+                  type: 'word',
+                  subType: 'search-word',
+                  wordValue: value.word.value,
+                  word: {
+                    ...value.word,
+                    translations: officialTranslations,
+                  },
+                  translations: addFieldIdsToTranslationObject(
+                    fillLangs(
+                      translationLangs,
+                      value.customTranslations ? Object.values(value.customTranslations) : [],
+                      officialTranslations,
+                    ),
                   ),
-                ),
-                wordDisplayType:
-                  value.word.mainType ?? (value.word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : value.word.type),
-                fieldUniqueId: Math.random().toString(),
-              }
-            : {
-                type: 'word',
-                subType: 'search-word',
-                wordValue: value.wordValue,
-                translations: addFieldIdsToTranslationObject(fillLangs(translationLangs, value.translations)),
-                fieldUniqueId: Math.random().toString(),
-              };
-          append(newWord);
-        }
-      },
-      [append, translationLangs],
-    );
+                  wordDisplayType:
+                    value.word.mainType ??
+                    (value.word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : value.word.type),
+                  fieldUniqueId: Math.random().toString(),
+                }
+              : {
+                  type: 'word',
+                  subType: 'search-word',
+                  wordValue: value.wordValue,
+                  translations: addFieldIdsToTranslationObject(fillLangs(translationLangs, value.translations)),
+                  fieldUniqueId: Math.random().toString(),
+                };
+            append(newWord);
+          }
+        },
+        [append, translationLangs],
+      );
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        addNewLesson: handleAddNewLesson,
-        addNewWord: handleAddNewWord,
-      }),
-      [handleAddNewLesson, handleAddNewWord],
-    );
+      const splitWordsDown = (childFieldKey: `children.${number}`) => {
+        if (!fieldParentData) return;
+        const childIndex = getLastNumber(childFieldKey);
+        const parentLessonIndex = getLastNumber(fieldKey.replace(/\.children$/, ''));
+        if (childIndex === null || parentLessonIndex === null) return;
+        const fieldValues = new Array(fields.length).fill(0).map((_, i) => getValues?.(`${fieldKey}.${i}`));
+        const everythingUp = fieldValues.slice(0, childIndex + 1); // including this child
+        const everythingDown = fieldValues.slice(childIndex + 1);
+        const newLesson: LessonInfo = {
+          fieldUniqueId: Math.random().toString(),
+          type: 'lesson',
+          title: '',
+          description: '',
+          children: everythingDown,
+        };
+        replace(everythingUp);
+        fieldParentData.insert(parentLessonIndex + 1, newLesson);
+        console.log(childIndex);
+      };
 
-    return (
-      <div>
-        {fields.map((field, index) => {
-          const isLastChild = index === fields.length - 1;
-          if (field.type === 'lesson') {
+      useImperativeHandle(
+        ref,
+        () => ({
+          addNewLesson: handleAddNewLesson,
+          addNewWord: handleAddNewWord,
+        }),
+        [handleAddNewLesson, handleAddNewWord],
+      );
+
+      return (
+        <div>
+          {fields.map((field, index) => {
+            const isLastChild = index === fields.length - 1;
+            if (field.type === 'lesson') {
+              return (
+                <LessonField
+                  key={field.fieldUniqueId}
+                  onRemove={remove}
+                  index={index}
+                  fieldKey={`${fieldKey as 'children'}.${index}`}
+                  formBaseInfo={formBaseInfo}
+                  helper={helper}
+                  getValues={getValues}
+                  fieldParentData={fieldParentDataForChildren}
+                />
+              );
+            }
             return (
-              <LessonField
+              <WordField
                 key={field.fieldUniqueId}
                 onRemove={remove}
                 index={index}
                 fieldKey={`${fieldKey as 'children'}.${index}`}
+                parentKey={fieldKey as 'children'}
                 formBaseInfo={formBaseInfo}
                 helper={helper}
+                onAddNewWord={onAddNewWord}
+                isLastChild={isLastChild}
+                splitWordsDown={splitWordsDown}
               />
             );
-          }
-          return (
-            <WordField
-              key={field.fieldUniqueId}
-              onRemove={remove}
-              index={index}
-              fieldKey={`${fieldKey as 'children'}.${index}`}
-              parentKey={fieldKey as 'children'}
-              formBaseInfo={formBaseInfo}
-              helper={helper}
-              onAddNewWord={onAddNewWord}
-              isLastChild={isLastChild}
-            />
-          );
-          return null;
-        })}
-        {isCourseLevel && <Button label={'Add new top-level lesson'} variant='default' onClick={handleAddNewLesson} />}
-      </div>
-    );
-  }),
+            return null;
+          })}
+          {isCourseLevel && (
+            <Button label={'Add new top-level lesson'} variant='default' onClick={handleAddNewLesson} />
+          )}
+        </div>
+      );
+    },
+  ),
 );
 FieldArray.displayName = 'FieldArray';
+
+const getLastNumber = (fieldKey: string | `${string}.${number}`) => {
+  const fieldSplit = fieldKey.split('.');
+  const childIndex = fieldSplit[fieldSplit.length - 1];
+  if (isNaN(parseInt(childIndex))) return null;
+  return +childIndex;
+};
 
 interface LessonFieldProps {
   onRemove: (index: number) => void;
@@ -362,101 +415,113 @@ interface LessonFieldProps {
   fieldKey: `children.${number}`;
   formBaseInfo: FormBaseInfo;
   helper: Helper;
+  getValues: UseFormGetValues<FormData>;
+  fieldParentData: FieldParentData;
 }
 
-const LessonField: FC<LessonFieldProps> = memo(({ formBaseInfo, onRemove, index, fieldKey, helper }) => {
-  const fieldArrayRef = useRef<FieldArrayRef>(null);
-  const { control } = useFormContext<FormData>();
-  const {
-    fieldState: { error },
-    field: { value: fieldValue },
-  } = useController({ control, name: `${fieldKey}.children` });
-  const childrenError = (error as { root?: FieldError } | undefined)?.root ?? error;
+const LessonField: FC<LessonFieldProps> = memo(
+  ({ formBaseInfo, onRemove, index, fieldKey, helper, getValues, fieldParentData }) => {
+    const fieldArrayRef = useRef<FieldArrayRef>(null);
+    const { control } = useFormContext<FormData>();
+    const {
+      fieldState: { error },
+      field: { value: fieldValue },
+    } = useController({ control, name: `${fieldKey}.children` });
+    const childrenError = (error as { root?: FieldError } | undefined)?.root ?? error;
 
-  const areOnlyWords = fieldValue.every((f) => f.type === 'word');
-  const areOnlyLessons = fieldValue.every((f) => f.type === 'lesson');
-  const hasChildren = fieldValue.length > 0;
+    const areOnlyWords = fieldValue.every((f) => f.type === 'word');
+    const areOnlyLessons = fieldValue.every((f) => f.type === 'lesson');
+    const hasChildren = fieldValue.length > 0;
 
-  const handleAddNewLesson = () => {
-    if (!fieldArrayRef.current) return;
-    fieldArrayRef.current.addNewLesson();
-  };
+    const handleAddNewLesson = () => {
+      if (!fieldArrayRef.current) return;
+      fieldArrayRef.current.addNewLesson();
+    };
 
-  const handleAddNewWord = (newWords?: AddNewWordInfo[]) => {
-    if (!fieldArrayRef.current) return;
-    fieldArrayRef.current.addNewWord(newWords);
-  };
+    const handleAddNewWord = (newWords?: AddNewWordInfo[]) => {
+      if (!fieldArrayRef.current) return;
+      fieldArrayRef.current.addNewWord(newWords);
+    };
 
-  return (
-    <div className={styles.lessonFieldContainer}>
-      <div className={styles.lessonTitle}>
-        <Controller
-          name={`${fieldKey}.title`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <Input placeholder='Lesson title' fullWidth {...field} size='large' status={error ? 'error' : undefined} />
+    return (
+      <div className={styles.lessonFieldContainer}>
+        <div className={styles.lessonTitle}>
+          <Controller
+            name={`${fieldKey}.title`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <Input
+                placeholder='Lesson title'
+                fullWidth
+                {...field}
+                size='large'
+                status={error ? 'error' : undefined}
+              />
+            )}
+          />
+          <Dropdown
+            menu={{
+              items: [
+                { label: 'Add sub lesson', key: 'add-l', icon: <PlusOutlined />, onClick: handleAddNewLesson },
+                { label: 'Add new word', key: 'add-w', icon: <PlusOutlined />, onClick: () => handleAddNewWord() },
+                {
+                  label: 'Delete',
+                  key: 'remove',
+                  icon: <DeleteOutlined />,
+                  onClick: () => onRemove(index),
+                },
+              ],
+            }}
+            placement='bottom'
+          >
+            <Button label={<SettingFilled />} size='large' />
+          </Dropdown>
+        </div>
+        <div className={styles.lessonChildren}>
+          <FieldArray
+            isCourseLevel={false}
+            formBaseInfo={formBaseInfo}
+            fieldKey={`${fieldKey}.children`}
+            ref={fieldArrayRef}
+            helper={helper}
+            onAddNewWord={handleAddNewWord}
+            getValues={getValues}
+            fieldParentData={fieldParentData}
+          />
+          {childrenError && childrenError.ref && (
+            <p style={{ color: 'red' }}>
+              Lesson cannot be empty. Add at least 1 word or sub-lesson or delete it from the settings icon
+            </p>
           )}
-        />
-        <Dropdown
-          menu={{
-            items: [
-              { label: 'Add sub lesson', key: 'add-l', icon: <PlusOutlined />, onClick: handleAddNewLesson },
-              { label: 'Add new word', key: 'add-w', icon: <PlusOutlined />, onClick: () => handleAddNewWord() },
-              {
-                label: 'Delete',
-                key: 'remove',
-                icon: <DeleteOutlined />,
-                onClick: () => onRemove(index),
-              },
-            ],
-          }}
-          placement='bottom'
-        >
-          <Button label={<SettingFilled />} size='large' />
-        </Dropdown>
+          {(!hasChildren || !areOnlyLessons) && (
+            <Button
+              style={{ marginTop: 10, marginRight: 10 }}
+              label={
+                <span>
+                  <PlusOutlined />
+                  <span style={{ marginLeft: 10 }}>Add new word</span>
+                </span>
+              }
+              onClick={() => handleAddNewWord()}
+            />
+          )}
+          {(!hasChildren || !areOnlyWords) && (
+            <Button
+              style={{ marginTop: 10 }}
+              label={
+                <span>
+                  <PlusOutlined />
+                  <span style={{ marginLeft: 10 }}>Add sub-level</span>
+                </span>
+              }
+              onClick={handleAddNewLesson}
+            />
+          )}
+        </div>
       </div>
-      <div className={styles.lessonChildren}>
-        <FieldArray
-          isCourseLevel={false}
-          formBaseInfo={formBaseInfo}
-          fieldKey={`${fieldKey}.children`}
-          ref={fieldArrayRef}
-          helper={helper}
-          onAddNewWord={handleAddNewWord}
-        />
-        {childrenError && childrenError.ref && (
-          <p style={{ color: 'red' }}>
-            Lesson cannot be empty. Add at least 1 word or sub-lesson or delete it from the settings icon
-          </p>
-        )}
-        {(!hasChildren || !areOnlyLessons) && (
-          <Button
-            style={{ marginTop: 10, marginRight: 10 }}
-            label={
-              <span>
-                <PlusOutlined />
-                <span style={{ marginLeft: 10 }}>Add new word</span>
-              </span>
-            }
-            onClick={() => handleAddNewWord()}
-          />
-        )}
-        {(!hasChildren || !areOnlyWords) && (
-          <Button
-            style={{ marginTop: 10 }}
-            label={
-              <span>
-                <PlusOutlined />
-                <span style={{ marginLeft: 10 }}>Add sub-level</span>
-              </span>
-            }
-            onClick={handleAddNewLesson}
-          />
-        )}
-      </div>
-    </div>
-  );
-});
+    );
+  },
+);
 LessonField.displayName = 'LessonField';
 
 interface WordFieldProps {
@@ -468,10 +533,11 @@ interface WordFieldProps {
   helper: Helper;
   onAddNewWord?: (newWords?: AddNewWordInfo[]) => void;
   isLastChild: boolean;
+  splitWordsDown: (fieldKey: `children.${number}`) => void;
 }
 
 const WordField: FC<WordFieldProps> = memo(
-  ({ fieldKey, parentKey, formBaseInfo, index, onRemove, onAddNewWord, isLastChild, helper }) => {
+  ({ fieldKey, parentKey, formBaseInfo, index, onRemove, onAddNewWord, isLastChild, helper, splitWordsDown }) => {
     const { control, setValue, getValues, trigger, setFocus, watch } = useFormContext<LessonInfo>();
 
     const handleSetValue: UseFormSetValue<LessonInfo> = useCallback(
@@ -504,6 +570,7 @@ const WordField: FC<WordFieldProps> = memo(
             watchFn={watch}
             onAddNewWord={onAddNewWord}
             isLastChild={isLastChild}
+            splitWordsDown={splitWordsDown}
           />
         )}
       </>
@@ -524,6 +591,7 @@ const SearchWord: FC<{
   watchFn: UseFormWatch<LessonInfo<WordInfo>>;
   onAddNewWord?: (newWords?: AddNewWordInfo[]) => void;
   isLastChild: boolean;
+  splitWordsDown: (fieldKey: `children.${number}`) => void;
 }> = ({
   formBaseInfo,
   fieldKey,
@@ -535,6 +603,7 @@ const SearchWord: FC<{
   onAddNewWord,
   isLastChild,
   helper,
+  splitWordsDown,
 }) => {
   const searchValue = useWatch({ control, name: `${fieldKey}.wordValue` }) as string;
   const word = useWatch({ control, name: `${fieldKey}.word` });
@@ -724,6 +793,7 @@ const SearchWord: FC<{
           key={word ? word.id : 'unknown'}
           helper={helper}
           handleOfficialWordChoose={handleChoose}
+          splitWordsDown={splitWordsDown}
         />
         {formBaseInfo.canManageOfficialWords && (
           <OfficialityIcon control={control} fieldKey={fieldKey} translationLangs={formBaseInfo.translationLangs} />
@@ -987,6 +1057,7 @@ interface WordAdvancedActionsProps {
   fieldKey: `children.${number}`;
   helper: Helper;
   handleOfficialWordChoose: (word: WordWithTranslationDTO) => void;
+  splitWordsDown: (fieldKey: `children.${number}`) => void;
 }
 
 type WordSettingsData = SearchWordInfo & {
@@ -1000,6 +1071,7 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
   fieldKey,
   helper,
   handleOfficialWordChoose,
+  splitWordsDown,
 }) => {
   const [isWordFormsModalOpen, setIsWordFormsModalOpen] = useState(false);
   const [userWordData, setUserWordData] = useState<WordSettingsData>();
@@ -1034,6 +1106,14 @@ const WordAdvancedActions: FC<WordAdvancedActionsProps> = ({
           key: 'add-l',
           icon: word ? <EditOutlined /> : <PlusOutlined />,
           onClick: handleOfficialWordOpen,
+        }
+      : null,
+    formBaseInfo.canManageOfficialWords
+      ? {
+          label: 'Split words below into new lesson',
+          key: 'lsn',
+          icon: <BranchesOutlined />,
+          onClick: () => splitWordsDown(fieldKey),
         }
       : null,
     // TODO: add possibility to hide words for non-admins as well,
