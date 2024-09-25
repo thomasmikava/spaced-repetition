@@ -17,10 +17,15 @@
   gap: 20px;
 }
 
+.timeLineContainer span:first-of-type {
+  flex-shrink: 0;
+}
+
 .timeOptionsContainer {
   display: flex;
   gap: 10px;
   color: white;
+  overflow-x: auto;
 }
 
 .option {

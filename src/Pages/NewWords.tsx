@@ -25,7 +25,7 @@ import type { AddNewWordInfo, JSONPasteWords } from './Course/EditContent/Form';
 import LoadingPage from './Loading/LoadingPage';
 import { useHelper } from './hooks/text-helpers';
 
-const NewWordsPage: FC<{ helper: Helper }> = () => {
+const NewWordsPage: FC<{ helper: Helper }> = ({ helper }) => {
   const [langToLearn, setLangToLearn] = useLocalStorage('lang-to-learn', null as null | string);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [results, setResults] = useState<ReturnType<typeof getTokens>>();
@@ -158,12 +158,16 @@ const NewWordsPage: FC<{ helper: Helper }> = () => {
             <div>
               <h2>New words that are in dictionary ({results.knownTokens.length})</h2>
               <ul>
-                {results.knownTokens.map((result, index) => (
-                  <li key={index}>
-                    {result.originalToken}
-                    {result.word.value !== result.originalToken ? ` (${result.word.value})` : ''}
-                  </li>
-                ))}
+                {results.knownTokens.map((result, index) => {
+                  const abbr = helper.getCardType(result.word.mainType ?? result.word.type, result.word.lang)?.abbr;
+                  return (
+                    <li key={index}>
+                      {abbr ? <span style={{ userSelect: 'none', marginRight: 5, opacity: 0.5 }}>{abbr}</span> : null}
+                      {result.originalToken}
+                      {result.word.value !== result.originalToken ? ` (${result.word.value})` : ''}
+                    </li>
+                  );
+                })}
               </ul>
               <Button label='Copy' onClick={copyResults} variant='primary' />
             </div>

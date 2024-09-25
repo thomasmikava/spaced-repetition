@@ -1,5 +1,6 @@
 import {
   BookOutlined,
+  CopyOutlined,
   DeleteOutlined,
   EditOutlined,
   LeftOutlined,
@@ -18,7 +19,7 @@ import { PreviousReviews } from '../../functions/previous-reviews';
 import { paths } from '../../routes/paths';
 import { isNonNullable } from '../../utils/array';
 import { roundNumber } from '../../utils/number';
-import { formatTime } from '../../utils/time';
+import { formatTime, roundTime } from '../../utils/time';
 import { useHelper } from '../hooks/text-helpers';
 import { LessonBody } from './Body';
 import { useFilteredLessons } from './useFilteredLessons';
@@ -159,7 +160,7 @@ const LessonPage = () => {
                     ? null
                     : closestDueDate <= 0
                       ? 'Ready'
-                      : formatTime(closestDueDate),
+                      : formatTime(roundTime(closestDueDate)),
                 style: { opacity: closestDueDate <= 10 ? 1 : undefined, textAlign: 'right' },
               },
               {
@@ -171,6 +172,20 @@ const LessonPage = () => {
             ],
           };
         });
+
+  const copyWords = () => {
+    if (!wordRows) return;
+    const words = lessonsInfo
+      .map((item) => {
+        if (!item.word) return null;
+        return item.word.value;
+      })
+      .filter(isNonNullable)
+      .join('\n');
+
+    navigator.clipboard.writeText(words);
+  };
+  const canCopyWords = wordRows && wordRows.length > 0 && typeof navigator?.clipboard?.writeText === 'function';
 
   return (
     <TranslationLangsProvider translationLangs={course.translationLangs}>
@@ -192,6 +207,9 @@ const LessonPage = () => {
                 items: [
                   { label: 'Edit', key: 'edit', icon: <EditOutlined />, onClick: goToEdit },
                   { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, onClick: showDeleteModal },
+                  canCopyWords
+                    ? { label: 'Copy words', key: 'copy', icon: <CopyOutlined />, onClick: copyWords }
+                    : null,
                 ].filter(isNonNullable),
               }}
               placement='bottom'

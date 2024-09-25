@@ -26,3 +26,15 @@ export function formatTime(seconds: number) {
 
   return isNegative ? '-' + formattedTime : formattedTime;
 }
+
+export function roundTime(seconds: number): number {
+  if (seconds < 60) {
+    return seconds;
+  }
+  if (seconds < 60 * 60) {
+    // < 1h, round to minutes
+    return Math.round(seconds / 60) * 60;
+  }
+  // round to hours
+  return Math.round(seconds / 3600) * 3600;
+}
