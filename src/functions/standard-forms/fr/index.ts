@@ -91,7 +91,6 @@ export const getFrenchStandardFormFn = (
         variant.attrs[AttributeMapper.PRONOUN.id] === AttributeMapper.PRONOUN.records[VerbPronoun.ich],
     )?.value;
     const hasPronounVersion = !!present1stSingular && isOneOfVariantsWithPronouns(present1stSingular);
-    console.log('hasPronounVersion', hasPronounVersion);
 
     return (variant: StandardCardVariant) => {
       if (variant.category === INITIAL_CARD_CATEGORY) return false;

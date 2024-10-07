@@ -154,7 +154,7 @@ export const getVerbStandardForm = (
   }
   const myEnding = endings[mood as never]?.[tense]?.[lastTwoLetters]?.[pronoun];
   if (myEnding === undefined) return null;
-  return verb.slice(0, -2) + myEnding;
+  return combineParts(verb.slice(0, -2), myEnding);
 };
 const separateBySpace = (value: string): [string, string] => {
   const spaceIndex = value.indexOf(' ');
@@ -165,6 +165,37 @@ export const isOneOfVariantsWithPronouns = (firstPronounConjugatedForm: string) 
     ? slashSplit(firstPronounConjugatedForm)
     : [firstPronounConjugatedForm];
   return forms.some((form) => form.includes(' ') && separateBySpace(form)[0] === DEFAULT_PRONOUNS.a[VerbPronoun.ich]);
+};
+
+export const combineParts = (firstPart: string, secondPart: string): string => {
+  const lastLetter = firstPart[firstPart.length - 1];
+  const firstLetter = secondPart[0];
+  if (canLettersBeMerged(lastLetter, firstLetter)) {
+    return firstPart.slice(0, -1) + secondPart;
+  }
+  return firstPart + secondPart;
+};
+
+const accentsMap = {
+  a: ['a', 'à', 'â', 'ä', 'á', 'ã', 'å', 'æ'],
+  e: ['e', 'é', 'è', 'ê', 'ë', 'æ'],
+  i: ['i', 'î', 'ï', 'í'],
+  o: ['o', 'ô', 'ö', 'ò', 'ó', 'õ', 'ø'],
+  u: ['u', 'ù', 'û', 'ü', 'ú'],
+  c: ['c', 'ç'],
+  y: ['y', 'ÿ'],
+} as Record<string, string[]>;
+
+const canLettersBeMerged = (lastLetter: string, firstLetter: string): boolean => {
+  if (lastLetter === firstLetter) {
+    return true;
+  }
+  if (accentsMap[lastLetter]) {
+    return accentsMap[lastLetter].includes(firstLetter);
+  } else if (accentsMap[firstLetter]) {
+    return accentsMap[firstLetter].includes(lastLetter);
+  }
+  return false;
 };
 
 export const DEFAULT_PRONOUNS = {
