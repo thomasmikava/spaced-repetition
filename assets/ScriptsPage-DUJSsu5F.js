@@ -1,4 +1,4 @@
-import{u as c,a as m,j as n,S as p,B as a,C as e}from"./index-CZLY44i6.js";const f=`function cpVerbConvertMoodName(moodName) {\r
+import{u as c,a as m,j as n,S as p,B as a,C as e}from"./index-ZPgbv5Fo.js";const f=`function cpVerbConvertMoodName(moodName) {\r
   if (!moodName) throw new Error('undefined mood');\r
   switch (moodName) {\r
     case 'Indicatif':\r
