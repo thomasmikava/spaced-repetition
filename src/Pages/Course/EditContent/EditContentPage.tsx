@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-constraint */
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCourseById, useUpdateCourseContent } from '../../../api/controllers/courses/courses.query';
 import { useCourseLessons } from '../../../api/controllers/lessons/lessons.query';
@@ -60,7 +60,14 @@ const EditContentPage = () => {
     return calculateInitialData({ courseId, lessonId, lessons, courseWords, translationLangs });
   }, [courseId, courseWords, lessonId, lessons, translationLangs]);
 
-  if (isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper) {
+  const isLoading = isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper;
+
+  useLayoutEffect(() => {
+    // scroll at the bottom of page
+    if (!isLoading) window.scrollTo(0, document.body.scrollHeight);
+  }, [isLoading]);
+
+  if (isLoading) {
     return <LoadingPage />;
   }
   if (!course || !initialData || !translationLangs) return <div>Error</div>;
