@@ -9,9 +9,11 @@ import {
   type VariantGroup,
 } from '../database/card-types';
 import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
+import { isNonNullable } from '../utils/array';
 import { isMatch } from '../utils/matcher';
 import { SPECIAL_VIEW_IDS } from './consts';
 import type { Helper } from './generate-card-content';
+import { getVariantTestId, shouldSkipTesting, type CardModifiersAccumulator } from './modifier-states';
 import type { Preferences } from './preferences';
 import type { StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
 import { getIsStandardFormFn } from './standard-forms';
@@ -20,7 +22,9 @@ export function generateTestableCards(
   card: StandardCard,
   helper: Helper,
   preferences: Preferences,
+  cardModifiers: CardModifiersAccumulator | undefined,
 ): StandardTestableCard[] {
+  if (shouldSkipTesting(cardModifiers?.fullCard)) return [];
   const config = helper.getCardType(card.type, card.lang)?.configuration ?? {};
 
   const displayType = card.mainType === null || card.mainType === undefined ? card.type : card.mainType;
@@ -45,6 +49,7 @@ export function generateTestableCards(
   const isStandardForm = getIsStandardFormFn(card, allStandardizedVariants);
   groups.forEach((group, groupIndex) => {
     const groupPreferences = cardTypePreferences.groupSettings[group.matcherId ?? '__default'];
+    if (group.matcherId && shouldSkipTesting(cardModifiers?.groups?.[group.matcherId])) return;
     if (groupPreferences.hideGroup) return;
     const variants = grandVariants[groupIndex];
     // debugger;
@@ -109,6 +114,12 @@ export function generateTestableCards(
     }
   }
 
+  if (cardModifiers?.variants) {
+    return testable.filter(
+      (t) => !shouldSkipTesting(cardModifiers?.variants[getVariantTestId(t.variant.id, t.groupMeta.testViewId)]),
+    );
+  }
+
   return testable;
 }
 
@@ -130,7 +141,7 @@ const sortGroups = (
       !e.cardMatcher ||
       isMatch({ attrs: card.attributes ?? undefined, labels: card.labels ?? undefined }, e.cardMatcher),
   );
-  const groupIds = userSortLogic ? [INIT_GROUP_ID, ...userSortLogic] : null ?? groupPriorities?.groupIds ?? [];
+  const groupIds = (userSortLogic ? [INIT_GROUP_ID, ...userSortLogic] : null) ?? groupPriorities?.groupIds ?? [];
   if (groupIds) {
     groups.sort((a, b) => {
       const aIndex = groupIds.indexOf(a.matcherId ?? '');
@@ -236,7 +247,16 @@ const getInvertedTestableCard = (
   displayType: number,
   testable: StandardTestableCard[],
 ): { testableCard: StandardTestableCard; index: number; invertedVariant: StandardTestableCard } | null => {
-  const invertedVariantIndex = testable.findIndex((v) => v.variant.category === 1);
+  let invertedVariantIndex = testable.findIndex((v) => v.variant.category === 1);
+  if (
+    invertedVariantIndex === -1 &&
+    testable.length === 1 &&
+    !isNonNullable(testable[0].variant.category) &&
+    (!isNonNullable(testable[0].variant.attrs) || Object.keys(testable[0].variant.attrs).length === 0)
+  ) {
+    // custom word added by user
+    invertedVariantIndex = 0;
+  }
   if (invertedVariantIndex === -1) return null;
   const invertedVariant = testable[invertedVariantIndex];
   if (!invertedVariant) return null;

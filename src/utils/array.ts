@@ -190,3 +190,13 @@ export function arrayToObject(arr: readonly any[], mainKey: any, allowMultiple =
   }
   return obj;
 }
+
+export const splitArray = <T>(arr: T[], fn: (el: T) => boolean): [T[], T[]] => {
+  const left: T[] = [];
+  const right: T[] = [];
+  for (const el of arr) {
+    if (fn(el)) left.push(el);
+    else right.push(el);
+  }
+  return [left, right];
+};

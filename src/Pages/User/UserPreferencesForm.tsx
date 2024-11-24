@@ -20,6 +20,7 @@ import SortableList, { SortableItem } from 'react-easy-sort';
 import { convertFormDataToUserPreferences } from './convert';
 import type { Helper } from '../../functions/generate-card-content';
 import { TranslationPosition } from '../../api/controllers/users/users.schema';
+import { getGroupName } from '../../utils/group-name';
 
 type Required<T> = {
   [P in keyof T]-?: NonNullable<T[P]>;
@@ -293,19 +294,8 @@ const useGroupOptions = (variantGroups: VariantGroup[] | undefined, lang: string
     ?.filter((e) => e.id !== INIT_GROUP_ID && e.id !== SKIP_GROUP_ID)
     .map((e) => {
       if (e.skip) return null;
-      let name = '';
-      if (!!e.name && typeof e.name === 'object') {
-        name = e.name.attrs
-          .map((attrId) => helper.getAttributeRecord(attrId, lang)?.name)
-          .filter(isNonNullable)
-          .join(e.name.separator ?? ' ');
-      } else if (typeof e.name === 'undefined' && !!e.matcher && !!e.matcher.attrs) {
-        name = Object.values(e.matcher.attrs)
-          .map((attrId) => (typeof attrId === 'number' ? helper.getAttributeRecord(attrId, lang)?.name : null))
-          .filter(isNonNullable)
-          .join(', ');
-      } else name = e.name ?? '';
-      if (e.name !== '' && name === '') name = e.id;
+      const name = getGroupName(e, lang, helper);
+      if (!name) return null;
       return { value: e.id, label: name };
     })
     .filter(isNonNullable);

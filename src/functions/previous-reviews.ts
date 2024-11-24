@@ -1,8 +1,10 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { MinimalReviewRecordDTO, ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
+import type { ModifierState } from '../Pages/Review/StateModifier';
 import { arrayToObject, isNonNullable } from '../utils/array';
 import { formatTime } from '../utils/time';
 import { globalHistory } from './history';
+import { getVariantTestId } from './modifier-states';
 import type { AllCardsReviewHistory, AnyReviewHistory, CardKeys, StandardTestableCard } from './reviews';
 import {
   CardViewMode,
@@ -160,6 +162,19 @@ export class PreviousReviews {
     throw new Error('Unknown card view mode: ' + mode);
   };
 
+  private getModifierSKey = (modifier: ModifierState) => {
+    switch (modifier.type) {
+      case 'card':
+        return `m@f`;
+      case 'group':
+        return `m@g_${modifier.groupId}`;
+      case 'variant':
+        return `m@v_${getVariantTestId(modifier.variantId, modifier.testViewId)}`;
+      default:
+        throw new Error('Unknown modifier type: ' + (modifier as ModifierState).type);
+    }
+  };
+
   private currentSessionCards: SessionHistory[] = [];
 
   getHistoryForLastPeriod = (period: number, currentDate = Date.now()) => {
@@ -197,7 +212,8 @@ export class PreviousReviews {
   };
 
   fixDueDates = (updates: { hId: number; dueDate: number | null }[]) => {
-    if (updateS.length === 0) return;
+    if (updates.length === 0) return;
+    console.log('fixing due dates', updates);
     const historyIdToKey = arrayToObject(Object.entries(this.history), ([key, value]) => ({
       key: value?.id ?? '',
       value: key,
@@ -324,6 +340,37 @@ export class PreviousReviews {
     }
     this.history = history;
     return { newValue, key };
+  };
+
+  saveModifierStates = (card: StandardTestableCard, modifierStates: ModifierState[], date = Date.now()) => {
+    if (!modifierStates.length) return [];
+    const dateInSec = Math.floor(date / 1000);
+    const history = { ...this.history };
+
+    const result: { newValue: AnyReviewHistory; key: string }[] = [];
+
+    for (const modifierState of modifierStates) {
+      const sKey = this.getModifierSKey(modifierState);
+      const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
+
+      const newValue: AnyReviewHistory = {
+        uniqueKey: key,
+        sKey,
+        lc: true,
+        lastDate: dateInSec,
+        corr: modifierState.value,
+        rep: 0,
+        wordId: card.card.id,
+        lastS: null,
+        dueDate: null,
+        savedInDb: false,
+      };
+      history[key] = newValue;
+      result.push({ newValue, key });
+    }
+
+    this.history = history;
+    return result;
   };
 
   getCurrentS = (card: StandardTestableCard, mode: CardViewMode) => {

@@ -39,7 +39,7 @@ export const DictionaryLoadedModal: FC<LoadedModalProps> = ({ onClose, word, car
     const finalCard = card ?? transformToStandardCard(word!);
     const preferences = calculatePreferences(userPreferences.result, finalCard.lang);
     const config = helper.getCardType(finalCard.type, finalCard.lang)?.configuration ?? {};
-    const variants = generateTestableCards(finalCard, helper, preferences);
+    const variants = generateTestableCards(finalCard, helper, preferences, undefined);
     const viewLines = config.dictionaryView || DEFAULT_DICTIONARY_VIEW;
     return viewLinesToContentLines(viewLines, helper, variants[0], preferences).lineContents;
   }, [word, helper, card, userPreferences]);

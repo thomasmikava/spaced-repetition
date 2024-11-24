@@ -10,18 +10,34 @@
 .controlsContainer {
   margin-top: 10px;
   margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.timeLineContainer {
+.timeLineContainer,
+.statesLineContainer {
   display: flex;
   gap: 20px;
 }
 
-.timeLineContainer span:first-of-type {
+.timeLineContainer span:first-of-type,
+.statesLineContainer span:first-of-type {
   flex-shrink: 0;
 }
 
-.timeOptionsContainer {
+.statesLineContainer span:first-of-type {
+  min-width: 110px;
+}
+
+.statesEntities {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.timeOptionsContainer,
+.statesOptionsContainer {
   display: flex;
   gap: 10px;
   color: white;

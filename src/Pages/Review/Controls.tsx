@@ -14,6 +14,9 @@ import { PlusOutlined } from '@ant-design/icons';
 import Modal from 'antd/es/modal';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
+import type { ModifierState, StateModifierRef } from './StateModifier';
+import StateModifier from './StateModifier';
+import type { Helper } from '../../functions/generate-card-content';
 
 interface Props {
   canChange: boolean;
@@ -21,14 +24,17 @@ interface Props {
   isCorrect: boolean;
   mode: CardViewMode;
   reviewer: Reviewer;
+  helper: Helper;
 }
 
 export interface ControlRef {
   getNewS: () => number | undefined;
+  getStates: () => ModifierState[];
 }
 
-const CardControlsInner = forwardRef<ControlRef, Props>(({ reviewer, card, mode, isCorrect }, ref) => {
+const CardControlsInner = forwardRef<ControlRef, Props>(({ reviewer, card, mode, isCorrect, helper }, ref) => {
   const timeOptionsRef = useRef<TimeOptionsRef>(null);
+  const stateModifierRef = useRef<StateModifierRef>(null);
   const hasAnotherRepetition = reviewer.hasAnotherRepetition(card.record, mode, isCorrect);
 
   const currentS = reviewer.prevReviews.getCurrentS(card.record, mode);
@@ -42,15 +48,20 @@ const CardControlsInner = forwardRef<ControlRef, Props>(({ reviewer, card, mode,
         : getDateOptions(isCorrect, currentS, newS, 2, 1);
 
   const showSModifier = !!hasAnotherRepetition && newS !== null && !!options;
+  const showStateModifier = true;
 
   useImperativeHandle(ref, () => ({
     getNewS: () => timeOptionsRef.current?.s ?? undefined,
+    getStates: () => stateModifierRef.current?.actions ?? [],
   }));
 
   // if (!hasAnotherRepetition) return null
   return (
     <div className={styles.controlsContainer}>
       {showSModifier && <TimeOptions ref={timeOptionsRef} options={options} />}
+      {showStateModifier && (
+        <StateModifier ref={stateModifierRef} testableCard={card.record} lang={card.record.card.lang} helper={helper} />
+      )}
     </div>
   );
 });

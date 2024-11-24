@@ -2,9 +2,12 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 import type { UserPreferencesDTO } from '../api/controllers/users/users.schema';
 import type { StandardCard } from '../database/types';
-import { uniquelize } from '../utils/array';
+import type { ModifierState } from '../Pages/Review/StateModifier';
+import { isNonNullable, splitArray, uniquelize } from '../utils/array';
 import type { Helper } from './generate-card-content';
 import { generateTestableCards } from './generate-variants';
+import type { CardModifiersAccumulator } from './modifier-states';
+import { calculateModifiers, convertToCardModifiers, getVariantTestId, shouldSkipTesting } from './modifier-states';
 import { calculatePreferences } from './preferences';
 import { PreviousReviews } from './previous-reviews';
 import type { StandardTestableCard, AnyReviewHistory } from './reviews';
@@ -20,7 +23,6 @@ import {
   REVIEW_MAX_DUE_FOR_HIGH_PROB,
   calculateProbability,
   dueDateUntilProbabilityIsHalf,
-  getRecordUniqueKey,
   initialTestS,
   initialViewS,
 } from './reviews';
@@ -64,9 +66,13 @@ export class Reviewer {
   ) {
     this.prevReviews = new PreviousReviews(avoidStorage);
     this.allTestableCards = [];
+    const cardModifiers = calculateModifiers(
+      cards.map((e) => e.id),
+      this.prevReviews.getHistoryRecords(),
+    );
     for (const card of cards) {
       const preference = calculatePreferences(this.userPreferences, card.lang);
-      const testableCards = generateTestableCards(card, helper, preference);
+      const testableCards = generateTestableCards(card, helper, preference, cardModifiers[card.id]);
       if (mode === 'only-new') {
         const hasAlreadySeen = testableCards.some((record) =>
           this.prevReviews.getCardHistory(record, CardViewMode.individualView),
@@ -143,7 +149,6 @@ export class Reviewer {
       blockCache[groupKey] = isBlocked;
       return isBlocked;
     };
-    const removableDueDatesCardKeys = new Set<string>();
     const probabilities = this.allTestableCards
       .map((record) => {
         const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
@@ -173,10 +178,6 @@ export class Reviewer {
           groupRecord.numOfCards++;
           if (willBeTested) groupRecord.numOfTestableCards++;
           if (willBeTested && historyRecord) groupRecord.numOfTestedCards++;
-          if (!willBeTested && historyRecord && typeof historyRecord.dueDate === 'number') {
-            // the history has due date while it shouldn't have
-            removableDueDatesCardKeys.add(getRecordUniqueKey(historyRecord));
-          }
           const lastViewDate = historyRecord
             ? historyRecord.lastDate
             : (groupVewRecord ?? individualViewRecord)?.lastDate;
@@ -363,10 +364,10 @@ export class Reviewer {
       });
     return {
       probabilities,
-      removableDueDatesCardKeys: removableDueDatesCardKeys.size > 0 ? [...removableDueDatesCardKeys] : undefined,
     };
   };
 
+  // always pass all cards of current session
   private getHistoryFlaws = (reviewCards: ReviewerCard[]) => {
     const wordsIndex = this.prevReviews.getWordsIndex();
     const historyIdToRecord: Record<number, ReviewerCard | undefined> = {};
@@ -398,18 +399,9 @@ export class Reviewer {
     const qOrder = this.prevReviews.getCurrentSessionCardsCount() + 1;
     console.log('#q', qOrder);
 
-    const { probabilities: sorted, removableDueDatesCardKeys } = this.calculateProbabilities(currentDate, qOrder);
-    if (removableDueDatesCardKeys) {
-      this.prevReviews.removeDueDates(removableDueDatesCardKeys); // TODO: is this even necessary?
-    }
-    if (qOrder) {
+    const { probabilities: sorted } = this.calculateProbabilities(currentDate, qOrder);
+    if (qOrder === 1 || this.prevViewedCard?.card.record.connectedTestKeys) {
       const flaws = this.getHistoryFlaws(sorted);
-      this.prevReviews.fixDueDates(flaws);
-    } else if (this.prevViewedCard && this.prevViewedCard.record.connectedTestKeys) {
-      const connectedCards = sorted.filter((e) =>
-        this.prevViewedCard!.record.connectedTestKeys!.includes(e.record.testKey),
-      );
-      const flaws = this.getHistoryFlaws(connectedCards);
       this.prevReviews.fixDueDates(flaws);
     }
     console.log(sorted.slice(0, 100), sorted.length);
@@ -442,27 +434,55 @@ export class Reviewer {
     return topCard;
   };
 
-  private prevViewedCard: CardWithProbability | undefined = undefined;
+  private prevViewedCard: { card: CardWithProbability; willBeHidden: boolean } | undefined = undefined;
   markViewed = (
     card: CardWithProbability,
     mode: CardViewMode,
     success: boolean,
     currentDate = Date.now(),
     newS: number | undefined = undefined,
+    modifierStates: ModifierState[] = [],
   ) => {
-    this.prevViewedCard = card;
-    const { newValue } = this.prevReviews.saveCardResult(
-      card.record,
-      mode,
-      success,
-      this.hasAnotherRepetition(card.record, mode, success),
-      currentDate,
-      newS,
-    );
+    const willBeHidden = modifierStates.some((e) => shouldSkipTesting({ value: e.value }));
+
+    this.prevViewedCard = { card, willBeHidden };
+
+    const hasRepetition = !willBeHidden && this.hasAnotherRepetition(card.record, mode, success);
+
+    const { newValue } = this.prevReviews.saveCardResult(card.record, mode, success, hasRepetition, currentDate, newS);
+    const modifiersResult = this.prevReviews.saveModifierStates(card.record, modifierStates);
     if (!this.avoidStorage) {
-      addUpdatedItemsInStorage([getDbRecord(newValue)]);
+      addUpdatedItemsInStorage([
+        getDbRecord(newValue),
+        ...modifiersResult.map(({ newValue }) => getDbRecord(newValue)),
+      ]);
+    }
+    if (modifierStates.length > 0) {
+      this.removeNewHiddenCards(card.record.card.id, convertToCardModifiers(modifierStates));
     }
   };
+
+  removeNewHiddenCards = (wordId: number, modifiers: CardModifiersAccumulator) => {
+    const [validCards, deprecatedCards] = splitArray(this.allTestableCards, (record) => {
+      if (record.card.id !== wordId) return true;
+      if (shouldSkipTesting(modifiers.fullCard)) return false;
+      if (shouldSkipTesting(modifiers.variants[getVariantTestId(record.variant.id, record.groupMeta.testViewId)]))
+        return false;
+      // eslint-disable-next-line sonarjs/prefer-single-boolean-return
+      if (record.groupMeta.matcherId && shouldSkipTesting(modifiers.groups[record.groupMeta.matcherId])) return false;
+      return true;
+    });
+
+    const updatedHistoryRecords = deprecatedCards
+      .map((record) => this.prevReviews.getCardHistory(record, CardViewMode.test))
+      .filter(isNonNullable);
+
+    const flaws = updatedHistoryRecords.filter((e) => !!e.id).map((e) => ({ hId: e.id as number, dueDate: null }));
+    this.prevReviews.fixDueDates(flaws);
+
+    this.allTestableCards = validCards;
+  };
+
   hasAnotherRepetition = (
     card: StandardTestableCard,
     mode: CardViewMode,

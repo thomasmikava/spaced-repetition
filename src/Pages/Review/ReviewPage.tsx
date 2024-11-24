@@ -75,7 +75,8 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
   const gotoNextCard = () => {
     if (!currentCard || !question) return;
     const newS = controlRef.current?.getNewS();
-    reviewer.markViewed(currentCard, question.type, !wasWrong, undefined, newS);
+    const modifierStates = controlRef.current?.getStates();
+    reviewer.markViewed(currentCard, question.type, !wasWrong, undefined, newS, modifierStates);
     const nextCard = reviewer.getNextCard();
     setCurrentCard(nextCard);
     setIsInAnswerReviewMode(false);
@@ -149,6 +150,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
                 isCorrect={!wasWrong}
                 mode={question.type}
                 reviewer={reviewer}
+                helper={helper}
               />
             </div>
           </WithNextButton>
