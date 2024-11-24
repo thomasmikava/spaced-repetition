@@ -197,13 +197,17 @@ const Input = ({
   const { mode, useOnCheck } = useTestContext();
   const ref = useRef<HTMLInputElement>(null);
   const submittedRef = useRef(false);
+
+  const correctValuesSet = useMemo(() => {
+    if (!correctValues || !correctValues.length) return undefined;
+    return new Set(caseInsensitive ? correctValues?.map((e) => e.toLocaleLowerCase()) : correctValues);
+  }, [caseInsensitive, correctValues]);
+
   const checkIfCorrect = (rawValue: string) => {
     const value = rawValue.trim();
     return (
-      !!correctValues?.some((correctValue) => {
-        if (caseInsensitive) return correctValue.toLocaleLowerCase() === value.toLocaleLowerCase();
-        return correctValue === value;
-      }) || !!advancedAnswerChecker?.(value, { caseInsensitive })
+      !!correctValuesSet?.has(caseInsensitive ? value.toLocaleLowerCase() : value) ||
+      !!advancedAnswerChecker?.(value, { caseInsensitive })
     );
   };
   const lastResult = useOnCheck(inputId, () => {
