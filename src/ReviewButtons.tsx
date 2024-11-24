@@ -52,12 +52,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
     <div className={cssModule.buttonsContainer}>
       <button onClick={() => handleReview(false, false)}>
         Train{isLoading ? '...' : ''}
-        {!isLoading && dueReview > 0 && (
-          <>
-            : {`${dueReview} `}
-            {uniqueCards !== dueReview && <sup>{`(${uniqueCards})`}</sup>}
-          </>
-        )}
+        {!isLoading && dueReview > 0 && <>: {`${uniqueCards}`}</>}
       </button>
       <button onClick={() => handleReview(false, true)}>Learn New words</button>
     </div>

@@ -60,7 +60,13 @@ const CardControlsInner = forwardRef<ControlRef, Props>(({ reviewer, card, mode,
     <div className={styles.controlsContainer}>
       {showSModifier && <TimeOptions ref={timeOptionsRef} options={options} />}
       {showStateModifier && (
-        <StateModifier ref={stateModifierRef} testableCard={card.record} lang={card.record.card.lang} helper={helper} />
+        <StateModifier
+          ref={stateModifierRef}
+          testableCard={card.record}
+          lang={card.record.card.lang}
+          helper={helper}
+          mode={mode}
+        />
       )}
     </div>
   );

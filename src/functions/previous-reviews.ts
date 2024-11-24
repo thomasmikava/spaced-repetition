@@ -431,14 +431,33 @@ const updateS = (
 ) => {
   const sBasedOnConnectedVariants = getSBasedOnConnectedVariants(maxConnectedTestS, correctnessRatio);
 
-  if (!s && success) return Math.max(initialTestS, sBasedOnConnectedVariants);
+  if (!s && success)
+    return Math.max(initialTestS, sBasedOnConnectedVariants, getSBasedOnLastAnswer(0, passedTimeInSeconds ?? 0));
   else if (!s) return getSAfterIncorrectAnswer(initialTestS);
   if (!success) return getSAfterIncorrectAnswer(s);
 
-  const newS = getRegularSAfterSuccess(isGroup, s, passedTimeInSeconds);
+  const newNormalS = getRegularSAfterSuccess(isGroup, s, passedTimeInSeconds);
   const sBasedOnLastAnswerValue = getSBasedOnLastAnswer(s, passedTimeInSeconds ?? 0);
+  const newS = Math.max(newNormalS, sBasedOnLastAnswerValue);
+  const fluctuatedNewS = getFluctuatedS(s, newS);
 
-  return Math.min(maxS, Math.max(minS, newS, sBasedOnLastAnswerValue));
+  return Math.min(maxS, Math.max(minS, fluctuatedNewS));
+};
+
+const getFluctuatedS = (oldS: number, newS: number): number => {
+  const diffTime = secondsUntilProbabilityIsHalf(newS) - secondsUntilProbabilityIsHalf(oldS);
+  const diffTimeAbs = Math.abs(diffTime);
+
+  let range = 0.03;
+  if (diffTimeAbs < 60 * 5) range = 0.1;
+  else if (diffTimeAbs < 60 * 60) range = 0.15;
+  else if (diffTimeAbs < 24 * 60 * 60) range = 0.2;
+  else if (diffTimeAbs < 10 * 24 * 60 * 60) range = 0.1;
+
+  const random = 2 * Math.random() * range - range;
+  const timeToAdd = diffTime * (1 + random);
+  const sToAdd = calculateHalfLifeCoefficient(timeToAdd);
+  return oldS + sToAdd;
 };
 
 const getSBasedOnConnectedVariants = (
@@ -505,6 +524,7 @@ const getSBasedOnLastAnswer = (s: number, passedTimeInSeconds: number) => {
 
   return calculateHalfLifeCoefficient(Math.min(maxHalfLife, passedTimeInSeconds));
 };
+console.log('x', getSBasedOnLastAnswer(0, 0));
 
 const calcMultiplierToAdd = (s: number, addedHalfTimeSeconds: number) => {
   const currentHalfLife = secondsUntilProbabilityIsHalf(s);

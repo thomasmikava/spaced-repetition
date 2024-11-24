@@ -1,5 +1,6 @@
 import { forwardRef, memo, useImperativeHandle, useState, type FC } from 'react';
 import type { StandardTestableCard } from '../../functions/reviews';
+import { CardViewMode } from '../../functions/reviews';
 import { getGroupName } from '../../utils/group-name';
 import type { Helper } from '../../functions/generate-card-content';
 import styles from './styles.module.css';
@@ -30,6 +31,7 @@ interface StateModifierProps {
   testableCard: StandardTestableCard;
   lang: string;
   helper: Helper;
+  mode: CardViewMode;
 }
 
 export enum SecondOption {
@@ -43,7 +45,7 @@ export interface StateModifierRef {
 }
 
 const StateModifier = memo(
-  forwardRef<StateModifierRef, StateModifierProps>(({ testableCard, lang, helper }, ref) => {
+  forwardRef<StateModifierRef, StateModifierProps>(({ testableCard, lang, helper, mode }, ref) => {
     const [variantMetaValue, setVariantMetaValue] = useState(SecondOption.DEFAULT);
     const [groupCardMetaValue, setGroupCardMetaValue] = useState(SecondOption.DEFAULT);
     const [wholeCardMetaValue, setWholeCardMetaValue] = useState(SecondOption.DEFAULT);
@@ -92,10 +94,12 @@ const StateModifier = memo(
     return (
       <div>
         <div className={styles.statesEntities}>
-          <div className={styles.statesLineContainer}>
-            <span>Current variant</span>
-            <Chooser value={variantMetaValue} onChange={setVariantMetaValue} />
-          </div>
+          {mode !== CardViewMode.groupView && (
+            <div className={styles.statesLineContainer}>
+              <span>Current form</span>
+              <Chooser value={variantMetaValue} onChange={setVariantMetaValue} />
+            </div>
+          )}
 
           {groupVariantCount > 0 && !!groupName && (
             <div className={styles.statesLineContainer}>
