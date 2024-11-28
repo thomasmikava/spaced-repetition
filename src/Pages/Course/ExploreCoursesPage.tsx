@@ -31,7 +31,7 @@ const ExploreCoursesPage = () => {
         {data.pages.map((page, i) => (
           <Fragment key={i}>
             {page.courses.map((course) => (
-              <CourseBox key={course.id} course={course} />
+              <CourseBox key={course.id} course={course} stats={undefined} />
             ))}
           </Fragment>
         ))}

@@ -13,6 +13,7 @@ import { useSignInUserData } from '../../contexts/Auth';
 import { AddToMyCoursesButton } from './AddToMyCourses';
 import LoadingPage from '../Loading/LoadingPage';
 import { useConfirmationModal } from '../../ui/ConfirmationModal';
+import { useWordsStats } from '../../api/controllers/words/words.hooks';
 
 const CoursePage = () => {
   const userData = useSignInUserData();
@@ -28,6 +29,7 @@ const CoursePage = () => {
     returnAllChildrenLessons: true,
   });
   const lessons = useFilteredLessons(allCourseLessons, courseId, null);
+  const stats = useWordsStats({ courseId, lessons: allCourseLessons });
 
   const goToMainPage = () => {
     navigate(paths.app.main());
@@ -119,7 +121,13 @@ const CoursePage = () => {
           Add content
         </Button>
       )}
-      <LessonBody courseId={courseId} lessonId={null} lessons={lessons} canManageCourse={!!canManageCourse} />
+      <LessonBody
+        courseId={courseId}
+        lessonId={null}
+        lessons={lessons}
+        canManageCourse={!!canManageCourse}
+        courseStats={stats?.courses[courseId]}
+      />
       <br />
       {confirmationModalElement}
     </div>

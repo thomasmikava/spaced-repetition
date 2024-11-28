@@ -36,6 +36,7 @@ import { specialBoxClasses } from '../Home/boxes';
 import { ALL_LANGS, sortByLangs, useTranslationLang } from '../hooks/useTranslationLang';
 import { TranslationLangSelector } from '../../components/Lang/TranslationLangSelector';
 import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
+import { useWordsStats } from '../../api/controllers/words/words.hooks';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 const LessonPage = () => {
@@ -57,6 +58,7 @@ const LessonPage = () => {
   });
   const { data: words, isLoading: isWordLoading } = useCourseWords({ courseId, lessonId });
   const lessons = useFilteredLessons(allCourseLessons, courseId, lessonId);
+  const stats = useWordsStats({ courseId, lessonId, lessons: allCourseLessons });
   const myLesson = useMemo(
     () => allCourseLessons?.find((e) => e.courseId === courseId && e.id === lessonId),
     [allCourseLessons, courseId, lessonId],
@@ -231,7 +233,13 @@ const LessonPage = () => {
           <AddToMyCoursesButton courseId={courseId} />
         )}
         {lessons && lessons.length > 0 && (
-          <LessonBody courseId={courseId} lessonId={lessonId} lessons={lessons} canManageCourse={!!canManageCourse} />
+          <LessonBody
+            courseId={courseId}
+            lessonId={lessonId}
+            lessons={lessons}
+            canManageCourse={!!canManageCourse}
+            courseStats={stats?.courses[courseId]}
+          />
         )}
         {wordRows && (
           <div>

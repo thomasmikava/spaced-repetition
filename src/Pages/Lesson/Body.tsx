@@ -9,19 +9,21 @@ import Modal from 'antd/es/modal';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
 import { useUpdateCourseContent } from '../../api/controllers/courses/courses.query';
+import type { CourseWordStatistics } from '../../api/controllers/words/words.hooks';
 
 interface Props {
   courseId: number;
   lessonId: number | null;
   lessons: LessonDTO[];
   canManageCourse: boolean;
+  courseStats: CourseWordStatistics | undefined;
 }
 
-export const LessonBody: FC<Props> = memo(({ courseId, lessons, lessonId }) => {
+export const LessonBody: FC<Props> = memo(({ courseId, lessons, lessonId, courseStats }) => {
   return (
     <div className={cssModule.lessonsContainer}>
       {lessons.map((lesson) => (
-        <LessonBox key={lesson.id} lesson={lesson} courseId={courseId} />
+        <LessonBox key={lesson.id} lesson={lesson} courseId={courseId} stats={courseStats?.lessons[lesson.id]} />
       ))}
       <AddNewLessonBox courseId={courseId} parentLessonId={lessonId} />
     </div>

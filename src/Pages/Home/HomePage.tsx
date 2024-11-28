@@ -9,9 +9,11 @@ import { paths } from '../../routes/paths';
 import { CourseBox } from '../Course/Box';
 import cssModule from './styles.module.css';
 import { specialBoxClasses } from './boxes';
+import { useWordsStats } from '../../api/controllers/words/words.hooks';
 
 const HomePage = () => {
   const { data: mainCourses } = useMyMainCourses();
+  const stats = useWordsStats();
   if (!mainCourses) return null;
 
   return (
@@ -20,7 +22,7 @@ const HomePage = () => {
       <br />
       <div className={appCssModule.courseContainer}>
         {mainCourses.map((course) => (
-          <CourseBox key={course.id} course={course} />
+          <CourseBox key={course.id} course={course} stats={stats?.courses?.[course.id]} />
         ))}
         {mainCourses.length > 0 && <SearchBox />}
         <PublicCourses />

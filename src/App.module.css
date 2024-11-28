@@ -25,6 +25,8 @@
     rgb(255, 255, 255) 0 18px 0 -9px;
   transition: all 0.1s;
   padding: 5px;
+  position: relative;
+  overflow: hidden;
 }
 .courseCard:hover {
   color: black;
@@ -334,4 +336,26 @@
 
 .bigSectionContainer > .sectionTitle {
   font-size: 20px;
+}
+
+.statsContainer {
+  height: 5px;
+  display: block;
+  width: 100%;
+  position: absolute;
+  top: 0;
+}
+
+.statsKnownWords,
+.statsReviewWords {
+  display: block;
+  height: 100%;
+  position: absolute;
+  left: 0;
+}
+.statsKnownWords {
+  background: #36be36;
+}
+.statsReviewWords {
+  background: #ffb90a;
 }
