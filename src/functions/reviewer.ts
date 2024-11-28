@@ -88,10 +88,6 @@ export class Reviewer {
     return [...this.allTestableCards];
   }
 
-  getClosestDueIn = (wordId: number) => {
-    return this.prevReviews.getClosestDueDate(wordId);
-  };
-
   getDueCardsCount = (accordingToDate = Date.now()) => {
     const probabilities = this.calculateProbabilities(accordingToDate).probabilities;
     const dueReview = probabilities.filter(

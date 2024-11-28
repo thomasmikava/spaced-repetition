@@ -109,10 +109,13 @@ const LessonPage = () => {
 
   const lessonsInfo = lessonWords.map((word) => {
     const closestDueDate = prevReviews.getClosestDueDate(word.id);
-    const closestDueIn = closestDueDate === Infinity ? Infinity : closestDueDate - Math.floor(Date.now() / 1000);
+    const closestDueIn =
+      closestDueDate === Infinity || closestDueDate === null
+        ? closestDueDate
+        : closestDueDate - Math.floor(Date.now() / 1000);
     return { closestDueIn, word };
   });
-  const studiedCards = lessonsInfo.filter((item) => item.closestDueIn !== Infinity).length;
+  const studiedCards = lessonsInfo.filter((item) => item.closestDueIn !== null).length;
   const allCardsCount = lessonsInfo.length;
 
   const canManageCourse = course?.userId === userData.userId || userData.adminLangs?.includes(course.langToLearn);
@@ -156,12 +159,14 @@ const LessonPage = () => {
                 : word.translations.find((e) => e.lang === translationLang)?.translation,
               {
                 cellValue:
-                  closestDueDate === Infinity || closestDueDate === null
+                  closestDueDate === null
                     ? null
-                    : closestDueDate <= 0
-                      ? 'Ready'
-                      : formatTime(roundTime(closestDueDate)),
-                style: { opacity: closestDueDate <= 10 ? 1 : undefined, textAlign: 'right' },
+                    : closestDueDate === Infinity
+                      ? '-'
+                      : closestDueDate <= 0
+                        ? 'Ready'
+                        : formatTime(roundTime(closestDueDate)),
+                style: { opacity: closestDueDate !== null && closestDueDate <= 10 ? 1 : undefined, textAlign: 'right' },
               },
               {
                 cellValue: (

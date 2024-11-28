@@ -66,12 +66,16 @@ export class PreviousReviews {
     return this.getWordsIndexObject(this.history);
   };
 
+  /**
+   * null - no record is found
+   * Infinity - word is studied and there will be no review
+   */
   getClosestDueDate = (wordId: number) => {
     const wordsIndex = this.getWordsIndexObject(this.history);
     const wordHistory = wordsIndex[wordId];
-    if (!wordHistory) return Infinity;
+    if (!wordHistory) return null;
     const dueDates = wordHistory.map((e) => e.dueDate ?? Infinity);
-    if (dueDates.length === 0) return Infinity;
+    if (dueDates.length === 0) return null;
     return Math.min(...dueDates);
   };
   getDueCardsCount = (wordId: number, accordingToDate = new Date()) => {
