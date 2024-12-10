@@ -1,6 +1,7 @@
 import type { FC, ReactNode } from 'react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import Content from '../../Content';
+import type { TestContextRef } from '../../contexts/testContext';
 import { TestContextProvider } from '../../contexts/testContext';
 import type { StandardCard } from '../../database/types';
 import type { Helper } from '../../functions/generate-card-content';
@@ -12,7 +13,7 @@ import cssModule from '../../App.module.css';
 import { useHelper } from '../hooks/text-helpers';
 import { useWords } from './useWords';
 import LoadingPage from '../Loading/LoadingPage';
-import { BookOutlined, SettingFilled } from '@ant-design/icons/lib/icons';
+import { BookOutlined, FormOutlined, SettingFilled } from '@ant-design/icons/lib/icons';
 import { DictionaryLoadedModal } from '../../components/DictionaryModal';
 import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 import { TranslationLangSelectorConnected } from '../../components/Lang/TranslationLangSelector';
@@ -99,6 +100,11 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
   const canGoToNextCard = isView || isInAnswerReviewMode;
   const onSubmit = canGoToNextCard ? gotoNextCard : checkAnswer;
 
+  const testContextRef = useRef<TestContextRef>(null);
+  const handleHintClick = () => {
+    testContextRef.current?.initiateHint();
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isEnded && canGoToNextCard && e.key === 'Enter') {
@@ -123,11 +129,12 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
   const availableLangs = currentCard.record.card.translations.map((e) => e.lang);
   const shouldShowLangSwitcher = availableLangs.length > 1;
   const shouldShowSwitcher = canGoToNextCard;
+  const shouldShowHint = !canGoToNextCard;
 
   return (
     <div className='body' style={{ paddingTop: 10, paddingBottom: 10 }}>
       <TranslationLangsProvider translationLangs={availableLangs}>
-        <TestContextProvider key={questionNumber} mode={testMode} onResult={handleResult}>
+        <TestContextProvider key={questionNumber} mode={testMode} onResult={handleResult} ref={testContextRef}>
           <WithNextButton
             onClick={onSubmit}
             rest={
@@ -137,7 +144,12 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
             }
           >
             <div>
-              <TopPart shouldShowLangSwitcher={shouldShowLangSwitcher} shouldShowSwitcher={shouldShowSwitcher} />
+              <TopPart
+                shouldShowLangSwitcher={shouldShowLangSwitcher}
+                shouldShowControls={shouldShowSwitcher}
+                shouldShowHint={shouldShowHint}
+                onHintClick={handleHintClick}
+              />
               <ViewCard>
                 <form onSubmit={withNoEventAction(onSubmit)}>
                   <Content content={question.content} />
@@ -162,52 +174,66 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
 
 interface TopPartProps {
   shouldShowLangSwitcher: boolean;
-  shouldShowSwitcher: boolean;
+  shouldShowControls: boolean;
+  shouldShowHint: boolean;
+  onHintClick?: () => void;
 }
 
-const TopPart: FC<TopPartProps> = memo(({ shouldShowLangSwitcher, shouldShowSwitcher }) => {
-  const langSwitcher = shouldShowLangSwitcher && (
-    <div className={styles.transLangsContainer}>
-      <TranslationLangSelectorConnected />
-    </div>
-  );
-  const settingsSnap = useSnapshot(settingsState);
+const TopPart: FC<TopPartProps> = memo(
+  ({ shouldShowLangSwitcher, shouldShowControls, shouldShowHint, onHintClick }) => {
+    const langSwitcher = shouldShowLangSwitcher && (
+      <div className={styles.transLangsContainer}>
+        <TranslationLangSelectorConnected />
+      </div>
+    );
+    const settingsSnap = useSnapshot(settingsState);
 
-  const onToggle = () => {
-    settingsState.showControls = !settingsState.showControls;
-  };
+    const onToggle = () => {
+      settingsState.showControls = !settingsState.showControls;
+    };
 
-  const settingsItems: ItemType[] | null = [
-    shouldShowSwitcher
-      ? {
-          label: <Checkbox label='Show controls' checked={settingsSnap.showControls} onClick={onToggle} />,
-          key: 'control',
-        }
-      : null,
-  ].filter(isNonNullable);
+    const settingsItems: ItemType[] | null = [
+      shouldShowControls
+        ? {
+            label: <Checkbox label='Show controls' checked={settingsSnap.showControls} onClick={onToggle} />,
+            key: 'control',
+          }
+        : null,
+    ].filter(isNonNullable);
 
-  const settings = settingsItems.length > 0 && (
-    <Dropdown
-      menu={{
-        items: settingsItems,
-      }}
-      placement='bottomLeft'
-    >
-      <AntButton>
-        <SettingFilled />
-      </AntButton>
-    </Dropdown>
-  );
+    const hint = shouldShowHint && (
+      <div className={styles.hintContainer}>
+        <AntButton onClick={onHintClick}>
+          <FormOutlined />
+        </AntButton>
+      </div>
+    );
 
-  if (!settings && !langSwitcher) return null;
+    const settings = settingsItems.length > 0 && (
+      <Dropdown
+        menu={{
+          items: settingsItems,
+        }}
+        placement='bottomLeft'
+      >
+        <AntButton>
+          <SettingFilled />
+        </AntButton>
+      </Dropdown>
+    );
 
-  return (
-    <div className={styles.topContainer}>
-      {settings}
-      {langSwitcher}
-    </div>
-  );
-});
+    if (!settings && !langSwitcher && !hint) return null;
+
+    return (
+      <div className={styles.topContainer}>
+        {settings}
+        {hint}
+        {langSwitcher}
+      </div>
+    );
+  },
+);
+TopPart.displayName = 'TopPart';
 
 export const ReviewPageLoader = () => {
   const searchParams = new URL(window.location.href).searchParams;

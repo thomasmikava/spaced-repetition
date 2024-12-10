@@ -18,6 +18,7 @@ import { useTestContext } from './contexts/testContext';
 import { Colors } from './functions/texts';
 import { useTranslationLangSettings } from './contexts/TranslationLangs';
 import { TranslationLangSelector } from './components/Lang/TranslationLangSelector';
+import { getMinimalChange } from './utils/hint';
 
 const renderContent = (
   content: string | number | null | undefined | AnyContent | (AnyContent | null | undefined)[],
@@ -185,7 +186,7 @@ const Input = ({
   style,
   containerStyle,
   correctValues,
-  caseInsensitive,
+  caseInsensitive = false,
   fullWidth,
   autoFocus,
   isSubmit,
@@ -194,7 +195,7 @@ const Input = ({
   autoCheck,
   shouldNotReplaceWithCorrectAnswer,
 }: ContentInput) => {
-  const { mode, useOnCheck } = useTestContext();
+  const { mode, useOnCheck, useOnHintListener } = useTestContext();
   const ref = useRef<HTMLInputElement>(null);
   const submittedRef = useRef(false);
 
@@ -210,10 +211,33 @@ const Input = ({
       !!advancedAnswerChecker?.(value, { caseInsensitive })
     );
   };
+  const submitAnswer = () => {
+    const element = ref.current;
+    const submitEvent = new Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    });
+    element?.form?.dispatchEvent(submitEvent);
+    submittedRef.current = true;
+  };
   const lastResult = useOnCheck(inputId, () => {
     const value = (ref.current?.value ?? '').trim();
     const isCorrect = checkIfCorrect(ref.current?.value ?? '');
     return { isCorrect, value };
+  });
+  useOnHintListener(inputId, () => {
+    if (!ref.current) return;
+    const inputValue = ref.current.value ?? '';
+    // TODO: receive prefixes from props
+    const newValue = getMinimalChange(inputValue, correctValues || [], caseInsensitive);
+
+    ref.current.value = newValue;
+    const isCorrect = checkIfCorrect(newValue);
+    if (isCorrect) {
+      submitAnswer();
+    } else {
+      ref.current.focus();
+    }
   });
 
   const audio = useMemo(() => {
@@ -226,12 +250,7 @@ const Input = ({
     if (submittedRef.current || !element || !element.form || e.key === 'Control') return;
     const isCorrect = checkIfCorrect(ref.current.value);
     if (!isCorrect) return;
-    const submitEvent = new Event('submit', {
-      bubbles: true,
-      cancelable: true,
-    });
-    element.form.dispatchEvent(submitEvent);
-    submittedRef.current = true;
+    submitAnswer();
   };
   const correctnessClassName =
     shouldNotReplaceWithCorrectAnswer && lastResult
