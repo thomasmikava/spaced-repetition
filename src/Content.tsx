@@ -194,6 +194,7 @@ const Input = ({
   advancedAnswerChecker,
   autoCheck,
   shouldNotReplaceWithCorrectAnswer,
+  hintPrefixes,
 }: ContentInput) => {
   const { mode, useOnCheck, useOnHintListener } = useTestContext();
   const ref = useRef<HTMLInputElement>(null);
@@ -229,7 +230,7 @@ const Input = ({
     if (!ref.current) return;
     const inputValue = ref.current.value ?? '';
     // TODO: receive prefixes from props
-    const newValue = getMinimalChange(inputValue, correctValues || [], caseInsensitive);
+    const newValue = getMinimalChange(inputValue, correctValues || [], caseInsensitive, hintPrefixes);
 
     ref.current.value = newValue;
     const isCorrect = checkIfCorrect(newValue);

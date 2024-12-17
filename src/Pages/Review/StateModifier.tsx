@@ -53,21 +53,6 @@ const StateModifier = memo(
     const variantsCount = card.variants.length;
     const groupName = testableCard.groupMeta.gr ? getGroupName(testableCard.groupMeta.gr, lang, helper) : null;
     const groupVariantCount = testableCard.groupMeta.variants.length;
-    console.log(
-      (
-        [
-          variantMetaValue === SecondOption.DEFAULT
-            ? null
-            : { type: 'variant', value: variantMetaValue, variantId: testableCard.variant.id, cardId: card.id },
-          groupCardMetaValue === SecondOption.DEFAULT || !testableCard.groupMeta.gr
-            ? null
-            : { type: 'group', value: groupCardMetaValue, groupId: testableCard.groupMeta.gr.id, cardId: card.id },
-          wholeCardMetaValue === SecondOption.DEFAULT
-            ? null
-            : { type: 'card', value: wholeCardMetaValue, cardId: card.id },
-        ] as (ModifierState | null)[]
-      ).filter(isNonNullable),
-    );
 
     useImperativeHandle(ref, () => ({
       actions: (

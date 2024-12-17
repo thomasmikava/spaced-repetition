@@ -98,6 +98,7 @@ export interface ContentInput {
   containerStyle?: React.CSSProperties;
   advancedAnswerChecker?: (value: string, options: AdvancedAnswerCheckerOptions) => boolean;
   shouldNotReplaceWithCorrectAnswer?: boolean;
+  hintPrefixes?: string[];
 }
 
 export interface ContentExpandable {

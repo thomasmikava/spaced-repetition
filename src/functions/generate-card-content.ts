@@ -34,6 +34,7 @@ import type { Preferences } from './preferences';
 import { SPECIAL_VIEW_IDS } from './consts';
 import { generatePossibleAnswers } from './compare-answers';
 import { TranslationPosition } from '../api/controllers/users/users.schema';
+import { getHintPrefixes } from './hint-prefixes';
 
 const getTopRow = (lang: string, tags: ContentTagLike[], word: string): AnyContent => {
   return {
@@ -539,6 +540,13 @@ export const viewLinesToContentLines = (
         };
         const correctValues = slashSplit(displayValue2);
         const audioPrefixObj = getConditionalOrRawValue(line.audioPrefix, record.variant);
+        const hintPrefixes = line.useTranslationsAsValue
+          ? uniquelize(
+              record.card.translations
+                .flatMap((e) => getHintPrefixes(record.card.mainType ?? record.card.type, e.lang))
+                .filter(isNonNullable),
+            )
+          : getHintPrefixes(record.card.mainType ?? record.card.type, record.card.lang);
         return {
           type: 'input',
           inputId: '1',
@@ -548,6 +556,7 @@ export const viewLinesToContentLines = (
           correctValues: getCorrectValues(displayValue2, record.caseSensitive),
           caseInsensitive: !record.caseSensitive,
           advancedAnswerChecker: line.useTranslationsAsValue ? undefined : getAnswerChecker(displayValue2),
+          hintPrefixes,
           shouldNotReplaceWithCorrectAnswer: !!line.shouldNotReplaceWithCorrectAnswer,
           style: { textAlign: 'center' },
           audioProps: line.skipAudio
