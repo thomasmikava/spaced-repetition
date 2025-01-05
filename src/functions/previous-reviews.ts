@@ -1,5 +1,9 @@
 /* eslint-disable sonarjs/cognitive-complexity */
-import type { MinimalReviewRecordDTO, ReviewWithOptionalDTO } from '../api/controllers/history/history.schema';
+import {
+  ReviewBlock,
+  type MinimalReviewRecordDTO,
+  type ReviewWithOptionalDTO,
+} from '../api/controllers/history/history.schema';
 import type { ModifierState } from '../Pages/Review/StateModifier';
 import { arrayToObject, isNonNullable } from '../utils/array';
 import { formatTime } from '../utils/time';
@@ -86,7 +90,9 @@ export class PreviousReviews {
     /* wordHistory
       .filter((e) => e.dueDate && e.dueDate < dueDateSec)
       .forEach((e) => console.log('historyId', e.id, 'w', e.wordId)); */
-    return wordHistory.filter((e) => e.block === block && e.dueDate && e.dueDate < dueDateSec).length;
+    return wordHistory.filter(
+      (e) => (e.block === block || e.block === ReviewBlock.universal) && e.dueDate && e.dueDate < dueDateSec,
+    ).length;
   };
 
   markAsSavedInDb = (keys: string[]) => {
@@ -350,10 +356,10 @@ export class PreviousReviews {
   };
 
   saveModifierStates = (
-    block: number,
     card: StandardTestableCard,
     modifierStates: ModifierState[],
     date = Date.now(),
+    block = ReviewBlock.universal,
   ) => {
     if (!modifierStates.length) return [];
     const dateInSec = Math.floor(date / 1000);

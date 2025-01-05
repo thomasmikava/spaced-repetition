@@ -1,5 +1,6 @@
 /* eslint-disable no-debugger */
 /* eslint-disable sonarjs/cognitive-complexity */
+import { ReviewBlock } from '../api/controllers/history/history.schema';
 import type { UserPreferencesDTO } from '../api/controllers/users/users.schema';
 import type { StandardCard } from '../database/types';
 import type { ModifierState } from '../Pages/Review/StateModifier';
@@ -396,6 +397,7 @@ export class Reviewer {
       if (!wordHistoryObjects) continue;
       for (const hist of wordHistoryObjects) {
         if (typeof hist.id !== 'number') continue;
+        if (hist.block !== this.reviewBlock && hist.block !== ReviewBlock.universal) continue;
         const variantRecord = historyIdToRecord[hist.id];
         const dueDate = variantRecord ? variantRecord.dueDate : null;
         if (areDueDatesSame(hist, dueDate)) continue;
@@ -470,7 +472,7 @@ export class Reviewer {
       currentDate,
       newS,
     );
-    const modifiersResult = this.prevReviews.saveModifierStates(block, card.record, modifierStates);
+    const modifiersResult = this.prevReviews.saveModifierStates(card.record, modifierStates);
     if (!this.avoidStorage) {
       addUpdatedItemsInStorage([
         getDbRecord(newValue),

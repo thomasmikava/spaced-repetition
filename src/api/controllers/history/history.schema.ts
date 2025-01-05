@@ -14,8 +14,9 @@ interface BaseRecordDTO {
 }
 
 export enum ReviewBlock {
-  standard = 0,
-  AI = 1,
+  universal = 0,
+  standard = 1,
+  AI = 2,
 }
 
 export interface ReviewRecordDTO extends BaseRecordDTO {

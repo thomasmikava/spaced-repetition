@@ -33,7 +33,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
     [wordsInfo],
   );
 
-  const { dueReview, uniqueCards, dueReviewAI, uniqueCardsAI } = useMemo(() => {
+  const { dueReview, uniqueCards } = useMemo(() => {
     if (!wordIds || !wordIds.length) return { dueReview: 0, uniqueCards: 0, dueReviewAI: 0, uniqueCardsAI: 0 };
     const prevReviews = new PreviousReviews();
     let totalVariantReviews = 0;
@@ -76,7 +76,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
       <button onClick={() => handleReview(false, true)}>Learn New words</button>
       {isPremium && (
         <button onClick={() => handleAIReview(false, false)}>
-          AI test{!isLoading && dueReviewAI > 0 && <>: {`${uniqueCardsAI}`}</>}
+          AI test{/* {!isLoading && dueReviewAI > 0 && <>: {`${uniqueCardsAI}`}</>} */}
         </button>
       )}
     </div>

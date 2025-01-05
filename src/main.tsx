@@ -45,6 +45,7 @@ const router = createBrowserRouter(
           <RegistrationPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.course.add.routePath,
@@ -53,6 +54,7 @@ const router = createBrowserRouter(
           <AddCoursePage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.course.edit.routePath,
@@ -61,6 +63,7 @@ const router = createBrowserRouter(
           <EditCoursePage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.course.page.routePath,
@@ -69,6 +72,7 @@ const router = createBrowserRouter(
           <CoursePage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.course.editContent.routePath,
@@ -77,6 +81,7 @@ const router = createBrowserRouter(
           <EditContentPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.lesson.page.routePath,
@@ -85,6 +90,7 @@ const router = createBrowserRouter(
           <LessonPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.explore.routePath,
@@ -93,6 +99,7 @@ const router = createBrowserRouter(
           <ExploreCoursesPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.search.routePath,
@@ -101,6 +108,7 @@ const router = createBrowserRouter(
           <SearchPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.review.routePath,
@@ -109,6 +117,7 @@ const router = createBrowserRouter(
           <ReviewPageLoader />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.app.reviewAI.routePath,
@@ -117,7 +126,7 @@ const router = createBrowserRouter(
           <AIReviewPageLoader />
         </PageGuard>
       ),
-      errorElement: <div>Some error occurred</div>,
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: '/review-algo',
@@ -126,6 +135,7 @@ const router = createBrowserRouter(
           <AlgorithmReviewPageLoader />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: '/testing-things',
@@ -134,6 +144,7 @@ const router = createBrowserRouter(
           <TestingThingsPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.admin.scripts.routePath,
@@ -142,6 +153,7 @@ const router = createBrowserRouter(
           <ScriptsPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: '/new-words',
@@ -150,6 +162,7 @@ const router = createBrowserRouter(
           <NewWordsPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
     {
       path: paths.user.preferences.routePath,
@@ -158,6 +171,7 @@ const router = createBrowserRouter(
           <UserPreferencesPage />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
     },
   ],
   {
