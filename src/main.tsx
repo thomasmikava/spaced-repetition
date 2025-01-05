@@ -117,6 +117,7 @@ const router = createBrowserRouter(
           <AIReviewPageLoader />
         </PageGuard>
       ),
+      errorElement: <div>Some error occurred</div>,
     },
     {
       path: '/review-algo',

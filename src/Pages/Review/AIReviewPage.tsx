@@ -267,7 +267,7 @@ const getVariantData = ({
 const getTags = (record: StandardTestableCard, helper: Helper) => {
   const tags: { name: string; value: string }[] = [];
 
-  let attributes = record.card.attributes;
+  let attributes = record.variant.attrs;
 
   if (record.variant.category === 1) {
     const configuration = helper.getCardType(record.card.mainType ?? record.card.type, record.card.lang)?.configuration;
@@ -367,6 +367,13 @@ export const getCardViewContent = (
         autoCheck: preferences.autoSubmitCorrectAnswers,
         fullWidth: true,
         shouldNotReplaceWithCorrectAnswer: true,
+      },
+      {
+        type: 'afterAnswer',
+        content: [
+          { type: 'hr' },
+          { type: 'paragraph', content: record.specificTranslation?.text || '', style: { fontSize: '1.2em' } },
+        ],
       },
     ];
   }
