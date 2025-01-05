@@ -7,9 +7,13 @@ const DynamicQuestionsQueryKeys = {
     !query ? ['dynamicQuestions:generate'] : ['dynamicQuestions:generate', query],
 };
 
-export const useDynamicQuestion = (query: GetDynamicQuestionReqDTO | null) => {
+export const useDynamicQuestion = (query: (GetDynamicQuestionReqDTO & { regIndex?: number }) | null) => {
   return useQuery({
-    queryFn: () => dynamicQuestionController.generateDynamicQuestion(query!),
+    queryFn: () =>
+      dynamicQuestionController.generateDynamicQuestion({
+        ...query!,
+        regenerate: !!query!.regIndex,
+      }),
     queryKey: DynamicQuestionsQueryKeys.generateQuestion(query),
     enabled: !!query,
   });

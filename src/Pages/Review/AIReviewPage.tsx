@@ -4,6 +4,7 @@ import { ReviewBlock } from '../../api/controllers/history/history.schema';
 import { useUserPreferences } from '../../api/controllers/users/users.query';
 import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
 import cssModule from '../../App.module.css';
+import AntButton from 'antd/es/button';
 import Content from '../../Content';
 import type { TestContextRef } from '../../contexts/testContext';
 import { TestContextProvider } from '../../contexts/testContext';
@@ -39,7 +40,7 @@ interface ReviewPageProps {
   userPreferences: UserPreferencesDTO | null;
 }
 
-type VariantData = GetDynamicQuestionReqDTO;
+type VariantData = GetDynamicQuestionReqDTO & { regIndex?: number };
 
 const AIReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, userPreferences }) => {
   const [reviewer] = useState(() => new Reviewer(words, helper, ReviewBlock.AI, userPreferences, isInsideLesson, mode));
@@ -50,6 +51,17 @@ const AIReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words
   const [wasWrong, setWasWrong] = useState(false);
   const controlRef = useRef<ControlRef>(null);
   const { data: dynamicQuestionData, isPending, error: dynamicQuestionError } = useDynamicQuestion(variantData);
+
+  const handleRegeneration = () => {
+    setVariantData((current) =>
+      !current
+        ? null
+        : current.regIndex === undefined
+          ? { ...current, regIndex: 1 }
+          : { ...current, regIndex: current.regIndex + 1 },
+    );
+    setIsInAnswerReviewMode(false);
+  };
 
   useEffect(() => {
     if (!helper || !currentCard || !userPreferences) return;
@@ -145,7 +157,12 @@ const AIReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words
   return (
     <div className='body' style={{ paddingTop: 10, paddingBottom: 10 }}>
       <TranslationLangsProvider translationLangs={availableLangs}>
-        <TestContextProvider key={questionNumber} mode={testMode} onResult={handleResult} ref={testContextRef}>
+        <TestContextProvider
+          key={`${questionNumber}_${variantData.regIndex ?? 0}`}
+          mode={testMode}
+          onResult={handleResult}
+          ref={testContextRef}
+        >
           <WithNextButton
             onClick={onSubmit}
             rest={
@@ -160,6 +177,7 @@ const AIReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words
                 shouldShowControls={shouldShowSwitcher}
                 shouldShowHint={shouldShowHint}
                 onHintClick={handleHintClick}
+                additionalButton={<AntButton onClick={handleRegeneration}>Regenerate sentence</AntButton>}
               />
               <ViewCard>
                 <form onSubmit={withNoEventAction(onSubmit)}>
@@ -314,6 +332,13 @@ export const getCardViewContent = (
         autoCheck: preferences.autoSubmitCorrectAnswers,
         fullWidth: true,
         shouldNotReplaceWithCorrectAnswer: true,
+      },
+      {
+        type: 'afterAnswer',
+        content: [
+          { type: 'hr' },
+          { type: 'paragraph', content: record.specificTranslation?.text || '', style: { fontSize: '1.2em' } },
+        ],
       },
     ];
   } else {

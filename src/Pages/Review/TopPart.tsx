@@ -16,10 +16,11 @@ interface TopPartProps {
   shouldShowControls: boolean;
   shouldShowHint: boolean;
   onHintClick?: () => void;
+  additionalButton?: React.ReactNode;
 }
 
 export const TopPart: FC<TopPartProps> = memo(
-  ({ shouldShowLangSwitcher, shouldShowControls, shouldShowHint, onHintClick }) => {
+  ({ shouldShowLangSwitcher, shouldShowControls, shouldShowHint, additionalButton, onHintClick }) => {
     const langSwitcher = shouldShowLangSwitcher && (
       <div className={styles.transLangsContainer}>
         <TranslationLangSelectorConnected />
@@ -61,12 +62,13 @@ export const TopPart: FC<TopPartProps> = memo(
       </Dropdown>
     );
 
-    if (!settings && !langSwitcher && !hint) return null;
+    if (!settings && !langSwitcher && !hint && !additionalButton) return null;
 
     return (
       <div className={styles.topContainer}>
         {settings}
         {hint}
+        {additionalButton}
         {langSwitcher}
       </div>
     );

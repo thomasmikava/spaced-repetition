@@ -9,6 +9,7 @@ export interface GetDynamicQuestionReqDTO {
   wordId: number;
   testKey: string;
   trial: number;
+  regenerate?: boolean;
 }
 
 export interface GetDynamicQuestionResDTO {
