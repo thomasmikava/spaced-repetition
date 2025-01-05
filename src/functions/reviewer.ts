@@ -10,6 +10,8 @@ import type { CardModifiersAccumulator } from './modifier-states';
 import { calculateModifiers, convertToCardModifiers, getVariantTestId, shouldSkipTesting } from './modifier-states';
 import { calculatePreferences } from './preferences';
 import { PreviousReviews } from './previous-reviews';
+import type { ReviewBlockManager } from './review-block';
+import { getReviewBlockManager } from './review-block';
 import type { StandardTestableCard, AnyReviewHistory } from './reviews';
 import {
   CardViewMode,
@@ -55,10 +57,12 @@ const HISTORY_ID_TO_OBSERVE = -2876;
 export class Reviewer {
   private allTestableCards: StandardTestableCard[];
   prevReviews: PreviousReviews;
+  private reviewBlockManager: ReviewBlockManager;
   // eslint-disable-next-line sonarjs/cognitive-complexity
   constructor(
     cards: StandardCard[],
     helper: Helper,
+    private reviewBlock: number,
     private userPreferences: UserPreferencesDTO | null,
     private isInsideLesson: boolean,
     private mode: 'endless' | 'normal' | 'only-new' = 'normal',
@@ -70,12 +74,19 @@ export class Reviewer {
       cards.map((e) => e.id),
       this.prevReviews.getHistoryRecords(),
     );
+    this.reviewBlockManager = getReviewBlockManager(reviewBlock);
     for (const card of cards) {
       const preference = calculatePreferences(this.userPreferences, card.lang);
-      const testableCards = generateTestableCards(card, helper, preference, cardModifiers[card.id]);
+      const testableCards = generateTestableCards(
+        card,
+        helper,
+        preference,
+        cardModifiers[card.id],
+        this.reviewBlockManager,
+      );
       if (mode === 'only-new') {
         const hasAlreadySeen = testableCards.some((record) =>
-          this.prevReviews.getCardHistory(record, CardViewMode.individualView),
+          this.prevReviews.getCardHistory(record, CardViewMode.individualView, reviewBlock),
         );
         if (hasAlreadySeen) continue; // skip the card if it has been reviewed before
       }
@@ -147,9 +158,13 @@ export class Reviewer {
     };
     const probabilities = this.allTestableCards
       .map((record) => {
-        const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test);
-        const individualViewRecord = this.prevReviews.getCardHistory(record, CardViewMode.individualView);
-        const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView);
+        const historyRecord = this.prevReviews.getCardHistory(record, CardViewMode.test, this.reviewBlock);
+        const individualViewRecord = this.prevReviews.getCardHistory(
+          record,
+          CardViewMode.individualView,
+          this.reviewBlock,
+        );
+        const groupVewRecord = this.prevReviews.getCardHistory(record, CardViewMode.groupView, this.reviewBlock);
 
         const prevGroupGlobalKey = record.previousGroupViewKey
           ? record.card.id + '__' + record.previousGroupViewKey
@@ -214,7 +229,7 @@ export class Reviewer {
           const lastGroupViewDate =
             record.groupViewKey && record.hasGroupViewMode ? groupsMetaData[groupGlobalKey]?.lastViewDate : undefined;
           const connectedVariantsMaxLastViewDate = record.connectedTestKeys
-            ? this.prevReviews.getMaxViewDate(record)
+            ? this.prevReviews.getMaxViewDate(record, this.reviewBlock)
             : undefined;
           const maxViewDate = getMaxDate(connectedVariantsMaxLastViewDate, historyRecord?.lastDate);
           const lastNormalizedViewDate = getMaxDate(lastGroupViewDate, maxViewDate);
@@ -432,6 +447,7 @@ export class Reviewer {
 
   private prevViewedCard: { card: CardWithProbability; willBeHidden: boolean } | undefined = undefined;
   markViewed = (
+    block: number,
     card: CardWithProbability,
     mode: CardViewMode,
     success: boolean,
@@ -445,8 +461,16 @@ export class Reviewer {
 
     const hasRepetition = !willBeHidden && this.hasAnotherRepetition(card.record, mode, success);
 
-    const { newValue } = this.prevReviews.saveCardResult(card.record, mode, success, hasRepetition, currentDate, newS);
-    const modifiersResult = this.prevReviews.saveModifierStates(card.record, modifierStates);
+    const { newValue } = this.prevReviews.saveCardResult(
+      block,
+      card.record,
+      mode,
+      success,
+      hasRepetition,
+      currentDate,
+      newS,
+    );
+    const modifiersResult = this.prevReviews.saveModifierStates(block, card.record, modifierStates);
     if (!this.avoidStorage) {
       addUpdatedItemsInStorage([
         getDbRecord(newValue),
@@ -454,11 +478,11 @@ export class Reviewer {
       ]);
     }
     if (modifierStates.length > 0) {
-      this.removeNewHiddenCards(card.record.card.id, convertToCardModifiers(modifierStates));
+      this.removeNewHiddenCards(card.record.card.id, convertToCardModifiers(modifierStates), block);
     }
   };
 
-  removeNewHiddenCards = (wordId: number, modifiers: CardModifiersAccumulator) => {
+  removeNewHiddenCards = (wordId: number, modifiers: CardModifiersAccumulator, block: number) => {
     const [validCards, deprecatedCards] = splitArray(this.allTestableCards, (record) => {
       if (record.card.id !== wordId) return true;
       if (shouldSkipTesting(modifiers.fullCard)) return false;
@@ -470,7 +494,7 @@ export class Reviewer {
     });
 
     const updatedHistoryRecords = deprecatedCards
-      .map((record) => this.prevReviews.getCardHistory(record, CardViewMode.test))
+      .map((record) => this.prevReviews.getCardHistory(record, CardViewMode.test, block))
       .filter(isNonNullable);
 
     const flaws = updatedHistoryRecords.filter((e) => !!e.id).map((e) => ({ hId: e.id as number, dueDate: null }));

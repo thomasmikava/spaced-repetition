@@ -44,4 +44,5 @@ export interface UserToken {
   sub: string;
   userId: number;
   adminLangs: string[] | null;
+  premiumUntil: number | null;
 }

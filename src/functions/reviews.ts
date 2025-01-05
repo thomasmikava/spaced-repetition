@@ -32,14 +32,15 @@ export const LAST_CARDS_COUNT_TO_CONSIDER = 3;
 export const LAST_PERIOD_TO_CONSIDER = 12; // seconds
 export const LAST_PERIOD_TO_CONSIDER_SMALL = 3; // seconds
 
-export const getRecordUniqueKey = (record: Pick<ReviewWithOptionalDTO, 'wordId' | 'sKey'>): string => {
-  return `${record.wordId}$${record.sKey}`;
+export const getRecordUniqueKey = (record: Pick<ReviewWithOptionalDTO, 'wordId' | 'sKey' | 'block'>): string => {
+  return `${record.wordId}_${record.block}$${record.sKey}`;
 };
 
 export interface AnyReviewHistory {
   id?: number;
   uniqueKey: string;
   wordId: number;
+  block: number;
   sKey: string;
   /** how many tries were correct */
   corr: number;
@@ -96,4 +97,5 @@ export interface StandardTestableCard extends GeneralTestableCard {
   caseSensitive: boolean;
   initial: boolean;
   groupMeta: StandardTestableCardGroupMeta;
+  specificTranslation?: { lang: string; text: string };
 }

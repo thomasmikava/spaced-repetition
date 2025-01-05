@@ -25,6 +25,8 @@ interface Props {
   mode: CardViewMode;
   reviewer: Reviewer;
   helper: Helper;
+  reviewBlock: number;
+  isStateModifierHidden?: boolean;
 }
 
 export interface ControlRef {
@@ -32,45 +34,47 @@ export interface ControlRef {
   getStates: () => ModifierState[];
 }
 
-const CardControlsInner = forwardRef<ControlRef, Props>(({ reviewer, card, mode, isCorrect, helper }, ref) => {
-  const timeOptionsRef = useRef<TimeOptionsRef>(null);
-  const stateModifierRef = useRef<StateModifierRef>(null);
-  const hasAnotherRepetition = reviewer.hasAnotherRepetition(card.record, mode, isCorrect);
+const CardControlsInner = forwardRef<ControlRef, Props>(
+  ({ reviewer, card, mode, isCorrect, helper, reviewBlock, isStateModifierHidden }, ref) => {
+    const timeOptionsRef = useRef<TimeOptionsRef>(null);
+    const stateModifierRef = useRef<StateModifierRef>(null);
+    const hasAnotherRepetition = reviewer.hasAnotherRepetition(card.record, mode, isCorrect);
 
-  const currentS = reviewer.prevReviews.getCurrentS(card.record, mode);
-  const newS = reviewer.prevReviews.getNewS(card.record, mode, isCorrect);
+    const currentS = reviewer.prevReviews.getCurrentS(card.record, mode, reviewBlock);
+    const newS = reviewer.prevReviews.getNewS(card.record, mode, isCorrect, reviewBlock);
 
-  const options =
-    newS === null
-      ? null
-      : isCorrect
-        ? getDateOptions(isCorrect, currentS, newS, 1, 2)
-        : getDateOptions(isCorrect, currentS, newS, 2, 1);
+    const options =
+      newS === null
+        ? null
+        : isCorrect
+          ? getDateOptions(isCorrect, currentS, newS, 1, 2)
+          : getDateOptions(isCorrect, currentS, newS, 2, 1);
 
-  const showSModifier = !!hasAnotherRepetition && newS !== null && !!options;
-  const showStateModifier = true;
+    const showSModifier = !!hasAnotherRepetition && newS !== null && !!options;
+    const showStateModifier = !isStateModifierHidden;
 
-  useImperativeHandle(ref, () => ({
-    getNewS: () => timeOptionsRef.current?.s ?? undefined,
-    getStates: () => stateModifierRef.current?.actions ?? [],
-  }));
+    useImperativeHandle(ref, () => ({
+      getNewS: () => timeOptionsRef.current?.s ?? undefined,
+      getStates: () => stateModifierRef.current?.actions ?? [],
+    }));
 
-  // if (!hasAnotherRepetition) return null
-  return (
-    <div className={styles.controlsContainer}>
-      {showSModifier && <TimeOptions ref={timeOptionsRef} options={options} />}
-      {showStateModifier && (
-        <StateModifier
-          ref={stateModifierRef}
-          testableCard={card.record}
-          lang={card.record.card.lang}
-          helper={helper}
-          mode={mode}
-        />
-      )}
-    </div>
-  );
-});
+    // if (!hasAnotherRepetition) return null
+    return (
+      <div className={styles.controlsContainer}>
+        {showSModifier && <TimeOptions ref={timeOptionsRef} options={options} />}
+        {showStateModifier && (
+          <StateModifier
+            ref={stateModifierRef}
+            testableCard={card.record}
+            lang={card.record.card.lang}
+            helper={helper}
+            mode={mode}
+          />
+        )}
+      </div>
+    );
+  },
+);
 
 interface TimeOptionsRef {
   s: number | undefined;

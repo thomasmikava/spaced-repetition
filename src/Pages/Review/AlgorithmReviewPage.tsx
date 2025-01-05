@@ -21,6 +21,7 @@ import { iterateAndModify } from '../../utils/object';
 import { useUserPreferences } from '../../api/controllers/users/users.query';
 import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
 import { calculatePreferences } from '../../functions/preferences';
+import { ReviewBlock } from '../../api/controllers/history/history.schema';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless' | 'only-new';
@@ -70,7 +71,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
   useLogs({ mode, getQuestion, correctness, maxCards });
 
   const entries = useMemo(() => {
-    const reviewer = new Reviewer(words, helper, userPreferences, isInsideLesson, mode, true);
+    const reviewer = new Reviewer(words, helper, ReviewBlock.standard, userPreferences, isInsideLesson, mode, true);
     const cards: CardWithProbability[] = [];
     const questions: NonNullable<ReturnType<typeof getQuestion>>[] = [];
     let lastDate = 0;
@@ -95,7 +96,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
         lastDate += currentCard.record.card.type === CardTypeMapper[CardType.VERB] ? 10000 : 5000;
       }
       questions.push(question);
-      reviewer.markViewed(currentCard, question.type, correctness[index] !== false, lastDate);
+      reviewer.markViewed(ReviewBlock.standard, currentCard, question.type, correctness[index] !== false, lastDate);
       index++;
     } while (cards.length < maxCards);
     return { cards, questions };

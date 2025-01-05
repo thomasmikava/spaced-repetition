@@ -1,35 +1,27 @@
-import type { FC, ReactNode } from 'react';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import type { FC } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ReviewBlock } from '../../api/controllers/history/history.schema';
+import { useUserPreferences } from '../../api/controllers/users/users.query';
+import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
+import cssModule from '../../App.module.css';
 import Content from '../../Content';
 import type { TestContextRef } from '../../contexts/testContext';
 import { TestContextProvider } from '../../contexts/testContext';
+import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 import type { StandardCard } from '../../database/types';
-import type { Helper } from '../../functions/generate-card-content';
 import { getCardViewContent } from '../../functions/generate-card-content';
+import { calculatePreferences } from '../../functions/preferences';
 import { Reviewer } from '../../functions/reviewer';
 import { CardViewMode } from '../../functions/reviews';
 import { withNoEventAction } from '../../utils/event';
-import cssModule from '../../App.module.css';
 import { useHelper } from '../hooks/text-helpers';
-import { useWords } from './useWords';
 import LoadingPage from '../Loading/LoadingPage';
-import { BookOutlined, FormOutlined, SettingFilled } from '@ant-design/icons/lib/icons';
-import { DictionaryLoadedModal } from '../../components/DictionaryModal';
-import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
-import { TranslationLangSelectorConnected } from '../../components/Lang/TranslationLangSelector';
-import styles from './styles.module.css';
-import { useUserPreferences } from '../../api/controllers/users/users.query';
-import type { UserPreferencesDTO } from '../../api/controllers/users/users.schema';
-import { calculatePreferences } from '../../functions/preferences';
-import Dropdown from 'antd/es/dropdown';
-import AntButton from 'antd/es/button';
-import type { ItemType } from 'antd/es/menu/interface';
-import { Checkbox } from '../../ui/Checkbox/Checkbox';
-import { isNonNullable } from '../../utils/array';
-import { useSnapshot } from 'valtio';
-import { settingsState } from '../../states/settings';
 import type { ControlRef } from './Controls';
 import { CardControls } from './Controls';
+import { DictionaryIcon } from './DictionaryIcon';
+import { TopPart } from './TopPart';
+import { useWords } from './useWords';
+import { WithNextButton } from './WithNextButton';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless' | 'only-new';
@@ -40,7 +32,9 @@ interface ReviewPageProps {
 }
 
 const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, userPreferences }) => {
-  const [reviewer] = useState(() => new Reviewer(words, helper, userPreferences, isInsideLesson, mode));
+  const [reviewer] = useState(
+    () => new Reviewer(words, helper, ReviewBlock.standard, userPreferences, isInsideLesson, mode),
+  );
   const [questionNumber, setQuestionNumber] = useState(0);
 
   const [currentCard, setCurrentCard] = useState(() => reviewer.getNextCard());
@@ -77,7 +71,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
     if (!currentCard || !question) return;
     const newS = controlRef.current?.getNewS();
     const modifierStates = controlRef.current?.getStates();
-    reviewer.markViewed(currentCard, question.type, !wasWrong, undefined, newS, modifierStates);
+    reviewer.markViewed(ReviewBlock.standard, currentCard, question.type, !wasWrong, undefined, newS, modifierStates);
     const nextCard = reviewer.getNextCard();
     setCurrentCard(nextCard);
     setIsInAnswerReviewMode(false);
@@ -163,6 +157,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
                 mode={question.type}
                 reviewer={reviewer}
                 helper={helper}
+                reviewBlock={ReviewBlock.standard}
               />
             </div>
           </WithNextButton>
@@ -171,69 +166,6 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
     </div>
   );
 };
-
-interface TopPartProps {
-  shouldShowLangSwitcher: boolean;
-  shouldShowControls: boolean;
-  shouldShowHint: boolean;
-  onHintClick?: () => void;
-}
-
-const TopPart: FC<TopPartProps> = memo(
-  ({ shouldShowLangSwitcher, shouldShowControls, shouldShowHint, onHintClick }) => {
-    const langSwitcher = shouldShowLangSwitcher && (
-      <div className={styles.transLangsContainer}>
-        <TranslationLangSelectorConnected />
-      </div>
-    );
-    const settingsSnap = useSnapshot(settingsState);
-
-    const onToggle = () => {
-      settingsState.showControls = !settingsState.showControls;
-    };
-
-    const settingsItems: ItemType[] | null = [
-      shouldShowControls
-        ? {
-            label: <Checkbox label='Show controls' checked={settingsSnap.showControls} onClick={onToggle} />,
-            key: 'control',
-          }
-        : null,
-    ].filter(isNonNullable);
-
-    const hint = shouldShowHint && (
-      <div className={styles.hintContainer}>
-        <AntButton onClick={onHintClick}>
-          <FormOutlined />
-        </AntButton>
-      </div>
-    );
-
-    const settings = settingsItems.length > 0 && (
-      <Dropdown
-        menu={{
-          items: settingsItems,
-        }}
-        placement='bottomLeft'
-      >
-        <AntButton>
-          <SettingFilled />
-        </AntButton>
-      </Dropdown>
-    );
-
-    if (!settings && !langSwitcher && !hint) return null;
-
-    return (
-      <div className={styles.topContainer}>
-        {settings}
-        {hint}
-        {langSwitcher}
-      </div>
-    );
-  },
-);
-TopPart.displayName = 'TopPart';
 
 export const ReviewPageLoader = () => {
   const searchParams = new URL(window.location.href).searchParams;
@@ -264,44 +196,6 @@ export const ReviewPageLoader = () => {
       isInsideLesson={!!courseId && !!lessonId}
       userPreferences={userPreferences.result}
     />
-  );
-};
-
-const WithNextButton = ({
-  children,
-  onClick,
-  rest,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  rest?: ReactNode;
-}) => {
-  return (
-    <div className={cssModule.withNextButton}>
-      {children}
-      <div className={cssModule.nextButtonContainer}>
-        <button onClick={onClick} className={cssModule.nextButton}>
-          <span>›</span>
-        </button>
-        {rest}
-      </div>
-    </div>
-  );
-};
-
-const DictionaryIcon = ({ card, helper }: { card: StandardCard; helper: Helper }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const handleOpen = () => setIsOpen(true);
-  const handleClose = () => setIsOpen(false);
-  return (
-    <>
-      <button onClick={handleOpen} className={cssModule.bigDictionaryButton}>
-        <span>
-          <BookOutlined />
-        </span>
-      </button>
-      {isOpen && <DictionaryLoadedModal word={null} card={card} helper={helper} onClose={handleClose} />}
-    </>
   );
 };
 

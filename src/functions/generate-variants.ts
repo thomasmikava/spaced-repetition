@@ -8,13 +8,14 @@ import {
   type SortBy,
   type VariantGroup,
 } from '../database/card-types';
-import type { StandardCard, StandardCardVariant, IdType, StandardCardAttributes } from '../database/types';
+import type { IdType, StandardCard, StandardCardAttributes, StandardCardVariant } from '../database/types';
 import { isNonNullable } from '../utils/array';
 import { isMatch } from '../utils/matcher';
 import { SPECIAL_VIEW_IDS } from './consts';
 import type { Helper } from './generate-card-content';
 import { getVariantTestId, shouldSkipTesting, type CardModifiersAccumulator } from './modifier-states';
 import type { Preferences } from './preferences';
+import type { ReviewBlockManager } from './review-block';
 import type { StandardTestableCard, StandardTestableCardGroupMeta } from './reviews';
 import { getIsStandardFormFn } from './standard-forms';
 
@@ -23,6 +24,7 @@ export function generateTestableCards(
   helper: Helper,
   preferences: Preferences,
   cardModifiers: CardModifiersAccumulator | undefined,
+  blockManager: ReviewBlockManager,
 ): StandardTestableCard[] {
   if (shouldSkipTesting(cardModifiers?.fullCard)) return [];
   const config = helper.getCardType(card.type, card.lang)?.configuration ?? {};
@@ -43,6 +45,11 @@ export function generateTestableCards(
 
   const newCard = { ...card, allStandardizedVariants };
 
+  const couldBeAddedByUser =
+    card.variants.length === 1 &&
+    !isNonNullable(card.variants[0].category) &&
+    (!isNonNullable(card.variants[0].attrs) || Object.keys(card.variants[0].attrs).length === 0);
+
   const testable: StandardTestableCard[] = [];
   let lastGroupLevel = -1;
   let lastGroupKey: string | undefined | null = undefined;
@@ -62,8 +69,9 @@ export function generateTestableCards(
 
     const isGroupStandard = nonStandardCount === 0 || nonStandardCount <= maxAllowedNonStandardForms;
 
-    const hasGroupViewMode = variants.length > 1 || !!group.gr?.forcefullyGroup;
-    const hasIndividualViewMode = !hasGroupViewMode;
+    const hasGroupViewMode =
+      (variants.length > 1 || !!group.gr?.forcefullyGroup) && !blockManager.isGroupViewDisabled();
+    const hasIndividualViewMode = !hasGroupViewMode && !blockManager.isIndividualViewDisabled();
     const shouldSkipIfNotInitial = !groupPreferences.askNonStandardVariants || groupPreferences.hideGroup;
     // TODO: go through all tags and set default tags as well
     const groupMeta: StandardTestableCardGroupMeta = {
@@ -78,18 +86,18 @@ export function generateTestableCards(
     group.variants.forEach((_v, i) => {
       const isStandardForm = standardness[i];
       const variant = variants[i];
-      testable.push({
+      const standardTestableCard: StandardTestableCard = {
         card: newCard,
         type: newCard.type,
         displayType,
         variant,
         caseSensitive: helper.getCardType(displayType, newCard.lang)?.configuration?.caseSensitive ?? false,
-        initial: variant.category === 1,
+        initial: variant.category === 1 || couldBeAddedByUser,
         groupViewKey: hasGroupViewMode ? 'gr-' + (group.matcherId || '').toLocaleLowerCase() : null,
         hasGroupViewMode,
         hasIndividualViewMode,
         skipTest: shouldSkipTest(newCard, group.gr) || (shouldSkipIfNotInitial && variant.category !== 1),
-        testKey: 'ind-' + variant.id,
+        testKey: blockManager.getTestKey({ isInverted: false, variant }),
         groupMeta,
         groupLevel: lastGroupLevel + 1,
         previousGroupViewKey: lastGroupKey,
@@ -98,27 +106,33 @@ export function generateTestableCards(
         forcefullySkipIfStandard: isStandardForm
           ? isOneOfTheMatchers(variant, group.gr?.skipStandardVariantsMatchers)
           : undefined,
+      };
+      const regeneratedTestableCards = blockManager.regenerateTestableCards({
+        testableCard: standardTestableCard,
+        translations: card.translations,
       });
+      let allRegeneratedTestableCards = regeneratedTestableCards;
+      const canBeInverted = preferences.testTypingTranslation && regeneratedTestableCards.some((e) => e.initial);
+      if (canBeInverted) {
+        allRegeneratedTestableCards = allRegeneratedTestableCards.concat(
+          regeneratedTestableCards
+            .map((variant) => getInvertedTestableCard(newCard, variant, blockManager))
+            .filter(isNonNullable),
+        );
+      }
+      testable.push(...allRegeneratedTestableCards);
     });
     lastGroupLevel++;
     lastGroupKey = hasGroupViewMode ? ('gr-' + (group.matcherId || '')).toLocaleLowerCase() : null;
   });
-
-  if (preferences.testTypingTranslation) {
-    const invertedTranslation = getInvertedTestableCard(newCard, displayType, testable);
-    if (invertedTranslation) {
-      testable.splice(invertedTranslation.index + 1, 0, invertedTranslation.testableCard);
-      if (!invertedTranslation.invertedVariant.connectedTestKeys)
-        invertedTranslation.invertedVariant.connectedTestKeys = [];
-      invertedTranslation.invertedVariant.connectedTestKeys.push(invertedTranslation.testableCard.testKey);
-    }
-  }
 
   if (cardModifiers?.variants) {
     return testable.filter(
       (t) => !shouldSkipTesting(cardModifiers?.variants[getVariantTestId(t.variant.id, t.groupMeta.testViewId)]),
     );
   }
+
+  normalizeConnectedTestKeys(testable);
 
   return testable;
 }
@@ -244,52 +258,59 @@ const sortVariants = (sortStrategy: SortBy[], variants: StandardCardVariant[]): 
 
 const getInvertedTestableCard = (
   card: StandardTestableCard['card'],
-  displayType: number,
-  testable: StandardTestableCard[],
-): { testableCard: StandardTestableCard; index: number; invertedVariant: StandardTestableCard } | null => {
-  let invertedVariantIndex = testable.findIndex((v) => v.variant.category === 1);
-  if (
-    invertedVariantIndex === -1 &&
-    testable.length === 1 &&
-    !isNonNullable(testable[0].variant.category) &&
-    (!isNonNullable(testable[0].variant.attrs) || Object.keys(testable[0].variant.attrs).length === 0)
-  ) {
-    // custom word added by user
-    invertedVariantIndex = 0;
+  variant: StandardTestableCard,
+  blockManager: ReviewBlockManager,
+): StandardTestableCard | null => {
+  const invertedVariantTestKey = blockManager.getTestKey({
+    isInverted: true,
+    variant: variant.variant,
+    translation: variant.specificTranslation,
+  });
+  if (!variant.connectedTestKeys) {
+    variant.connectedTestKeys = [variant.testKey];
   }
-  if (invertedVariantIndex === -1) return null;
-  const invertedVariant = testable[invertedVariantIndex];
-  if (!invertedVariant) return null;
+  // mutation is intended, so that in case new connected variants are inverted after this inversion, they remain connected to this one and vice versa
+  variant.connectedTestKeys.push(invertedVariantTestKey);
   return {
-    testableCard: {
-      card,
-      type: card.type,
-      displayType,
-      variant: invertedVariant.variant,
-      caseSensitive: false,
-      initial: false,
-      groupViewKey: null,
-      hasGroupViewMode: false,
-      hasIndividualViewMode: false,
-      skipTest: false,
-      testKey: 'ind-t-' + invertedVariant.variant.id,
-      connectedTestKeys: [invertedVariant.testKey],
-      groupMeta: {
-        matcherId: null,
-        groupViewId: null,
-        indViewId: null,
-        testViewId: SPECIAL_VIEW_IDS.inverseTest,
-        variants: [invertedVariant.variant],
-        gr: null,
-        groupMetaArgs: undefined,
-      },
-      groupLevel: invertedVariant.groupLevel,
-      previousGroupViewKey: invertedVariant.previousGroupViewKey,
-      isStandardForm: false,
-      isGroupStandardForm: false,
-      forcefullySkipIfStandard: false,
+    card,
+    type: card.type,
+    displayType: variant.displayType,
+    variant: variant.variant,
+    caseSensitive: false,
+    initial: false,
+    groupViewKey: null,
+    hasGroupViewMode: false,
+    hasIndividualViewMode: false,
+    skipTest: false,
+    testKey: invertedVariantTestKey,
+    connectedTestKeys: variant.connectedTestKeys,
+    groupMeta: {
+      matcherId: null,
+      groupViewId: null,
+      indViewId: null,
+      testViewId: SPECIAL_VIEW_IDS.inverseTest,
+      variants: [variant.variant],
+      gr: null,
+      groupMetaArgs: undefined,
     },
-    index: invertedVariantIndex,
-    invertedVariant,
+    groupLevel: variant.groupLevel,
+    previousGroupViewKey: variant.previousGroupViewKey,
+    isStandardForm: false,
+    isGroupStandardForm: false,
+    forcefullySkipIfStandard: false,
+    specificTranslation: variant.specificTranslation,
   };
+};
+
+const normalizeConnectedTestKeys = (testable: StandardTestableCard[]) => {
+  for (const testableCard of testable) {
+    if (testableCard.connectedTestKeys) {
+      const array = testableCard.connectedTestKeys.filter((key) => key !== testableCard.testKey);
+      if (array.length === 0) {
+        delete testableCard.connectedTestKeys;
+      } else {
+        testableCard.connectedTestKeys = array;
+      }
+    }
+  }
 };

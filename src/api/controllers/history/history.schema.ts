@@ -1,5 +1,6 @@
 interface BaseRecordDTO {
   wordId: number;
+  block: number;
   sKey: string;
   /** how many tries were correct */
   corr: number;
@@ -11,6 +12,12 @@ interface BaseRecordDTO {
   lastS: number | null;
   dueDate: number | null;
 }
+
+export enum ReviewBlock {
+  standard = 0,
+  AI = 1,
+}
+
 export interface ReviewRecordDTO extends BaseRecordDTO {
   id: number;
   userId: number;

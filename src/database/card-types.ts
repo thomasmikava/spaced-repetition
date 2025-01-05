@@ -437,6 +437,8 @@ export interface CardTypeConfiguration {
   }[];
   /** It determines how many non-standard form group might have to still be regarded as standard group; default = 0 */
   maxAllowedNonStandardForms?: number;
+  initialCardTags?: string[];
+  initialCardAttrs?: StandardCardAttributes;
 }
 
 const caseSortBy: SortBy = {
@@ -645,6 +647,7 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
     ],
     // maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,
+    initialCardTags: ['Infinitiv'],
   },
   [CardTypeMapper.NOUN]: {
     caseSensitive: true,
@@ -793,6 +796,9 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     maxAllowedNonStandardForms: 4,
+    initialCardAttrs: {
+      [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[Case.Nominativ],
+    },
   },
   [CardTypeMapper.ADJECTIVE_ADVERB]: {
     caseSensitive: true,
@@ -906,6 +912,12 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
       },
     ],
     maxAllowedNonStandardForms: 4,
+    initialCardAttrs: {
+      [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Positiv],
+      [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[NounGender.Maskulinum],
+      [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[Case.Nominativ],
+      [AttributeMapper.INFLECTION.id]: AttributeMapper.INFLECTION.records[AdjectiveInflection.Weak],
+    },
   },
   [CardTypeMapper.ARTICLE]: {
     tags: [
@@ -1138,6 +1150,7 @@ const EnglishCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> 
         ],
       },
     ],
+    initialCardTags: ['Infinitive'],
   },
 };
 
@@ -1408,6 +1421,7 @@ const FrenchCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
     ],
     // maxNumOfGroups: 3,
     maxAllowedNonStandardForms: 1,
+    initialCardTags: ['Infinitive'],
   },
 
   [CardTypeMapper.NOUN]: {

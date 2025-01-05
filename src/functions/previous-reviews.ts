@@ -78,7 +78,7 @@ export class PreviousReviews {
     if (dueDates.length === 0) return null;
     return Math.min(...dueDates);
   };
-  getDueCardsCount = (wordId: number, accordingToDate = new Date()) => {
+  getDueCardsCount = (block: number, wordId: number, accordingToDate = new Date()) => {
     const wordsIndex = this.getWordsIndexObject(this.history);
     const wordHistory = wordsIndex[wordId];
     if (!wordHistory) return 0;
@@ -86,7 +86,7 @@ export class PreviousReviews {
     /* wordHistory
       .filter((e) => e.dueDate && e.dueDate < dueDateSec)
       .forEach((e) => console.log('historyId', e.id, 'w', e.wordId)); */
-    return wordHistory.filter((e) => e.dueDate && e.dueDate < dueDateSec).length;
+    return wordHistory.filter((e) => e.block === block && e.dueDate && e.dueDate < dueDateSec).length;
   };
 
   markAsSavedInDb = (keys: string[]) => {
@@ -139,16 +139,16 @@ export class PreviousReviews {
     return Object.values(this.history).filter(isNonNullable);
   };
 
-  getCardHistory(card: StandardTestableCard, mode: CardViewMode): AnyReviewHistory | undefined {
-    const key = this.getFinalKey(card, mode);
+  getCardHistory(card: StandardTestableCard, mode: CardViewMode, block: number): AnyReviewHistory | undefined {
+    const key = this.getFinalKey(card, mode, block);
     if (!key) return undefined;
     return this.history[key];
   }
 
-  private getFinalKey(card: StandardTestableCard, mode: CardViewMode): string | null {
+  private getFinalKey(card: StandardTestableCard, mode: CardViewMode, block: number): string | null {
     const sKey = this.getSKey(card, mode);
     if (!sKey) return null;
-    return getRecordUniqueKey({ wordId: card.card.id, sKey });
+    return getRecordUniqueKey({ wordId: card.card.id, sKey, block });
   }
 
   private getTestSKey = (testKey: string) => {
@@ -238,30 +238,31 @@ export class PreviousReviews {
     this.history = history;
   };
 
-  convertConnectedKeysToTestKeys = (card: StandardTestableCard) => {
+  convertConnectedKeysToTestKeys = (card: StandardTestableCard, block: number) => {
     if (!card.connectedTestKeys) return undefined;
     return card.connectedTestKeys
       .map((key) => {
-        return getRecordUniqueKey({ wordId: card.card.id, sKey: this.getTestSKey(key) });
+        return getRecordUniqueKey({ wordId: card.card.id, sKey: this.getTestSKey(key), block });
       })
       .filter(isNonNullable);
   };
 
-  getMaxS = (card: StandardTestableCard): number | undefined => {
-    const historyKeys = this.convertConnectedKeysToTestKeys(card);
+  getMaxS = (card: StandardTestableCard, block: number): number | undefined => {
+    const historyKeys = this.convertConnectedKeysToTestKeys(card, block);
     const tests = historyKeys?.map((key) => this.history[key]?.lastS).filter(isNonNullable);
     if (!tests || tests.length === 0) return undefined;
     return tests.reduce((acc, cur) => Math.max(acc, cur), 0);
   };
 
-  getMaxViewDate = (card: StandardTestableCard): number | undefined => {
-    const historyKeys = this.convertConnectedKeysToTestKeys(card);
+  getMaxViewDate = (card: StandardTestableCard, block: number): number | undefined => {
+    const historyKeys = this.convertConnectedKeysToTestKeys(card, block);
     const tests = historyKeys?.map((key) => this.history[key]?.lastDate).filter(isNonNullable);
     if (!tests || tests.length === 0) return undefined;
     return tests.reduce((acc, cur) => Math.max(acc, cur), 0);
   };
 
   saveCardResult = (
+    block: number,
     card: StandardTestableCard,
     mode: CardViewMode,
     success: boolean,
@@ -272,10 +273,10 @@ export class PreviousReviews {
     const dateInSec = Math.floor(date / 1000);
     const sKey = this.getSKey(card, mode);
     if (!sKey) throw new Error('sKey is not defined');
-    const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
+    const key = getRecordUniqueKey({ wordId: card.card.id, sKey, block });
     this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
-    const newS = customNewS ?? this.getNewS(card, mode, success, date);
+    const newS = customNewS ?? this.getNewS(card, mode, success, block, date);
 
     let newValue: AnyReviewHistory;
 
@@ -301,6 +302,7 @@ export class PreviousReviews {
           lc: success,
           lastDate: dateInSec,
           wordId: card.card.id,
+          block,
           lastS: newS,
           dueDate: null,
           savedInDb: false,
@@ -336,6 +338,7 @@ export class PreviousReviews {
           corr: success ? 1 : 0,
           rep: 1,
           wordId: card.card.id,
+          block,
           lastS: newS,
           dueDate,
           savedInDb: false,
@@ -346,7 +349,12 @@ export class PreviousReviews {
     return { newValue, key };
   };
 
-  saveModifierStates = (card: StandardTestableCard, modifierStates: ModifierState[], date = Date.now()) => {
+  saveModifierStates = (
+    block: number,
+    card: StandardTestableCard,
+    modifierStates: ModifierState[],
+    date = Date.now(),
+  ) => {
     if (!modifierStates.length) return [];
     const dateInSec = Math.floor(date / 1000);
     const history = { ...this.history };
@@ -355,7 +363,7 @@ export class PreviousReviews {
 
     for (const modifierState of modifierStates) {
       const sKey = this.getModifierSKey(modifierState);
-      const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
+      const key = getRecordUniqueKey({ wordId: card.card.id, sKey, block });
 
       const newValue: AnyReviewHistory = {
         uniqueKey: key,
@@ -365,6 +373,7 @@ export class PreviousReviews {
         corr: modifierState.value,
         rep: 0,
         wordId: card.card.id,
+        block,
         lastS: null,
         dueDate: null,
         savedInDb: false,
@@ -377,10 +386,10 @@ export class PreviousReviews {
     return result;
   };
 
-  getCurrentS = (card: StandardTestableCard, mode: CardViewMode) => {
+  getCurrentS = (card: StandardTestableCard, mode: CardViewMode, block: number) => {
     const sKey = this.getSKey(card, mode);
     if (!sKey) throw new Error('sKey is not defined');
-    const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
+    const key = getRecordUniqueKey({ wordId: card.card.id, sKey, block });
 
     const currentValue = this.history[key];
     if (currentValue) {
@@ -390,12 +399,12 @@ export class PreviousReviews {
     }
   };
 
-  getNewS = (card: StandardTestableCard, mode: CardViewMode, success: boolean, date = Date.now()) => {
+  getNewS = (card: StandardTestableCard, mode: CardViewMode, success: boolean, block: number, date = Date.now()) => {
     const dateInSec = Math.floor(date / 1000);
 
     const sKey = this.getSKey(card, mode);
     if (!sKey) throw new Error('sKey is not defined');
-    const key = getRecordUniqueKey({ wordId: card.card.id, sKey });
+    const key = getRecordUniqueKey({ wordId: card.card.id, sKey, block });
 
     if (mode === CardViewMode.groupView || mode === CardViewMode.individualView) {
       return null;
@@ -404,7 +413,7 @@ export class PreviousReviews {
     const isGroup = !!card.groupViewKey;
     const currentValue = this.history[key];
 
-    const maxConnectedTestS = this.getMaxS(card);
+    const maxConnectedTestS = this.getMaxS(card, block);
 
     if (currentValue) {
       const updatedCorrectnessRatio = (success ? currentValue.corr + 1 : currentValue.corr) / (currentValue.rep + 1);
