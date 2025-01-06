@@ -331,7 +331,7 @@ export const getCardViewContent = (
         correctValues: [correctAnswer, ...otherCorrectValues],
         autoCheck: preferences.autoSubmitCorrectAnswers,
         fullWidth: true,
-        shouldNotReplaceWithCorrectAnswer: true,
+        shouldNotReplaceWithCorrectAnswer: false,
       },
       {
         type: 'afterAnswer',
@@ -366,7 +366,7 @@ export const getCardViewContent = (
         correctValues: [correctAnswer, ...otherCorrectValues],
         autoCheck: preferences.autoSubmitCorrectAnswers,
         fullWidth: true,
-        shouldNotReplaceWithCorrectAnswer: true,
+        shouldNotReplaceWithCorrectAnswer: false,
       },
       {
         type: 'afterAnswer',
