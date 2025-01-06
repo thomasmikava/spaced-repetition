@@ -377,8 +377,6 @@ export const getCardViewContent = (
       },
     ];
   }
-  //TODO: Implement fill === 'transLang'
-  return [];
 };
 
 function processAsteriskParts(input: string): { sentence: string; parts: string[] } {
