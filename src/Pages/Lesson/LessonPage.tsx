@@ -37,6 +37,7 @@ import { ALL_LANGS, sortByLangs, useTranslationLang } from '../hooks/useTranslat
 import { TranslationLangSelector } from '../../components/Lang/TranslationLangSelector';
 import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 import { useWordsStats } from '../../api/controllers/words/words.hooks';
+import { ReviewBlock } from '../../api/controllers/history/history.schema';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 const LessonPage = () => {
@@ -110,7 +111,7 @@ const LessonPage = () => {
   if (!myLesson || !allCourseLessons) return <div>Lesson not found</div>;
 
   const lessonsInfo = lessonWords.map((word) => {
-    const closestDueDate = prevReviews.getClosestDueDate(word.id);
+    const closestDueDate = prevReviews.getClosestDueDate(ReviewBlock.standard, word.id);
     const closestDueIn =
       closestDueDate === Infinity || closestDueDate === null
         ? closestDueDate

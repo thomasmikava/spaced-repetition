@@ -3,6 +3,7 @@ import { useWordIds } from './words.query';
 import { arrayToObject, groupArray, uniquelize } from '../../../utils/array';
 import { PreviousReviews } from '../../../functions/previous-reviews';
 import type { GetLessonsResDTO, LessonDTO } from '../lessons/lessons.schema';
+import { ReviewBlock } from '../history/history.schema';
 
 export interface WordStatistics {
   totalWords: number;
@@ -20,11 +21,19 @@ export interface TotalWordStatistics {
   courses: Record<number, CourseWordStatistics | undefined>;
 }
 
-export const useWordsStats = ({
-  courseId,
-  lessonId,
-  lessons,
-}: { courseId?: number; lessonId?: number; lessons?: GetLessonsResDTO } = {}): TotalWordStatistics | null => {
+export const useWordsStats = (
+  {
+    courseId,
+    lessonId,
+    lessons,
+    block = ReviewBlock.standard,
+  }: {
+    block?: number;
+    courseId?: number;
+    lessonId?: number;
+    lessons?: GetLessonsResDTO;
+  } = { block: ReviewBlock.standard },
+): TotalWordStatistics | null => {
   const { data: wordsInfo } = useWordIds({ courseId, lessonId });
 
   return useMemo((): TotalWordStatistics | null => {
@@ -44,6 +53,7 @@ export const useWordsStats = ({
       (w) => w.courseId,
       (courseWords, courseId) => {
         const courseStats = countStats(
+          block,
           courseWords.map((w) => w.id),
           prevReviews,
         );
@@ -52,6 +62,7 @@ export const useWordsStats = ({
           (w) => w.lessonId,
           (lessonWords, lessonId) => {
             const lessonStats = countStats(
+              block,
               lessonWords.map((w) => w.id),
               prevReviews,
             );
@@ -67,12 +78,13 @@ export const useWordsStats = ({
 
     return {
       total: countStats(
+        block,
         words.map((w) => w.id),
         prevReviews,
       ),
       courses: courseStatsObject,
     };
-  }, [wordsInfo, lessonId, lessons]);
+  }, [block, wordsInfo, lessonId, lessons]);
 };
 
 const getLessonIdMapper = (
@@ -121,7 +133,12 @@ const getLessonIdMapper = (
   };
 };
 
-const countStats = (wordIds: number[], prevReviews: PreviousReviews, accordingToDate = new Date()): WordStatistics => {
+const countStats = (
+  block: number,
+  wordIds: number[],
+  prevReviews: PreviousReviews,
+  accordingToDate = new Date(),
+): WordStatistics => {
   const uniqueWordIds = uniquelize(wordIds);
   const dueDateSec = Math.floor(accordingToDate.getTime() / 1000);
 
@@ -129,7 +146,7 @@ const countStats = (wordIds: number[], prevReviews: PreviousReviews, accordingTo
   let totalViewedWords = 0;
   let dueReviewWords = 0;
   for (const wordId of uniqueWordIds) {
-    const closestDueDate = prevReviews.getClosestDueDate(wordId);
+    const closestDueDate = prevReviews.getClosestDueDate(block, wordId);
     if (closestDueDate === null) continue;
     totalViewedWords++;
     if (closestDueDate <= dueDateSec && closestDueDate !== Infinity) {

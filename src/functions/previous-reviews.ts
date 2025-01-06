@@ -74,11 +74,13 @@ export class PreviousReviews {
    * null - no record is found
    * Infinity - word is studied and there will be no review
    */
-  getClosestDueDate = (wordId: number) => {
+  getClosestDueDate = (block: number, wordId: number) => {
     const wordsIndex = this.getWordsIndexObject(this.history);
     const wordHistory = wordsIndex[wordId];
     if (!wordHistory) return null;
-    const dueDates = wordHistory.map((e) => e.dueDate ?? Infinity);
+    const dueDates = wordHistory
+      .filter((e) => e.block === block || e.block === ReviewBlock.universal)
+      .map((e) => e.dueDate ?? Infinity);
     if (dueDates.length === 0) return null;
     return Math.min(...dueDates);
   };
@@ -87,9 +89,6 @@ export class PreviousReviews {
     const wordHistory = wordsIndex[wordId];
     if (!wordHistory) return 0;
     const dueDateSec = Math.floor(accordingToDate.getTime() / 1000);
-    /* wordHistory
-      .filter((e) => e.dueDate && e.dueDate < dueDateSec)
-      .forEach((e) => console.log('historyId', e.id, 'w', e.wordId)); */
     return wordHistory.filter(
       (e) => (e.block === block || e.block === ReviewBlock.universal) && e.dueDate && e.dueDate < dueDateSec,
     ).length;
