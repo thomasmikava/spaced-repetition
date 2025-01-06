@@ -230,7 +230,7 @@ export class Reviewer {
           const lastGroupViewDate =
             record.groupViewKey && record.hasGroupViewMode ? groupsMetaData[groupGlobalKey]?.lastViewDate : undefined;
           const connectedVariantsMaxLastViewDate = record.connectedTestKeys
-            ? this.prevReviews.getMaxViewDate(record, this.reviewBlock)
+            ? this.prevReviews.getMaxViewDate(record)
             : undefined;
           const maxViewDate = getMaxDate(connectedVariantsMaxLastViewDate, historyRecord?.lastDate);
           const lastNormalizedViewDate = getMaxDate(lastGroupViewDate, maxViewDate);

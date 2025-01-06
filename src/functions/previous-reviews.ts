@@ -243,24 +243,24 @@ export class PreviousReviews {
     this.history = history;
   };
 
-  convertConnectedKeysToTestKeys = (card: StandardTestableCard, block: number) => {
+  convertConnectedKeysToTestKeys = (card: StandardTestableCard) => {
     if (!card.connectedTestKeys) return undefined;
     return card.connectedTestKeys
-      .map((key) => {
+      .map(({ block, key }) => {
         return getRecordUniqueKey({ wordId: card.card.id, sKey: this.getTestSKey(key), block });
       })
       .filter(isNonNullable);
   };
 
-  getMaxS = (card: StandardTestableCard, block: number): number | undefined => {
-    const historyKeys = this.convertConnectedKeysToTestKeys(card, block);
+  getMaxS = (card: StandardTestableCard): number | undefined => {
+    const historyKeys = this.convertConnectedKeysToTestKeys(card);
     const tests = historyKeys?.map((key) => this.history[key]?.lastS).filter(isNonNullable);
     if (!tests || tests.length === 0) return undefined;
     return tests.reduce((acc, cur) => Math.max(acc, cur), 0);
   };
 
-  getMaxViewDate = (card: StandardTestableCard, block: number): number | undefined => {
-    const historyKeys = this.convertConnectedKeysToTestKeys(card, block);
+  getMaxViewDate = (card: StandardTestableCard): number | undefined => {
+    const historyKeys = this.convertConnectedKeysToTestKeys(card);
     const tests = historyKeys?.map((key) => this.history[key]?.lastDate).filter(isNonNullable);
     if (!tests || tests.length === 0) return undefined;
     return tests.reduce((acc, cur) => Math.max(acc, cur), 0);
@@ -418,7 +418,7 @@ export class PreviousReviews {
     const isGroup = !!card.groupViewKey;
     const currentValue = this.history[key];
 
-    const maxConnectedTestS = this.getMaxS(card, block);
+    const maxConnectedTestS = this.getMaxS(card);
 
     if (currentValue) {
       const updatedCorrectnessRatio = (success ? currentValue.corr + 1 : currentValue.corr) / (currentValue.rep + 1);

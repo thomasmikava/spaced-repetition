@@ -68,7 +68,7 @@ export type CardKeys = {
   groupViewKey: string | null;
   previousGroupViewKey?: string | null;
   groupLevel?: number;
-  connectedTestKeys?: string[];
+  connectedTestKeys?: { block: number; key: string }[];
 };
 export type GeneralTestableCard = CardKeys & {
   hasGroupViewMode: boolean;
