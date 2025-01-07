@@ -914,9 +914,6 @@ const GermanCardTypeConfigurationMapper: Record<IdType, CardTypeConfiguration> =
     maxAllowedNonStandardForms: 4,
     initialCardAttrs: {
       [AttributeMapper.DEGREE.id]: AttributeMapper.DEGREE.records[AdjectiveDegree.Positiv],
-      [AttributeMapper.GENDER.id]: AttributeMapper.GENDER.records[NounGender.Maskulinum],
-      [AttributeMapper.CASE.id]: AttributeMapper.CASE.records[Case.Nominativ],
-      [AttributeMapper.INFLECTION.id]: AttributeMapper.INFLECTION.records[AdjectiveInflection.Weak],
     },
   },
   [CardTypeMapper.ARTICLE]: {

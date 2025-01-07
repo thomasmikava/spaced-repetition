@@ -31,6 +31,8 @@ import type {
 import { useDynamicQuestion } from '../../api/controllers/dynamic-questions/dynamic-questions.query';
 import type { AnyContent } from '../../content-types';
 import { calculatePreferences, type Preferences } from '../../functions/preferences';
+import { getHintPrefixes } from '../../functions/hint-prefixes';
+import { isNonNullable, uniquelize } from '../../utils/array';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless' | 'only-new';
@@ -310,6 +312,7 @@ export const getCardViewContent = (
     const { parts, sentence } = processAsteriskParts(dynamicQuestionData.text);
     const correctAnswer = parts.join(' ');
     const otherCorrectValues = dynamicQuestionData.possibleValues?.map((x) => x.join(' ')) ?? [];
+    const hintPrefixes = getHintPrefixes(record.card.mainType ?? record.card.type, record.card.lang);
     return [
       {
         type: 'paragraph',
@@ -332,6 +335,7 @@ export const getCardViewContent = (
         autoCheck: preferences.autoSubmitCorrectAnswers,
         fullWidth: true,
         shouldNotReplaceWithCorrectAnswer: false,
+        hintPrefixes,
       },
       {
         type: 'afterAnswer',
@@ -345,6 +349,11 @@ export const getCardViewContent = (
     const { parts, sentence } = processAsteriskParts(dynamicQuestionData.translatedText);
     const correctAnswer = parts.join(' ');
     const otherCorrectValues = dynamicQuestionData.possibleValues?.map((x) => x.join(' ')) ?? [];
+    const hintPrefixes = uniquelize(
+      record.card.translations
+        .flatMap((e) => getHintPrefixes(record.card.mainType ?? record.card.type, e.lang))
+        .filter(isNonNullable),
+    );
     return [
       {
         type: 'paragraph',
@@ -367,6 +376,7 @@ export const getCardViewContent = (
         autoCheck: preferences.autoSubmitCorrectAnswers,
         fullWidth: true,
         shouldNotReplaceWithCorrectAnswer: false,
+        hintPrefixes,
       },
       {
         type: 'afterAnswer',
