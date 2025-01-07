@@ -200,3 +200,8 @@ export const splitArray = <T>(arr: T[], fn: (el: T) => boolean): [T[], T[]] => {
   }
   return [left, right];
 };
+
+export const addCapitalized = (arr: string[]): string[] => {
+  const capitalized = arr.map((el) => el.charAt(0).toUpperCase() + el.slice(1));
+  return uniquelize([...arr, ...capitalized]);
+};

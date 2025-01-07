@@ -32,7 +32,7 @@ import { useDynamicQuestion } from '../../api/controllers/dynamic-questions/dyna
 import type { AnyContent } from '../../content-types';
 import { calculatePreferences, type Preferences } from '../../functions/preferences';
 import { getHintPrefixes } from '../../functions/hint-prefixes';
-import { isNonNullable, uniquelize } from '../../utils/array';
+import { addCapitalized, isNonNullable, uniquelize } from '../../utils/array';
 
 interface ReviewPageProps {
   mode: 'normal' | 'endless' | 'only-new';
@@ -335,7 +335,7 @@ export const getCardViewContent = (
         autoCheck: preferences.autoSubmitCorrectAnswers,
         fullWidth: true,
         shouldNotReplaceWithCorrectAnswer: false,
-        hintPrefixes,
+        hintPrefixes: hintPrefixes ? addCapitalized(hintPrefixes) : undefined,
       },
       {
         type: 'afterAnswer',
