@@ -771,7 +771,11 @@ const getAnswerChecker = (correctValue: string) => (userInput: string, options: 
 };
 
 const prepareTextForAudio = (text: string) => slashSplit(text).join('. ');
-const prepareInputAudio = (lang: string, correctValues: string[], prefix: string = ''): Omit<ContentVoice, 'type'> => ({
+export const prepareInputAudio = (
+  lang: string,
+  correctValues: string[],
+  prefix: string = '',
+): Omit<ContentVoice, 'type'> => ({
   language: lang,
   text: prepareTextForAudio(correctValues.map((e) => `(${prefix + e})`).join('/')),
   autoplay: true,

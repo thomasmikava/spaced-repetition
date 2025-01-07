@@ -11,7 +11,7 @@ import { TestContextProvider } from '../../contexts/testContext';
 import { TranslationLangsProvider } from '../../contexts/TranslationLangs';
 import type { IdType, StandardCard } from '../../database/types';
 import { SPECIAL_VIEW_IDS } from '../../functions/consts';
-import type { Helper } from '../../functions/generate-card-content';
+import { prepareInputAudio, type Helper } from '../../functions/generate-card-content';
 import { Reviewer } from '../../functions/reviewer';
 import type { AnyReviewHistory } from '../../functions/reviews';
 import { CardViewMode, type StandardTestableCard } from '../../functions/reviews';
@@ -336,6 +336,7 @@ export const getCardViewContent = (
         fullWidth: true,
         shouldNotReplaceWithCorrectAnswer: false,
         hintPrefixes: hintPrefixes ? addCapitalized(hintPrefixes) : undefined,
+        audioProps: prepareInputAudio(record.card.lang, [correctAnswer]),
       },
       {
         type: 'afterAnswer',
