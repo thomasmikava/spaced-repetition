@@ -22,7 +22,7 @@ export const DEFAULT_REVIEW_DUE = 40;
 export const initialTestS = calculateHalfLifeCoefficient(90); // after 120 seconds of being tested, the probability of remembering the card is 50%
 export const initialViewS = calculateHalfLifeCoefficient(80);
 export const minS = calculateHalfLifeCoefficient(30);
-export const maxS = calculateHalfLifeCoefficient(60 * 60 * 24 * 60); // 60 days
+export const maxS = calculateHalfLifeCoefficient(60 * 60 * 24 * 200); // 200 days
 export const REVIEW_MAX_DUE = 5 * 60; // 5 minutes
 export const REVIEW_MAX_DUE_FOR_HIGH_PROB = 60 * 60; // 1 hour
 
