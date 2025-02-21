@@ -44,6 +44,7 @@ export const defaultPreferences: Preferences = {
   askNonStandardVariants: true,
   transPos: TranslationPosition.split,
   hideRegularTranslationIfAdvanced: false,
+  learningSpeedMultiplier: 1,
   hideForms: false,
   cardTypeSettings,
 };
@@ -73,6 +74,10 @@ export const calculatePreferences = (preferences: UserPreferencesDTO | null, lan
       globalPref.hideRegularTranslationIfAdvanced ??
       defaultPreferences.hideRegularTranslationIfAdvanced,
     hideForms: langPref?.hideForms ?? globalPref.hideForms ?? defaultPreferences.hideForms,
+    learningSpeedMultiplier:
+      langPref?.learningSpeedMultiplier ??
+      globalPref.learningSpeedMultiplier ??
+      defaultPreferences.learningSpeedMultiplier,
     cardTypeSettings: calculateCardTypePreferences(globalPref, langPref),
   };
 };

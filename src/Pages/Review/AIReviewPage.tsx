@@ -83,6 +83,7 @@ const AIReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words
     return {
       type: CardViewMode.test,
       content: getCardViewContent(currentCard.record, dynamicQuestionData, variantData, preferences),
+      preferences,
     };
   }, [currentCard, helper, isPending, userPreferences, variantData, dynamicQuestionError, dynamicQuestionData]);
 
@@ -92,7 +93,16 @@ const AIReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words
     if (!currentCard || !question) return;
     const newS = controlRef.current?.getNewS();
     const modifierStates = controlRef.current?.getStates();
-    reviewer.markViewed(ReviewBlock.AI, currentCard, question.type, !wasWrong, undefined, newS, modifierStates);
+    reviewer.markViewed(
+      ReviewBlock.AI,
+      currentCard,
+      question.type,
+      !wasWrong,
+      question.preferences,
+      undefined,
+      newS,
+      modifierStates,
+    );
     const nextCard = reviewer.getNextCard();
     setVariantData(null);
     setCurrentCard(nextCard);
@@ -196,6 +206,7 @@ const AIReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words
                 helper={helper}
                 reviewBlock={ReviewBlock.AI}
                 isStateModifierHidden
+                preferences={question.preferences}
               />
             </div>
           </WithNextButton>

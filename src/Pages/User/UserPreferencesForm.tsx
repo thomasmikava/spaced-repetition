@@ -21,6 +21,7 @@ import { convertFormDataToUserPreferences } from './convert';
 import type { Helper } from '../../functions/generate-card-content';
 import { TranslationPosition } from '../../api/controllers/users/users.schema';
 import { getGroupName } from '../../utils/group-name';
+import { roundNumber } from '../../utils/number';
 
 type Required<T> = {
   [P in keyof T]-?: NonNullable<T[P]>;
@@ -31,6 +32,7 @@ interface SinglePreference {
   testTypingTranslation?: boolean | null;
   askNonStandardVariants?: boolean | null;
   transPos?: TranslationPosition;
+  learningSpeedMultiplier?: number | null;
   hideRegularTranslationIfAdvanced?: boolean;
   hideForms?: boolean | null;
 }
@@ -176,6 +178,23 @@ const Preferences: FC<PreferencesProps> = memo(({ fieldKey, control, defaultValu
             name={`${fieldKey}.transPos`}
             control={control}
             render={({ field }) => <TranslationPositionSelector field={field} defaultValue={defaultValues.transPos} />}
+          />
+        </Form.Item>
+      </div>
+      <div className={styles.pref}>
+        <Form.Item label='Learning speed multiplier'>
+          <Controller
+            name={`${fieldKey}.learningSpeedMultiplier`}
+            control={control}
+            render={({ field }) => (
+              <Slider
+                onChange={field.onChange}
+                value={field.value ?? defaultValues.learningSpeedMultiplier}
+                min={0.3}
+                max={5}
+                step={0.1}
+              />
+            )}
           />
         </Form.Item>
       </div>
@@ -725,5 +744,29 @@ const TranslationPositionSelector: FC<TranslationPositionSelectorProps> = ({ fie
       value={field.value ?? null}
       onChange={field.onChange}
     />
+  );
+};
+
+interface SliderProps {
+  onChange: (value: number) => void;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+}
+
+const Slider: FC<SliderProps> = ({ onChange, value, min, max, step }) => {
+  return (
+    <div>
+      <input
+        type='range'
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+      />
+      {roundNumber(value, 1)}
+    </div>
   );
 };

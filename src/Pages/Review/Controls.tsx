@@ -17,6 +17,7 @@ import Input from '../../ui/Input';
 import type { ModifierState, StateModifierRef } from './StateModifier';
 import StateModifier from './StateModifier';
 import type { Helper } from '../../functions/generate-card-content';
+import type { Preferences } from '../../functions/preferences';
 
 interface Props {
   canChange: boolean;
@@ -27,6 +28,7 @@ interface Props {
   helper: Helper;
   reviewBlock: number;
   isStateModifierHidden?: boolean;
+  preferences: Preferences;
 }
 
 export interface ControlRef {
@@ -35,13 +37,13 @@ export interface ControlRef {
 }
 
 const CardControlsInner = forwardRef<ControlRef, Props>(
-  ({ reviewer, card, mode, isCorrect, helper, reviewBlock, isStateModifierHidden }, ref) => {
+  ({ reviewer, card, mode, isCorrect, helper, reviewBlock, isStateModifierHidden, preferences }, ref) => {
     const timeOptionsRef = useRef<TimeOptionsRef>(null);
     const stateModifierRef = useRef<StateModifierRef>(null);
     const hasAnotherRepetition = reviewer.hasAnotherRepetition(card.record, mode, isCorrect);
 
     const currentS = reviewer.prevReviews.getCurrentS(card.record, mode, reviewBlock);
-    const newS = reviewer.prevReviews.getNewS(card.record, mode, isCorrect, reviewBlock);
+    const newS = reviewer.prevReviews.getNewS(card.record, mode, isCorrect, reviewBlock, preferences);
 
     const options =
       newS === null

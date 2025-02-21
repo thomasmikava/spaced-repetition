@@ -48,6 +48,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
       return {
         type: CardViewMode.groupView,
         content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, preferences),
+        preferences,
       };
     } else if (
       !currentCard.hasGroupViewMode &&
@@ -57,11 +58,13 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
       return {
         type: CardViewMode.individualView,
         content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, preferences),
+        preferences,
       };
     }
     return {
       type: CardViewMode.test,
       content: getCardViewContent(currentCard.record, CardViewMode.test, helper, preferences),
+      preferences,
     };
   }, [currentCard, helper, userPreferences]);
 
@@ -71,7 +74,16 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
     if (!currentCard || !question) return;
     const newS = controlRef.current?.getNewS();
     const modifierStates = controlRef.current?.getStates();
-    reviewer.markViewed(ReviewBlock.standard, currentCard, question.type, !wasWrong, undefined, newS, modifierStates);
+    reviewer.markViewed(
+      ReviewBlock.standard,
+      currentCard,
+      question.type,
+      !wasWrong,
+      question.preferences,
+      undefined,
+      newS,
+      modifierStates,
+    );
     const nextCard = reviewer.getNextCard();
     setCurrentCard(nextCard);
     setIsInAnswerReviewMode(false);
@@ -158,6 +170,7 @@ const ReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode, words, 
                 reviewer={reviewer}
                 helper={helper}
                 reviewBlock={ReviewBlock.standard}
+                preferences={question.preferences}
               />
             </div>
           </WithNextButton>

@@ -17,6 +17,7 @@ export const convertUserPreferencesToFormData = (
     hideRegularTranslationIfAdvanced: preferences?.global.hideRegularTranslationIfAdvanced ?? undefined,
     transPos: preferences?.global.transPos ?? undefined,
     hideForms: preferences?.global.hideForms ?? undefined,
+    learningSpeedMultiplier: preferences?.global.learningSpeedMultiplier ?? undefined,
   },
   languages: Object.entries(preferences?.perLang ?? {}).map(
     ([lang, preferences]): UserPreferencesFormData['languages'][number] => ({
@@ -28,6 +29,7 @@ export const convertUserPreferencesToFormData = (
         hideRegularTranslationIfAdvanced: preferences?.hideRegularTranslationIfAdvanced ?? undefined,
         transPos: preferences?.transPos ?? undefined,
         hideForms: preferences?.hideForms ?? undefined,
+        learningSpeedMultiplier: preferences?.learningSpeedMultiplier ?? undefined,
         cardTypeSettings: preferences?.cardTypeSettings
           ? objectMap(
               preferences.cardTypeSettings,
@@ -69,6 +71,7 @@ export const convertFormDataToUserPreferences = (data: UserPreferencesFormData) 
               hideRegularTranslationIfAdvanced: preferences.hideRegularTranslationIfAdvanced,
               cardTypeSettings: convertCardTypeSettings(preferences.cardTypeSettings),
               hideForms: preferences.hideForms,
+              learningSpeedMultiplier: preferences.learningSpeedMultiplier,
             }),
           ] as const,
       )
@@ -82,6 +85,7 @@ export const convertFormDataToUserPreferences = (data: UserPreferencesFormData) 
       transPos: data.global.transPos,
       hideRegularTranslationIfAdvanced: data.global.hideRegularTranslationIfAdvanced,
       hideForms: data.global.hideForms,
+      learningSpeedMultiplier: data.global.learningSpeedMultiplier,
     }),
     perLang,
   };

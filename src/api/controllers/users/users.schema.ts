@@ -13,6 +13,7 @@ export interface UserGlobalPreferencesDTO {
   transPos?: TranslationPosition;
   hideRegularTranslationIfAdvanced?: boolean;
   hideForms?: boolean;
+  learningSpeedMultiplier?: number;
 }
 
 export interface UserLangCardGroupSettingsDTO {
@@ -38,6 +39,7 @@ const UserGlobalPreferences = z.object({
   transPos: z.enum([TranslationPosition.top, TranslationPosition.bottom, TranslationPosition.split]).optional(),
   hideRegularTranslationIfAdvanced: z.boolean().optional(),
   hideForms: z.boolean().optional(),
+  learningSpeedMultiplier: z.number().optional(),
 });
 
 const UserLangCardGroupSettings = z.object({

@@ -47,6 +47,7 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
         type: CardViewMode.groupView,
         content: getCardViewContent(currentCard.record, CardViewMode.groupView, helper, preferences),
         record: currentCard.record,
+        preferences,
       };
     } else if (
       !currentCard.hasGroupViewMode &&
@@ -57,12 +58,14 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
         type: CardViewMode.individualView,
         content: getCardViewContent(currentCard.record, CardViewMode.individualView, helper, preferences),
         record: currentCard.record,
+        preferences,
       };
     }
     return {
       type: CardViewMode.test,
       content: getCardViewContent(currentCard.record, CardViewMode.test, helper, preferences),
       record: currentCard.record,
+      preferences,
     };
   });
 
@@ -96,7 +99,14 @@ const AlgorithmReviewPage: FC<ReviewPageProps> = ({ helper, isInsideLesson, mode
         lastDate += currentCard.record.card.type === CardTypeMapper[CardType.VERB] ? 10000 : 5000;
       }
       questions.push(question);
-      reviewer.markViewed(ReviewBlock.standard, currentCard, question.type, correctness[index] !== false, lastDate);
+      reviewer.markViewed(
+        ReviewBlock.standard,
+        currentCard,
+        question.type,
+        correctness[index] !== false,
+        question.preferences,
+        lastDate,
+      );
       index++;
     } while (cards.length < maxCards);
     return { cards, questions };

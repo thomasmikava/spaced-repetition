@@ -9,6 +9,7 @@ import type { Helper } from './generate-card-content';
 import { generateTestableCards } from './generate-variants';
 import type { CardModifiersAccumulator } from './modifier-states';
 import { calculateModifiers, convertToCardModifiers, getVariantTestId, shouldSkipTesting } from './modifier-states';
+import type { Preferences } from './preferences';
 import { calculatePreferences } from './preferences';
 import { PreviousReviews } from './previous-reviews';
 import type { ReviewBlockManager } from './review-block';
@@ -453,6 +454,7 @@ export class Reviewer {
     card: CardWithProbability,
     mode: CardViewMode,
     success: boolean,
+    preferences: Preferences,
     currentDate = Date.now(),
     newS: number | undefined = undefined,
     modifierStates: ModifierState[] = [],
@@ -469,6 +471,7 @@ export class Reviewer {
       mode,
       success,
       hasRepetition,
+      preferences,
       currentDate,
       newS,
     );

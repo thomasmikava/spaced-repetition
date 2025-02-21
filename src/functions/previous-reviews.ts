@@ -9,6 +9,7 @@ import { arrayToObject, isNonNullable } from '../utils/array';
 import { formatTime } from '../utils/time';
 import { globalHistory } from './history';
 import { getVariantTestId } from './modifier-states';
+import type { Preferences } from './preferences';
 import type { AllCardsReviewHistory, AnyReviewHistory, CardKeys, StandardTestableCard } from './reviews';
 import {
   CardViewMode,
@@ -272,6 +273,7 @@ export class PreviousReviews {
     mode: CardViewMode,
     success: boolean,
     willThereBeAnotherRepetition: boolean,
+    preferences: SPreferences,
     date = Date.now(),
     customNewS: number | undefined = undefined,
   ) => {
@@ -281,7 +283,7 @@ export class PreviousReviews {
     const key = getRecordUniqueKey({ wordId: card.card.id, sKey, block });
     this.currentSessionCards.push({ card, mode, success, date, key });
     const history = { ...this.history };
-    const newS = customNewS ?? this.getNewS(card, mode, success, block, date);
+    const newS = customNewS ?? this.getNewS(card, mode, success, block, preferences, date);
 
     let newValue: AnyReviewHistory;
 
@@ -404,7 +406,14 @@ export class PreviousReviews {
     }
   };
 
-  getNewS = (card: StandardTestableCard, mode: CardViewMode, success: boolean, block: number, date = Date.now()) => {
+  getNewS = (
+    card: StandardTestableCard,
+    mode: CardViewMode,
+    success: boolean,
+    block: number,
+    preferences: SPreferences,
+    date = Date.now(),
+  ) => {
     const dateInSec = Math.floor(date / 1000);
 
     const sKey = this.getSKey(card, mode);
@@ -423,28 +432,63 @@ export class PreviousReviews {
     if (currentValue) {
       const updatedCorrectnessRatio = (success ? currentValue.corr + 1 : currentValue.corr) / (currentValue.rep + 1);
       const passedTime = dateInSec - currentValue.lastDate;
-      return updateS(
+      return calculateNewS(
+        preferences,
         success,
         isGroup,
         currentValue.lastS ?? initialTestS,
+
         passedTime,
         maxConnectedTestS,
         updatedCorrectnessRatio,
       );
     } else {
       const updatedCorrectnessRatio = success ? 1 : 0;
-      return updateS(success, isGroup, undefined, undefined, maxConnectedTestS, updatedCorrectnessRatio);
+      return calculateNewS(
+        preferences,
+        success,
+        isGroup,
+        undefined,
+        undefined,
+        maxConnectedTestS,
+        updatedCorrectnessRatio,
+      );
     }
   };
 }
 
-const updateS = (
+type SPreferences = Pick<Preferences, 'learningSpeedMultiplier'>;
+
+const clampS = (s: number) => Math.max(minS, Math.min(maxS, s));
+
+const calculateNewS = (preferences: SPreferences, ...args: Parameters<typeof calculateNewSWithoutCustomSpeed>) => {
+  const newS = calculateNewSWithoutCustomSpeed(...args);
+  const newSTime = secondsUntilProbabilityIsHalf(newS);
+  const oldS = args[2];
+  const oldSTime = oldS ? secondsUntilProbabilityIsHalf(oldS) : undefined;
+  if (typeof oldSTime !== 'number')
+    return clampS(calculateHalfLifeCoefficient(newSTime * preferences.learningSpeedMultiplier));
+
+  if (oldSTime > newSTime) {
+    // Use logarithmic formulas when user has answered incorrectly. Higher learningSpeedMultiplier will make the final return value closer to oldSTime, while lower learningSpeedMultiplier will make the final return value closer to 0.
+    // Without clamping, when learningSpeedMultiplier = 0, return value will be 0, when learningSpeedMultiplier = 1, return value will be newSTime, when learningSpeedMultiplier approaches infinity, return value will be oldSTime.
+    return clampS(
+      calculateHalfLifeCoefficient(
+        oldSTime * (1 - Math.pow(1 - newSTime / oldSTime, preferences.learningSpeedMultiplier)),
+      ),
+    );
+  }
+
+  return clampS(calculateHalfLifeCoefficient(oldSTime + (newSTime - oldSTime) * preferences.learningSpeedMultiplier));
+};
+
+const calculateNewSWithoutCustomSpeed = (
   success: boolean,
   isGroup: boolean,
   s: number | undefined,
   passedTimeInSeconds: number | undefined,
   maxConnectedTestS: number | undefined,
-  correctnessRatio?: number,
+  correctnessRatio: number | undefined,
   // eslint-disable-next-line sonarjs/cognitive-complexity
 ) => {
   const sBasedOnConnectedVariants = getSBasedOnConnectedVariants(maxConnectedTestS, correctnessRatio);
@@ -459,7 +503,7 @@ const updateS = (
   const newS = Math.max(newNormalS, sBasedOnLastAnswerValue);
   const fluctuatedNewS = getFluctuatedS(s, newS);
 
-  return Math.min(maxS, Math.max(minS, fluctuatedNewS));
+  return clampS(fluctuatedNewS);
 };
 
 const getFluctuatedS = (oldS: number, newS: number): number => {
@@ -542,7 +586,6 @@ const getSBasedOnLastAnswer = (s: number, passedTimeInSeconds: number) => {
 
   return calculateHalfLifeCoefficient(Math.min(maxHalfLife, passedTimeInSeconds));
 };
-console.log('x', getSBasedOnLastAnswer(0, 0));
 
 const calcMultiplierToAdd = (s: number, addedHalfTimeSeconds: number) => {
   const currentHalfLife = secondsUntilProbabilityIsHalf(s);
@@ -551,12 +594,16 @@ const calcMultiplierToAdd = (s: number, addedHalfTimeSeconds: number) => {
   return newS / s;
 };
 
+const fakePreferences: SPreferences = {
+  learningSpeedMultiplier: 1,
+};
+
 function getFirstNS(n: number) {
   let currentS = initialTestS;
   let passedTimeInSeconds = secondsUntilProbabilityIsHalf(currentS);
   const result = [passedTimeInSeconds];
   for (let i = 1; i < n; i++) {
-    currentS = updateS(true, false, currentS, passedTimeInSeconds, undefined);
+    currentS = calculateNewS(fakePreferences, true, false, currentS, passedTimeInSeconds, undefined, undefined);
     passedTimeInSeconds = secondsUntilProbabilityIsHalf(currentS);
     result.push(passedTimeInSeconds);
   }
@@ -568,7 +615,7 @@ function getFirstNSFast(n: number, multiplyBy2 = true) {
   let passedTimeInSeconds = 5;
   const result = [secondsUntilProbabilityIsHalf(currentS)];
   for (let i = 1; i < n; i++) {
-    currentS = updateS(true, false, currentS, passedTimeInSeconds, undefined);
+    currentS = calculateNewS(fakePreferences, true, false, currentS, passedTimeInSeconds, undefined, undefined);
     if (multiplyBy2) {
       passedTimeInSeconds *= 2;
       passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24 * 15);
@@ -583,7 +630,7 @@ function getFirstNSSlow(n: number) {
   let passedTimeInSeconds = 60 * 60 * 5;
   const result = [secondsUntilProbabilityIsHalf(currentS)];
   for (let i = 1; i < n; i++) {
-    currentS = updateS(true, false, currentS, passedTimeInSeconds, undefined);
+    currentS = calculateNewS(fakePreferences, true, false, currentS, passedTimeInSeconds, undefined, undefined);
     passedTimeInSeconds *= 2;
     passedTimeInSeconds = Math.min(passedTimeInSeconds, 60 * 60 * 24 * 15);
     result.push(secondsUntilProbabilityIsHalf(currentS));

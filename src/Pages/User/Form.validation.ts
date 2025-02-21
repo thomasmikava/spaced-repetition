@@ -1,4 +1,4 @@
-import { array, boolean, object, record, string, enum as zodEnum } from 'zod';
+import { array, boolean, number, object, record, string, enum as zodEnum } from 'zod';
 import { useValidators } from '../../utils/useValidators';
 import { TranslationPosition } from '../../api/controllers/users/users.schema';
 
@@ -12,6 +12,7 @@ export const useValidation = () => {
     transPos: zodEnum([TranslationPosition.top, TranslationPosition.bottom, TranslationPosition.split]).nullish(),
     hideRegularTranslationIfAdvanced: boolean().nullish(),
     hideForms: boolean().nullish(),
+    learningSpeedMultiplier: number().nullish(),
   });
 
   const UserLangCardGroupSettings = object({
