@@ -64,6 +64,12 @@ export const paths = addPrefix('/')({
       },
       '/ai-review',
     ),
+    difficultWords: withParams(({ courseId, lessonId }: { courseId?: number; lessonId?: number }) => {
+      const params = [];
+      if (courseId) params.push(`courseId=${courseId}`);
+      if (lessonId) params.push(`lessonId=${lessonId}`);
+      return params.length ? `/difficult-words?${params.join('&')}` : '/difficult-words';
+    }, '/difficult-words'),
   }),
   admin: addPrefix('/admin')({
     scripts: '/scripts',

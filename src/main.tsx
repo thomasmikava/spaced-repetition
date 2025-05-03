@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { QueryClientProvider } from '@tanstack/react-query';
 import ConfigProvider from 'antd/es/config-provider/index';
 import theme from 'antd/es/theme/index';
@@ -26,6 +27,7 @@ import SearchPage from './Pages/Search/SearchPage.tsx';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import UserPreferencesPage from './Pages/User/UserPreferencesPage.tsx';
 import { AIReviewPageLoader } from './Pages/Review/AIReviewPage.tsx';
+import { DifficultWordsPageLoader } from './Pages/Review/DifficultWordsPage.tsx';
 
 (window as never as Record<string, unknown>).__MyApp = 'Spaced Repetition.';
 
@@ -124,6 +126,15 @@ const router = createBrowserRouter(
       element: (
         <PageGuard onlyAuth>
           <AIReviewPageLoader />
+        </PageGuard>
+      ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
+    },
+    {
+      path: paths.app.difficultWords.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <DifficultWordsPageLoader />
         </PageGuard>
       ),
       errorElement: <div>Some error occurred. Reload the page</div>,

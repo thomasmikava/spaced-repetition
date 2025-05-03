@@ -66,6 +66,9 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
   const handleAIReview = (endless: boolean, onlyNewWords: boolean) => {
     navigate(paths.app.reviewAI({ courseId, lessonId, endless, onlyNewWords }));
   };
+  const handleHardWords = () => {
+    navigate(paths.app.difficultWords({ courseId, lessonId }));
+  };
 
   return (
     <div className={cssModule.buttonsContainer}>
@@ -79,6 +82,7 @@ const ReviewButtons: FC<Props> = ({ courseId, lessonId }) => {
           AI test{/* {!isLoading && dueReviewAI > 0 && <>: {`${uniqueCardsAI}`}</>} */}
         </button>
       )}
+      {isPremium && <button onClick={() => handleHardWords()}>Hard words</button>}
     </div>
   );
 };

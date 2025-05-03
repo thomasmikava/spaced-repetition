@@ -94,6 +94,27 @@ export class PreviousReviews {
       (e) => (e.block === block || e.block === ReviewBlock.universal) && e.dueDate && e.dueDate < dueDateSec,
     ).length;
   };
+  getStats = (block: number, wordId: number, testKeys?: string | string[]) => {
+    const sKeys = testKeys
+      ? Array.isArray(testKeys)
+        ? new Set(testKeys.map((e) => this.getTestSKey(e)))
+        : testKeys
+      : null;
+    const wordsIndex = this.getWordsIndexObject(this.history);
+    const wordHistory = wordsIndex[wordId];
+    if (!wordHistory) return null;
+    const hist = wordHistory.filter(
+      (e) =>
+        (e.block === block || e.block === ReviewBlock.universal) &&
+        (!sKeys || (typeof sKeys === 'string' ? sKeys === e.sKey : sKeys.has(e.sKey))),
+    );
+    if (hist.length === 0) return null;
+    const totalRepetition = hist.reduce((acc, cur) => acc + (cur.rep ?? 0), 0);
+    const totalCorrect = hist.reduce((acc, cur) => acc + (cur.corr ?? 0), 0);
+    const minS = hist.reduce((acc, cur) => Math.min(acc, cur.lastS ?? Infinity), Infinity);
+    const closestDueDate = hist.reduce((acc, cur) => Math.min(acc, cur.dueDate ?? Infinity), Infinity);
+    return { totalRepetition, totalCorrect, minS, closestDueDate };
+  };
 
   markAsSavedInDb = (keys: string[]) => {
     if (!keys.length) return;
