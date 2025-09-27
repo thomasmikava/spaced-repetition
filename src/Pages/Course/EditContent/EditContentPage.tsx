@@ -5,6 +5,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useCourseById, useUpdateCourseContent } from '../../../api/controllers/courses/courses.query';
 import { useCourseLessons } from '../../../api/controllers/lessons/lessons.query';
 import type { LessonDTO, LessonUpdateActionDTO } from '../../../api/controllers/lessons/lessons.schema';
+import { useQuizzes } from '../../../api/controllers/quizzes/quiz.query';
+import type { QuizDTO } from '../../../api/controllers/quizzes/quiz.schema';
 import { useCourseWords } from '../../../api/controllers/words/words.query';
 import type {
   AdvancedTranslationDTO,
@@ -15,7 +17,7 @@ import type {
 } from '../../../api/controllers/words/words.schema';
 import { removeKeys } from '../../../utils/object';
 import { useFilteredLessons } from '../../Lesson/useFilteredLessons';
-import type { FormData, LessonInfo, WordInfo } from './Form';
+import type { FormData, LessonInfo, LessonItem, WordInfo } from './Form';
 import { ContentForm, DEFAULT_WORD_DISPLAY_TYPE } from './Form';
 import { paths } from '../../../routes/paths';
 import { arrayToObject, isNonNullable } from '../../../utils/array';
@@ -23,6 +25,7 @@ import { useHelper } from '../../hooks/text-helpers';
 import LoadingPage from '../../Loading/LoadingPage';
 import { useSignInUserData } from '../../../contexts/Auth';
 import { addFieldIdsToTranslationObject, areTranslationsEqual, fillLangs } from './utils';
+import type { QuizInfo, QuizQuestion } from './QuizField';
 
 const EditContentPage = () => {
   const params = useParams();
@@ -45,6 +48,16 @@ const EditContentPage = () => {
     includeOfficialTranslationsSeparately: true,
   });
 
+  const { data: lessonQuizzes, isLoading: areQuizzesLoading } = useQuizzes(
+    lessonId
+      ? {
+          lessonId,
+          includeHidden: true,
+          includeQuestions: true,
+        }
+      : null,
+  );
+
   const translationLangs = useMemo(() => (!course ? null : course.translationLangs.split(',')), [course]);
 
   const lessons = useFilteredLessons(allCourseLessons, courseId, !lessonId ? null : lessonId, true, true);
@@ -57,10 +70,17 @@ const EditContentPage = () => {
   const initialData = useMemo(() => {
     if (!lessons || !courseWords || !translationLangs) return null;
 
-    return calculateInitialData({ courseId, lessonId, lessons, courseWords, translationLangs });
-  }, [courseId, courseWords, lessonId, lessons, translationLangs]);
+    return calculateInitialData({
+      courseId,
+      lessonId,
+      lessons,
+      courseWords,
+      translationLangs,
+      quizzes: lessonQuizzes || [],
+    });
+  }, [courseId, courseWords, lessonId, lessons, translationLangs, lessonQuizzes]);
 
-  const isLoading = isLessonLoading || isCourseLoading || areCourseWordsLoading || !helper;
+  const isLoading = isLessonLoading || isCourseLoading || areCourseWordsLoading || areQuizzesLoading || !helper;
 
   useLayoutEffect(() => {
     // scroll at the bottom of page
@@ -126,18 +146,20 @@ const calculateInitialData = ({
   lessons,
   courseWords,
   translationLangs,
+  quizzes,
 }: {
   courseId: number;
   lessonId: number | undefined;
   lessons: LessonDTO[];
   courseWords: GetWordsResDTO;
   translationLangs: string[];
-}): FormData<WordInfo> => {
+  quizzes: QuizDTO[];
+}): FormData<WordInfo | QuizInfo> => {
   const initialLessons = lessonId
     ? lessons.filter((lesson) => lesson.id === lessonId)
     : lessons.filter((lesson) => lesson.parentLessonId === null);
 
-  function getLessonInfo(lesson: LessonDTO): LessonInfo<WordInfo> {
+  function getLessonInfo(lesson: LessonDTO): LessonInfo<WordInfo | QuizInfo> {
     const childLessons = lessons.filter((l) => l.parentLessonId === lesson.id);
     const lessonWords = courseWords
       .filter((word) => word.relations.some((rel) => rel.courseId === courseId && rel.lessonId === lesson.id))
@@ -153,13 +175,42 @@ const calculateInitialData = ({
           wordDisplayType: word.mainType ?? (word.type === DEFAULT_WORD_DISPLAY_TYPE ? undefined : word.type),
         }),
       );
+
+    // Add quizzes for this lesson
+    const lessonQuizzes = quizzes
+      .filter((quiz) => quiz.lessonId === lesson.id)
+      .map(
+        (quiz): QuizInfo => ({
+          type: 'quiz',
+          fieldUniqueId: Math.random().toString(),
+          id: quiz.id,
+          title: quiz.title,
+          description: quiz.description || '',
+          priority: quiz.priority,
+          isHidden: quiz.isHidden,
+          questions:
+            quiz.questions?.map(
+              (q): QuizQuestion => ({
+                fieldUniqueId: Math.random().toString(),
+                type: 'existing',
+                questionId: q.questionId,
+                order: q.order,
+                points: q.points,
+                title: q.question.title || undefined,
+                content: q.question.content,
+                isOfficial: q.question.isOfficial,
+              }),
+            ) || [],
+        }),
+      );
+
     return {
       type: 'lesson',
       fieldUniqueId: Math.random().toString(),
       id: lesson.id,
       title: lesson.title,
       description: lesson.description || '',
-      children: [...lessonWords, ...childLessons.map((lesson) => getLessonInfo(lesson))],
+      children: [...lessonWords, ...childLessons.map((lesson) => getLessonInfo(lesson)), ...lessonQuizzes],
     };
   }
 
@@ -257,6 +308,52 @@ const convertLessonUpdates = (
     };
   }
 
+  function mapQuiz(quiz: QuizInfo): LessonUpdateActionDTO {
+    if (quiz.id) {
+      return {
+        type: 'update-quiz',
+        quizId: quiz.id,
+        title: quiz.title,
+        description: quiz.description || null,
+        // priority: quiz.priority,
+        isHidden: quiz.isHidden,
+        questions: quiz.questions.map((q, idx) => {
+          if (q.type === 'existing' && q.questionId) {
+            return {
+              type: 'existing',
+              questionId: q.questionId,
+              order: idx,
+              points: q.points,
+            };
+          }
+          return {
+            type: 'new',
+            order: idx,
+            points: q.points,
+            title: q.title,
+            content: q.content!,
+            isOfficial: q.isOfficial,
+          };
+        }),
+      };
+    }
+    return {
+      type: 'new-quiz',
+      title: quiz.title,
+      description: quiz.description || null,
+      // priority: quiz.priority,
+      isHidden: quiz.isHidden,
+      questions: quiz.questions.map((q, idx) => ({
+        type: 'new' as const,
+        order: idx,
+        points: q.points,
+        title: q.title,
+        content: q.content!,
+        isOfficial: q.isOfficial,
+      })),
+    };
+  }
+
   function convertLessonInfo(
     info: LessonInfo,
     parentLessonId: number | null | undefined,
@@ -271,6 +368,7 @@ const convertLessonUpdates = (
         items: normalizeItems([
           ...info.children.filter(isLesson).map((lesson) => convertLessonInfo(lesson, undefined)),
           ...info.children.filter(isWord).map((word) => mapWord(word, true)),
+          ...info.children.filter(isQuiz).map((quiz) => mapQuiz(quiz)),
         ]),
       };
     }
@@ -297,6 +395,7 @@ const convertLessonUpdates = (
             return true;
           })
           .map((word) => mapWord(word, true)),
+        ...info.children.filter(isQuiz).map((quiz) => mapQuiz(quiz)),
         ...deletedWordIds.map((wordId): LessonUpdateActionDTO => ({ type: 'delete-word', wordId })),
       ]),
     };
@@ -336,6 +435,30 @@ const convertLessonUpdates = (
     });
   }
 
+  // Handle quiz deletion
+  const initialQuizIds = new Set(
+    Object.values(initialDataTree)
+      .filter(isNonNullable)
+      .flatMap((lesson) => lesson.children.filter(isQuiz).map((q) => q.id))
+      .filter(isNonNullable),
+  );
+
+  const newQuizIds = new Set(
+    Object.values(newDataTree)
+      .filter(isNonNullable)
+      .flatMap((lesson) => lesson.children.filter(isQuiz).map((q) => q.id))
+      .filter(isNonNullable),
+  );
+
+  const removedQuizIds = [...initialQuizIds].filter((id) => !newQuizIds.has(id));
+
+  for (const removedQuizId of removedQuizIds) {
+    actions.push({
+      type: 'delete-quiz',
+      quizId: removedQuizId,
+    });
+  }
+
   const newActionsTree = buildActionsTree(actions);
   for (const oldLessonId in initialDataTree) {
     const oldLesson = initialDataTree[oldLessonId];
@@ -372,14 +495,17 @@ const convertLessonUpdates = (
   return actions;
 };
 
-const isLesson = <T extends WordInfo>(info: T | LessonInfo<T>): info is LessonInfo<T> => info.type === 'lesson';
+const isLesson = <T extends LessonItem>(info: T | LessonInfo<T>): info is LessonInfo<T> => info.type === 'lesson';
 
-const isWord = <T extends WordInfo>(info: T | LessonInfo<T>): info is T => info.type === 'word';
+const isWord = (info: LessonItem | LessonInfo<LessonItem>): info is WordInfo => info.type === 'word';
 
-const isKnownWordInfo = (info: WordInfo | LessonInfo<WordInfo>): info is WordInfo & { word: WordWithTranslationDTO } =>
-  info.type === 'word' && !!info.word;
+const isQuiz = (info: LessonItem | LessonInfo<LessonItem>): info is QuizInfo => info.type === 'quiz';
 
-const buildTree = <T extends WordInfo>(data: LessonInfo<T>[], rootParentId: number | null) => {
+const isKnownWordInfo = (
+  info: LessonItem | LessonInfo<LessonItem>,
+): info is WordInfo & { word: WordWithTranslationDTO } => info.type === 'word' && !!info.word;
+
+const buildTree = <T extends WordInfo | QuizInfo>(data: LessonInfo<T>[], rootParentId: number | null) => {
   const tree: { [lessonId in string]?: LessonInfo<T> & { parentLessonId: number | null } } = {};
 
   for (const lesson of data) {
@@ -391,7 +517,7 @@ const buildTree = <T extends WordInfo>(data: LessonInfo<T>[], rootParentId: numb
     Object.assign(
       tree,
       buildTree(
-        lesson.children.filter((child): child is LessonInfo => child.type === 'lesson'),
+        lesson.children.filter((child): child is LessonInfo<T> => child.type === 'lesson'),
         lesson.id,
       ),
     );

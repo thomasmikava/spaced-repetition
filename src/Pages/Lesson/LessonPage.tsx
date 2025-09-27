@@ -22,6 +22,7 @@ import { roundNumber } from '../../utils/number';
 import { formatTime, roundTime } from '../../utils/time';
 import { useHelper } from '../hooks/text-helpers';
 import { LessonBody } from './Body';
+import { QuizList } from './QuizList';
 import { useFilteredLessons } from './useFilteredLessons';
 import { useSignInUserData } from '../../contexts/Auth';
 import { AddToMyCoursesButton } from '../Course/AddToMyCourses';
@@ -254,6 +255,7 @@ const LessonPage = () => {
             <Table rows={wordRows} removeEmptyColumns />
           </div>
         )}
+        <QuizList lessonId={lessonId} courseId={courseId} />
         {canManageCourse && lessons && lessons.length === 0 && (!wordRows || !wordRows.length) && (
           <AddBox onClick={goToEdit} />
         )}

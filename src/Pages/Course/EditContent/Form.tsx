@@ -68,6 +68,7 @@ import OfficialWordFormModal from '../../../components/OfficialWordFormModal';
 import { Tooltip } from 'antd';
 import { useConfirmationModal } from '../../../ui/ConfirmationModal';
 import { addFieldIdsToTranslationObject, areCustomTranslationsSameAsOfficial, fillLangs } from './utils';
+import { QuizField, type QuizInfo } from './QuizField';
 
 type AdvancedExampleField = WordUsageExampleDTO & { fieldUniqueId: string };
 
@@ -97,16 +98,18 @@ export const DEFAULT_WORD_DISPLAY_TYPE = 1;
 
 export type WordInfo = SearchWordInfo;
 
-export interface LessonInfo<W = WordInfo> {
+export type LessonItem = WordInfo | QuizInfo;
+
+export interface LessonInfo<W = WordInfo | QuizInfo> {
   fieldUniqueId: string;
   type: 'lesson';
   id?: number;
   title: string;
   description: string;
-  children: (LessonInfo | W)[];
+  children: (LessonInfo<W> | W)[];
 }
 
-export interface FormData<W = WordInfo> {
+export interface FormData<W = WordInfo | QuizInfo> {
   children: LessonInfo<W>[];
 }
 
@@ -218,7 +221,7 @@ const ContentForm: FC<Props> = memo(
 );
 ContentForm.displayName = 'ContentForm';
 
-interface FormBaseInfo {
+export interface FormBaseInfo {
   langToLearn: string;
   translationLangs: string[];
   isValidationStarted: boolean;
@@ -239,6 +242,7 @@ interface FieldArrayProps {
 interface FieldArrayRef {
   addNewLesson: () => void;
   addNewWord: (newWords?: AddNewWordInfo[]) => void;
+  addNewQuiz: (value: QuizInfo) => void;
 }
 
 export type AddNewWordInfo =
@@ -329,6 +333,13 @@ const FieldArray = memo(
         [append, translationLangs],
       );
 
+      const handleAddNewQuiz = useCallback(
+        (newQuiz: QuizInfo) => {
+          append(newQuiz);
+        },
+        [append],
+      );
+
       const splitWordsDown = (childFieldKey: `children.${number}`) => {
         if (!fieldParentData) return;
         const childIndex = getLastNumber(childFieldKey);
@@ -351,11 +362,12 @@ const FieldArray = memo(
 
       useImperativeHandle(
         ref,
-        () => ({
+        (): FieldArrayRef => ({
           addNewLesson: handleAddNewLesson,
           addNewWord: handleAddNewWord,
+          addNewQuiz: handleAddNewQuiz,
         }),
-        [handleAddNewLesson, handleAddNewWord],
+        [handleAddNewLesson, handleAddNewWord, handleAddNewQuiz],
       );
 
       return (
@@ -376,6 +388,17 @@ const FieldArray = memo(
                 />
               );
             }
+            if (field.type === 'quiz') {
+              return (
+                <QuizField
+                  key={field.fieldUniqueId}
+                  onRemove={remove}
+                  index={index}
+                  fieldKey={`${fieldKey as `children.${number}.children`}.${index}`}
+                  formBaseInfo={formBaseInfo}
+                />
+              );
+            }
             return (
               <WordField
                 key={field.fieldUniqueId}
@@ -390,7 +413,6 @@ const FieldArray = memo(
                 splitWordsDown={splitWordsDown}
               />
             );
-            return null;
           })}
           {isCourseLevel && (
             <Button label={'Add new top-level lesson'} variant='default' onClick={handleAddNewLesson} />
@@ -429,7 +451,7 @@ const LessonField: FC<LessonFieldProps> = memo(
     } = useController({ control, name: `${fieldKey}.children` });
     const childrenError = (error as { root?: FieldError } | undefined)?.root ?? error;
 
-    const areOnlyWords = fieldValue.every((f) => f.type === 'word');
+    const areOnlyItems = fieldValue.every((f) => f.type !== 'lesson');
     const areOnlyLessons = fieldValue.every((f) => f.type === 'lesson');
     const hasChildren = fieldValue.length > 0;
 
@@ -441,6 +463,16 @@ const LessonField: FC<LessonFieldProps> = memo(
     const handleAddNewWord = (newWords?: AddNewWordInfo[]) => {
       if (!fieldArrayRef.current) return;
       fieldArrayRef.current.addNewWord(newWords);
+    };
+    const handleAddNewQuiz = () => {
+      const newQuiz: QuizInfo = {
+        type: 'quiz',
+        title: '',
+        description: '',
+        questions: [],
+        fieldUniqueId: Math.random().toString(),
+      };
+      fieldArrayRef.current?.addNewQuiz(newQuiz);
     };
 
     return (
@@ -464,6 +496,7 @@ const LessonField: FC<LessonFieldProps> = memo(
               items: [
                 { label: 'Add sub lesson', key: 'add-l', icon: <PlusOutlined />, onClick: handleAddNewLesson },
                 { label: 'Add new word', key: 'add-w', icon: <PlusOutlined />, onClick: () => handleAddNewWord() },
+                { label: 'Add quiz', key: 'add-q', icon: <PlusOutlined />, onClick: handleAddNewQuiz },
                 {
                   label: 'Delete',
                   key: 'remove',
@@ -505,9 +538,21 @@ const LessonField: FC<LessonFieldProps> = memo(
               onClick={() => handleAddNewWord()}
             />
           )}
-          {(!hasChildren || !areOnlyWords) && (
+          {(!hasChildren || !areOnlyLessons) && (
             <Button
               style={{ marginTop: 10 }}
+              label={
+                <span>
+                  <PlusOutlined />
+                  <span style={{ marginLeft: 10 }}>Add quiz</span>
+                </span>
+              }
+              onClick={handleAddNewQuiz}
+            />
+          )}
+          {(!hasChildren || !areOnlyItems) && (
+            <Button
+              style={{ marginTop: 10, marginRight: 10 }}
               label={
                 <span>
                   <PlusOutlined />
@@ -565,9 +610,9 @@ const WordField: FC<WordFieldProps> = memo(
             fieldKey={fieldKey}
             setValue={handleSetValue}
             setFocus={setFocus}
-            getValues={getValues}
+            getValues={getValues as UseFormGetValues<LessonInfo<WordInfo>>}
             helper={helper}
-            watchFn={watch}
+            watchFn={watch as UseFormWatch<LessonInfo<WordInfo>>}
             onAddNewWord={onAddNewWord}
             isLastChild={isLastChild}
             splitWordsDown={splitWordsDown}

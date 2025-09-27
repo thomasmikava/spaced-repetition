@@ -22,6 +22,13 @@ export const paths = addPrefix('/')({
         '/course/:courseId/lesson/:lessonId',
       ),
     },
+    quiz: {
+      page: withParams(
+        ({ quizId, courseId, lessonId }: { quizId: number; courseId: number; lessonId: number }) =>
+          `/courses/${courseId}/lessons/${lessonId}/quizzes/${quizId}`,
+        '/courses/:courseId/lessons/:lessonId/quizzes/:quizId',
+      ),
+    },
     review: withParams(
       ({
         courseId,

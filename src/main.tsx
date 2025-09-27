@@ -16,6 +16,7 @@ import EditCoursePage from './Pages/Course/EditCoursePage.tsx';
 import HomePage from './Pages/Home/HomePage.tsx';
 import LessonPage from './Pages/Lesson/LessonPage.tsx';
 import LoginPage from './Pages/Login/index.tsx';
+import QuizPage from './Pages/Quiz/QuizPage.tsx';
 import NewWordsPage from './Pages/NewWords.tsx';
 import RegistrationPage from './Pages/Registration/index.tsx';
 import { ReviewPageLoader } from './Pages/Review/ReviewPage.tsx';
@@ -90,6 +91,15 @@ const router = createBrowserRouter(
       element: (
         <PageGuard onlyAuth>
           <LessonPage />
+        </PageGuard>
+      ),
+      errorElement: <div>Some error occurred. Reload the page</div>,
+    },
+    {
+      path: paths.app.quiz.page.routePath,
+      element: (
+        <PageGuard onlyAuth>
+          <QuizPage />
         </PageGuard>
       ),
       errorElement: <div>Some error occurred. Reload the page</div>,
