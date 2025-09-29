@@ -109,7 +109,6 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
           const canBeRevealed = status === AnswerStatus.INCORRECT && !isRevealed;
           const previousAnswer = getPreviousAnswer(blankIndex);
           const correctAnswer = getCorrectAnswer(blankIndex);
-          console.log(blankIndex, status, isRevealed, previousAnswer, correctAnswer);
 
           // In read-only mode or if answer is submitted
           if (isReadOnly || (status !== null && !canBeRevealed) || isRevealed) {
@@ -151,6 +150,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                     textAlign: 'center',
                     wordBreak: 'keep-all',
                   }}
+                  data-status={isRevealed ? AnswerStatus.REVEALED : status || AnswerStatus.UNANSWERED}
                 >
                   {status === AnswerStatus.INCORRECT || status === AnswerStatus.UNANSWERED || isRevealed ? (
                     <>
@@ -159,11 +159,12 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                           textDecoration: displayValue !== emptyValue ? 'line-through' : 'none',
                           color: '#f87171',
                         }}
+                        datatype='user-incorrect-answer'
                       >
                         {displayValue === emptyValue ? '___' : displayValue}
                       </span>
                       {' → '}
-                      <span style={{ color: '#4ade80', fontWeight: 'bold' }}>
+                      <span style={{ color: '#4ade80', fontWeight: 'bold' }} datatype='correct-answer'>
                         {correctAnswer || item.officialAnswers[0]}
                       </span>
                     </>
@@ -188,6 +189,8 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                         marginLeft: '4px',
                         cursor: 'help',
                       }}
+                      aria-description={item.explanation}
+                      datatype='explanation-icon'
                     >
                       i
                     </span>
@@ -204,6 +207,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                 name={`answers.${questionId}.answers.${blankIndex}`}
                 control={control}
                 render={({ field }) => {
+                  const isSameAsIncorrect = status === AnswerStatus.INCORRECT && field.value?.value === previousAnswer;
                   return (
                     <>
                       <input
@@ -222,7 +226,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                           width: '120px',
                           padding: '4px 8px',
                           margin: '0 4px',
-                          border: `2px solid ${status === AnswerStatus.INCORRECT ? '#f87171' : '#6b7280'}`,
+                          border: `2px solid ${isSameAsIncorrect ? '#f87171' : '#6b7280'}`,
                           borderRadius: '4px',
                           backgroundColor: '#1f1f1f',
                           color: '#e0e0e0',
@@ -246,6 +250,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                               fontSize: '12px',
                               cursor: 'pointer',
                             }}
+                            aria-description='Reveal answer (forfeit points)'
                           >
                             ?
                           </button>

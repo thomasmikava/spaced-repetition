@@ -98,6 +98,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         backgroundColor: '#1f1f1f',
         position: 'relative',
       }}
+      datatype='question-card'
     >
       {/* Question Header */}
       <div
