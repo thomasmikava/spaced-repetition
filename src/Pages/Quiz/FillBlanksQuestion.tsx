@@ -11,6 +11,7 @@ import type {
   FillBlanksUserInputDTO,
   FillBlanksUserAnswerDTO,
   FillBlanksInputItemDTO,
+  FillBlanksMissingItem,
 } from '../../api/controllers/questions/question-content.schema';
 import type { QuizFormData } from './types';
 import { Tooltip } from 'antd';
@@ -108,7 +109,9 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
       const userInput = currentAnswer?.value || '';
 
       // Get the correct answers for this blank
-      const blankItem = content.items.filter((item) => item.type === 'missing')[blankIndex];
+      const blankItem = content.items.filter((item): item is FillBlanksMissingItem => item.type === 'missing')[
+        blankIndex
+      ];
       const correctAnswers = blankItem?.officialAnswers || [];
 
       // Call getMinimalChange with case sensitive (false) and no prefixes (empty array)

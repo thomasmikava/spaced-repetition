@@ -257,7 +257,7 @@ const CardControls = memo(
     const shouldRender = !!props.canChange && !!settingsSnap.showControls;
 
     useEffect(() => {
-      let timer: number | null;
+      let timer: NodeJS.Timeout | null;
       if (shouldRender) {
         timer = setTimeout(() => {
           setShouldShow(true); // in case of incorrect answer, we first get isCorrect=true and then isCorrect=false, so to not render twice we need wait a bit
