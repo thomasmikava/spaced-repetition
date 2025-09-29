@@ -68,7 +68,7 @@ export const useValidation = (translationLangs: string[]) => {
 
   const QuizQuestionSchema = z.object({
     fieldUniqueId: z.string(),
-    type: z.enum(['existing', 'new']),
+    type: z.enum(['existing', 'new', 'update']),
     questionId: z.number().optional(),
     order: z.number(),
     points: z.number().min(0),

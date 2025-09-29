@@ -13,19 +13,22 @@ import type {
 
 export const QuizQueryKeys = {
   getQuizzes: (query: GetQuizzesReqDTO | null) =>
-    query ? [`quiz:getQuizzes${query.lessonId}`, { lessonId: query.lessonId }, query] : [],
+    query ? [`quiz:getQuizzes${query.lessonId}`, `any-quiz`, { lessonId: query.lessonId }, query] : [],
   getQuizDetails: (query: GetQuizDetailsReqDTO) => [
     `quiz:getQuizDetails${query.quizId}`,
+    `any-quiz`,
     { quizId: query.quizId },
     query,
   ],
   getCourseQuizzes: (query: GetCourseQuizzesReqDTO) => [
     `quiz:getCourseQuizzes${query.courseId}`,
+    `any-quiz`,
     { courseId: query.courseId },
     query,
   ],
   getUserQuizProgress: (query: GetUserQuizProgressReqDTO) => [
     `quiz:getUserQuizProgress${query.quizId}`,
+    `any-quiz`,
     { quizId: query.quizId },
     query,
   ],
@@ -178,4 +181,17 @@ export const useResetQuizAttempt = () => {
       ]);
     },
   });
+};
+
+export const invalidateQuizzes = ({ lessonId, courseId }: { lessonId: number | null; courseId: number }) => {
+  if (!lessonId) {
+    return queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey.some((e) => typeof e === 'string' && e.startsWith('any-quiz')),
+    });
+  }
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: [`quiz:getQuizzes${lessonId}`], exact: false }),
+    queryClient.invalidateQueries({ queryKey: [`quiz:getQuizDetails${lessonId}`], exact: false }),
+    queryClient.invalidateQueries({ queryKey: [`quiz:getCourseQuizzes${courseId}`], exact: false }),
+  ]);
 };

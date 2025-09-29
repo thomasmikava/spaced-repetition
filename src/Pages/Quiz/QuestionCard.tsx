@@ -93,6 +93,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     <div
       style={{
         padding: '24px',
+        // paddingBottom: !isReadOnly ? '80px' : '24px', // Add extra padding for sticky buttons
         border: `2px solid ${getBorderColor()}`,
         borderRadius: '8px',
         backgroundColor: '#1f1f1f',
@@ -150,9 +151,24 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* Question Content */}
       <div style={{ marginBottom: '20px' }}>{renderQuestionContent()}</div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Sticky at bottom */}
       {!isReadOnly && (
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+        <div
+          style={{
+            position: 'sticky',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            gap: '10px',
+            justifyContent: 'flex-end',
+            padding: '16px 24px',
+            margin: '0 -24px 0 -24px', // Negative margins to extend to card edges
+            backgroundColor: '#1f1f1f', // Same as card background
+            borderTop: '1px solid #555555',
+            borderRadius: '0 0 6px 6px', // Match card border radius on bottom
+          }}
+        >
           {shouldShowPartialSubmit && (
             <button
               onClick={onPartialSubmit}

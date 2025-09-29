@@ -523,6 +523,35 @@ describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
       });
     });
 
+    it('should show hint button (💡) next to incorrect inputs', async () => {
+      const quiz = createFillBlanksQuizDetails();
+      const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+        createQuestionAttempt(1, {
+          type: QuestionType.FILL_BLANKS,
+          answers: [
+            {
+              index: 0,
+              value: 'London',
+              isFirstTrial: true,
+              status: AnswerStatus.INCORRECT,
+              pointsEarned: 0,
+              correctAnswer: 'Paris',
+            },
+          ],
+        }),
+      ]);
+
+      server.use(
+        quizMocks.requests.getQuizDetails.successResponse(quiz),
+        quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+      );
+
+      renderQuizPage();
+
+      const hintButton = await screen.find(fillingBlanksSelector.hintButton());
+      expect(hintButton).toHaveAccessibleDescription('Get a hint');
+    });
+
     it('should show reveal answer icon (?) next to incorrect inputs', async () => {
       const quiz = createFillBlanksQuizDetails();
       const attemptWithIncorrect = createUserProgressWithAttempt(1, [
@@ -550,6 +579,117 @@ describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
 
       const revealButton = await screen.find(fillingBlanksSelector.revealButton());
       expect(revealButton).toHaveAccessibleDescription('Reveal answer (forfeit points)');
+    });
+
+    it('should not show hint button for correct answers', async () => {
+      const quiz = createFillBlanksQuizDetails();
+      const attemptWithCorrect = createUserProgressWithAttempt(1, [
+        createQuestionAttempt(
+          1,
+          {
+            type: QuestionType.FILL_BLANKS,
+            answers: [
+              {
+                index: 0,
+                value: 'Paris',
+                isFirstTrial: true,
+                status: AnswerStatus.CORRECT,
+                pointsEarned: 1,
+                correctAnswer: 'Paris',
+              },
+            ],
+          },
+          { submittedAt: new Date(), pointsEarned: 1 },
+        ),
+      ]);
+
+      server.use(
+        quizMocks.requests.getQuizDetails.successResponse(quiz),
+        quizMocks.requests.getUserQuizProgress.successResponse(attemptWithCorrect),
+      );
+
+      renderQuizPage();
+
+      await waitFor(() => {
+        const questionCard = screen.get(questionCardSelector.questionCard(1));
+        expect(questionCard).toBeInTheDocument();
+      });
+
+      const hintButton = screen.query(fillingBlanksSelector.hintButton());
+      expect(hintButton).not.toBeInTheDocument();
+    });
+
+    it('should not show hint button for unanswered inputs', async () => {
+      const quiz = createFillBlanksQuizDetails();
+      const userProgress = createEmptyUserProgress();
+      const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+        id: 1,
+        userId: 1,
+        quizId: 1,
+        lessonId: 1,
+        courseId: 1,
+        pointsAttempted: 0,
+        pointsEarned: 0,
+        isCompleted: false,
+        completedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      server.use(
+        quizMocks.requests.getQuizDetails.successResponse(quiz),
+        quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+        quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+      );
+
+      renderQuizPage();
+
+      await waitFor(() => {
+        const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+        expect(inputs).toHaveLength(2);
+      });
+
+      const hintButton = screen.query(fillingBlanksSelector.hintButton());
+      expect(hintButton).not.toBeInTheDocument();
+    });
+
+    it('should update input value when hint button is clicked', async () => {
+      const quiz = createFillBlanksQuizDetails();
+      const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+        createQuestionAttempt(1, {
+          type: QuestionType.FILL_BLANKS,
+          answers: [
+            {
+              index: 0,
+              value: 'Par',
+              isFirstTrial: true,
+              status: AnswerStatus.INCORRECT,
+              pointsEarned: 0,
+              correctAnswer: 'Paris',
+            },
+          ],
+        }),
+      ]);
+
+      server.use(
+        quizMocks.requests.getQuizDetails.successResponse(quiz),
+        quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+      );
+
+      const { user } = renderQuizPage();
+
+      await waitFor(() => {
+        const firstInput = getBlankInput(0);
+        expect(firstInput).toHaveValue('Par');
+      });
+
+      const hintButton = await screen.find(fillingBlanksSelector.hintButton());
+      await user.click(hintButton);
+
+      await waitFor(() => {
+        const firstInput = getBlankInput(0);
+        expect(firstInput).toHaveValue('Pari'); // getMinimalChange should add one character
+      });
     });
 
     it('should reveal official answer and make blank non-editable when reveal icon is clicked', async () => {

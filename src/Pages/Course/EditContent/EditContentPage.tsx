@@ -326,6 +326,17 @@ const convertLessonUpdates = (
               points: q.points,
             };
           }
+          if (q.type === 'update' && q.questionId) {
+            return {
+              type: 'update',
+              questionId: q.questionId,
+              order: idx,
+              points: q.points,
+              content: q.content,
+              title: q.title,
+              isOfficial: q.isOfficial,
+            };
+          }
           return {
             type: 'new',
             order: idx,

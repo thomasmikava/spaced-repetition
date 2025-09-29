@@ -4,6 +4,7 @@ import { courseController } from './courses.controller';
 import type { ExploreCoursesReqDTO, GetMyCoursesResDTO } from './courses.schema';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { WordQueryKeys } from '../words/words.query';
+import { invalidateQuizzes } from '../quizzes/quiz.query';
 
 const prefixes = {
   getOneMinified: 'course:getMinified',
@@ -93,6 +94,7 @@ export const useUpdateCourseContent = () => {
         queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`], exact: false }), // TODO: export from lessons.query
         queryClient.invalidateQueries({ queryKey: [`word:getCourseWords${args.courseId}`], exact: false }), // TODO: export from words.query
         queryClient.invalidateQueries({ queryKey: WordQueryKeys.getMyCoursesWords(), exact: false }),
+        invalidateQuizzes({ lessonId: null, courseId: args.courseId }),
       ]);
     },
   });

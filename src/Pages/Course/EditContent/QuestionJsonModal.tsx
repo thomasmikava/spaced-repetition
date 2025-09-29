@@ -12,6 +12,7 @@ const { TextArea } = Input;
 
 export interface QuestionJsonOnSaveProps {
   content: QuestionContentDTO;
+  title: string;
   points: number;
 }
 
@@ -21,6 +22,10 @@ interface QuestionJsonModalProps {
   onSave: (content: QuestionJsonOnSaveProps) => void;
   initialContent?: QuestionContentDTO;
   title?: string;
+}
+
+interface AdditionalContentProps {
+  title: string;
 }
 
 const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
@@ -34,7 +39,7 @@ const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
   const [validationStatus, setValidationStatus] = useState<{
     isValid: boolean;
     error?: string;
-    parsedContent?: QuestionContentDTO;
+    parsedContent?: { content: QuestionContentDTO } & AdditionalContentProps;
   }>({ isValid: false });
 
   useEffect(() => {
@@ -68,11 +73,12 @@ const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
     try {
       const parsed = JSON.parse(jsonText);
       const result = QuestionContentSchemaSchema.safeParse(parsed);
+      const title = 'title' in parsed && typeof parsed.title === 'string' ? parsed.title : '';
 
       if (result.success) {
         setValidationStatus({
           isValid: true,
-          parsedContent: result.data,
+          parsedContent: { content: result.data, title },
         });
       } else {
         const errors = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
@@ -91,8 +97,12 @@ const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
 
   const handleSave = () => {
     if (validationStatus.isValid && validationStatus.parsedContent) {
-      const q = createQuestion(validationStatus.parsedContent);
-      onSave({ content: validationStatus.parsedContent, points: q.getInputCount() });
+      const q = createQuestion(validationStatus.parsedContent.content);
+      onSave({
+        content: validationStatus.parsedContent.content,
+        points: q.getInputCount(),
+        title: validationStatus.parsedContent.title,
+      });
       onClose();
     }
   };

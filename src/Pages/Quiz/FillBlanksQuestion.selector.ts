@@ -5,6 +5,9 @@ export const fillingBlanksSelector = {
   blankInputs: (): TestingQueryParams<HTMLInputElement> => {
     return createTestingQuery.role('textbox');
   },
+  hintButton: (): TestingQueryParams<HTMLButtonElement> => {
+    return createTestingQuery.role('button', { name: '💡' });
+  },
   revealButton: (): TestingQueryParams<HTMLButtonElement> => {
     return createTestingQuery.role('button', { name: '?' });
   },

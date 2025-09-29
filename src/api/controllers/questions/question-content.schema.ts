@@ -26,6 +26,12 @@ export interface BaseQuestionDTO {
 // FILL-IN-THE-BLANKS QUESTION TYPES
 // =============================================================================
 
+export enum FillBlanksInputSize {
+  SMALL = 'small',
+  MEDIUM = 'medium',
+  LARGE = 'large',
+}
+
 const FillBlanksTextItemSchema = z.object({
   type: z.literal('text'),
   value: z.string().min(1),
@@ -40,6 +46,7 @@ const FillBlanksMissingItemSchema = z.object({
   officialAnswers: z.array(z.string().min(1)).min(1),
   additionalAnswers: z.array(z.string().min(1)).optional(),
   explanation: z.string().optional(),
+  size: z.nativeEnum(FillBlanksInputSize).optional(),
 });
 
 export interface FillBlanksMissingItem {
@@ -47,6 +54,7 @@ export interface FillBlanksMissingItem {
   officialAnswers: string[];
   additionalAnswers?: string[];
   explanation?: string;
+  size?: FillBlanksInputSize;
 }
 
 const FillBlanksContentItemSchema = z.discriminatedUnion('type', [

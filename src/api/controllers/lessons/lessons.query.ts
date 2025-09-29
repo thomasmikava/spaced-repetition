@@ -1,5 +1,6 @@
 import { filterLessons } from '../../../Pages/Lesson/useFilteredLessons';
 import { queryClient, useMutation, useQuery } from '../../../utils/queries';
+import { invalidateQuizzes } from '../quizzes/quiz.query';
 import { lessonController } from './lessons.controller';
 import type { GetLessonsReqDTO, GetLessonsResDTO } from './lessons.schema';
 
@@ -34,8 +35,13 @@ export const useCreateNewLesson = () => {
   return useMutation({
     mutationFn: lessonController.createLesson,
     mutationKey: ['document:create'],
-    onSuccess: (_, args): Promise<unknown> => {
-      return queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] });
+    onSuccess: async (data, args) => {
+      const lessonId = data.id;
+      const courseId = args.courseId;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`], exact: false }),
+        invalidateQuizzes({ lessonId, courseId }),
+      ]);
     },
   });
 };
@@ -43,8 +49,11 @@ export const useCreateNewLesson = () => {
 export const useDeleteLesson = () => {
   return useMutation({
     mutationFn: lessonController.deleteLesson,
-    onSuccess: (_, args): Promise<unknown> => {
-      return queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`] });
+    onSuccess: async (_, args) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`lesson:getCourseLessons${args.courseId}`], exact: false }),
+        invalidateQuizzes({ lessonId: args.lessonId, courseId: args.courseId }),
+      ]);
     },
   });
 };

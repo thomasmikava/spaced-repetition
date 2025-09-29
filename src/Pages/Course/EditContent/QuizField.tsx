@@ -12,7 +12,7 @@ import QuestionJsonModal from './QuestionJsonModal';
 
 export interface QuizQuestion {
   fieldUniqueId: string;
-  type: 'existing' | 'new';
+  type: 'existing' | 'new' | 'update';
   questionId?: number;
   order: number;
   points: number;
@@ -40,8 +40,8 @@ interface QuizFieldProps {
 }
 
 export const QuizField: FC<QuizFieldProps> = memo(({ onRemove, index, fieldKey }) => {
-  const { control, setValue } = useFormContext<FormData>();
-  const { fields, append, remove } = useFieldArray({
+  const { control, getValues } = useFormContext<FormData>();
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: `${fieldKey}.questions`,
   });
@@ -59,11 +59,16 @@ export const QuizField: FC<QuizFieldProps> = memo(({ onRemove, index, fieldKey }
     setIsQuestionModalOpen(true);
   };
 
-  const handleSaveQuestion = ({ content, points }: QuestionJsonOnSaveProps) => {
+  const handleSaveQuestion = ({ content, points, title }: QuestionJsonOnSaveProps) => {
     if (editingQuestion) {
-      // Update existing question
-      setValue(`${fieldKey}.questions.${editingQuestion.index}.content`, content);
-      setValue(`${fieldKey}.questions.${editingQuestion.index}.points`, points);
+      const existingValue = getValues(`${fieldKey}.questions.${editingQuestion.index}`);
+      update(editingQuestion.index, {
+        ...existingValue,
+        content,
+        points,
+        title,
+        type: existingValue.questionId ? 'update' : 'new',
+      });
     } else {
       // Add new question
       const newQuestion: QuizQuestion = {
@@ -72,6 +77,7 @@ export const QuizField: FC<QuizFieldProps> = memo(({ onRemove, index, fieldKey }
         points,
         content,
         fieldUniqueId: Math.random().toString(),
+        title,
       };
       append(newQuestion);
     }
