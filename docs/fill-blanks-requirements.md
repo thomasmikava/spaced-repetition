@@ -40,7 +40,7 @@
 
 ### Interactive Elements
 
-- Incorrect answers have an amber "💡" hint button that provides a minimal change suggestion to guide toward the correct answer
+- All input fields have an amber "💡" hint button that provides a minimal change suggestion to guide toward the correct answer
 - Incorrect answers have a red "?" button that reveals the correct answer
 - Correct and partial answers with explanations have a blue "i" icon showing explanation on hover
 - Revealing an answer makes the field non-editable and sets `isRevealed: true`

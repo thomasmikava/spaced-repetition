@@ -8,6 +8,7 @@ import type {
   AnswerCheckResultDTO,
   QuestionCheckResultDTO,
   FillBlanksInputItemDTO,
+  UserAnswerDTO,
 } from '../question-content.schema';
 import { AnswerStatus, QuestionType } from '../question-content.schema';
 import type { IQuestion, MapOptions } from './base-question.interface';
@@ -160,7 +161,9 @@ export class FillBlanksQuestion implements IQuestion {
           isFirstTrial: answer.isFirstTrial ?? true,
         }),
       )
-      .filter((answer) => options.isFullSubmission || answer.value !== ''); // Filter out empty answers
+      .filter(
+        (answer) => options.isFullSubmission || !answer.isFirstTrial || !answer.isRevealed || answer.value !== '',
+      ); // Filter out empty answers
 
     return {
       type: QuestionType.FILL_BLANKS,
@@ -172,25 +175,25 @@ export class FillBlanksQuestion implements IQuestion {
    * Map user input from backend to form data format
    * Ensures the answers array is indexed by blank position, using correct types.
    */
-  mapUserInputToFormData(userInput: UserInputDTO): UserInputDTO {
+  mapUserInputToFormData(userInput: UserAnswerDTO): UserInputDTO {
     if (!userInput || !this.isValidUserInput(userInput)) {
       return {
         type: QuestionType.FILL_BLANKS,
         answers: [],
       };
     }
-    const fillBlanksInput = userInput as FillBlanksUserInputDTO;
+    const fillBlanksInput = userInput as FillBlanksUserAnswerDTO;
     return {
       type: QuestionType.FILL_BLANKS,
-      answers: Array.from(
-        { length: this.content.items.filter((item) => item.type === 'missing').length },
-        (_, idx) =>
-          fillBlanksInput.answers.find((a) => a.index === idx) ?? {
-            index: idx,
-            value: '',
-            isFirstTrial: true,
-          },
-      ),
+      answers: Array.from({ length: this.content.items.filter((item) => item.type === 'missing').length }, (_, idx) => {
+        const input = fillBlanksInput.answers.find((a) => a.index === idx);
+        if (input) return { ...input, isRevealed: input.status === AnswerStatus.REVEALED };
+        return {
+          index: idx,
+          value: '',
+          isFirstTrial: true,
+        };
+      }),
     };
   }
 

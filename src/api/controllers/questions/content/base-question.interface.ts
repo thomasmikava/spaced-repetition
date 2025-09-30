@@ -1,4 +1,4 @@
-import type { QuestionCheckResultDTO, UserInputDTO } from '../question-content.schema';
+import type { QuestionCheckResultDTO, UserAnswerDTO, UserInputDTO } from '../question-content.schema';
 
 /**
  * Base interface that all question classes must implement
@@ -25,7 +25,7 @@ export interface IQuestion {
    */
   mapFormDataToUserInput(formData: UserInputDTO | undefined | null, options: MapOptions): UserInputDTO;
 
-  mapUserInputToFormData(userInput: UserInputDTO): UserInputDTO;
+  mapUserInputToFormData(userInput: UserAnswerDTO): UserInputDTO;
 }
 
 export type MapOptions = {

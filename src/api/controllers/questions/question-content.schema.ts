@@ -132,12 +132,12 @@ export type MatchingContentItemDTO = MatchingTextItemDTO | MatchingBlankItemDTO;
 
 const MatchingAnswerOptionSchema = z.object({
   value: z.string().min(1),
-  usageLimit: z.number().min(1).optional(),
+  usageLimit: z.number().min(1).nullish(),
 });
 
 export interface MatchingAnswerOptionDTO {
   value: string;
-  usageLimit?: number; // defaults to 1
+  usageLimit?: number | null; // defaults to 1. null means unlimited
 }
 
 const MatchingQuestionSchema = z.object({

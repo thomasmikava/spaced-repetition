@@ -8,6 +8,7 @@ import type {
   AnswerCheckResultDTO,
   QuestionCheckResultDTO,
   MatchingInputItemDTO,
+  UserAnswerDTO,
 } from '../question-content.schema';
 import { AnswerStatus, QuestionType } from '../question-content.schema';
 import type { IQuestion, MapOptions } from './base-question.interface';
@@ -166,7 +167,9 @@ export class MatchingQuestion implements IQuestion {
           isFirstTrial: answer.isFirstTrial ?? true,
         }),
       )
-      .filter((answer) => options.isFullSubmission || answer.value !== ''); // Filter empty answers for matching as well
+      .filter(
+        (answer) => options.isFullSubmission || !answer.isFirstTrial || !answer.isRevealed || answer.value !== '',
+      ); // Filter empty answers for matching as well
 
     return {
       type: QuestionType.MATCHING,
@@ -178,25 +181,25 @@ export class MatchingQuestion implements IQuestion {
    * Map user input from backend to form data format
    * Ensures the answers array is indexed by blank position, using correct types.
    */
-  mapUserInputToFormData(userInput: UserInputDTO): UserInputDTO {
+  mapUserInputToFormData(userInput: UserAnswerDTO): UserInputDTO {
     if (!userInput || !this.isValidUserInput(userInput)) {
       return {
         type: QuestionType.MATCHING,
         answers: [],
       };
     }
-    const matchingInput = userInput as MatchingUserInputDTO;
+    const matchingInput = userInput as MatchingUserAnswerDTO;
     return {
       type: QuestionType.MATCHING,
-      answers: Array.from(
-        { length: this.content.items.filter((item) => item.type === 'blank').length },
-        (_, idx) =>
-          matchingInput.answers.find((a) => a.index === idx) ?? {
-            index: idx,
-            value: '',
-            isFirstTrial: true,
-          },
-      ),
+      answers: Array.from({ length: this.content.items.filter((item) => item.type === 'blank').length }, (_, idx) => {
+        const input = matchingInput.answers.find((a) => a.index === idx);
+        if (input) return { ...input, isRevealed: input.status === AnswerStatus.REVEALED };
+        return {
+          index: idx,
+          value: '',
+          isFirstTrial: true,
+        };
+      }),
     };
   }
 

@@ -36,6 +36,7 @@ const QuizPage: React.FC = () => {
 
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [submittingQuestionId, setSubmittingQuestionId] = useState<number | null>(null);
+  const [resetCounter, setResetCounter] = useState<number>(0);
 
   const methods = useForm<QuizFormData>({
     defaultValues: {
@@ -60,9 +61,7 @@ const QuizPage: React.FC = () => {
             if (quizQuestion) {
               // Use the question factory to create question instance and map user input to form data
               const questionInstance = createQuestion(quizQuestion.question.content);
-              existingAnswers[attempt.questionId] = questionInstance.mapUserInputToFormData(
-                attempt.userAnswer as UserInputDTO,
-              );
+              existingAnswers[attempt.questionId] = questionInstance.mapUserInputToFormData(attempt.userAnswer);
             }
           }
         });
@@ -148,8 +147,11 @@ const QuizPage: React.FC = () => {
       });
 
       // Reset form data and attempt ID to restart
-      methods.reset({ answers: {} as [] });
+      methods.reset({ answers: null as never as [] }, { keepValues: false });
       setAttemptId(null);
+
+      // Increment reset counter for body key
+      setResetCounter((prev) => prev + 1);
 
       // Refetch progress to update UI
       await refetchProgress();
@@ -197,7 +199,7 @@ const QuizPage: React.FC = () => {
 
   return (
     <FormProvider {...methods}>
-      <div className='body'>
+      <div className='body' key={resetCounter}>
         <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
           {/* Header */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: '30px' }}>

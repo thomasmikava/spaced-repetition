@@ -16,6 +16,8 @@ import type {
 import type { QuizFormData } from './types';
 import { Tooltip } from 'antd';
 import { getMinimalChange } from '../../utils/hint';
+import { isNonNullable } from '../../utils/array';
+import { renderTextWithLineBreaks } from './common';
 
 interface FillBlanksQuestionProps {
   questionId: number;
@@ -85,7 +87,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
     // Update form value to mark this as revealed
     const currentValue = getValues(`answers.${questionId}`) as FillBlanksUserInputDTO;
     if (currentValue && currentValue.answers) {
-      const updatedAnswers = [...currentValue.answers];
+      const updatedAnswers = [...currentValue.answers].filter(isNonNullable);
       const answerIndex = updatedAnswers.findIndex((a) => a.index === blankIndex);
       if (answerIndex !== -1) {
         updatedAnswers[answerIndex] = {
@@ -105,7 +107,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
   const handleHint = (blankIndex: number, onChange: (value: FillBlanksInputItemDTO) => void) => {
     const currentValue = getValues(`answers.${questionId}`) as FillBlanksUserInputDTO;
     if (currentValue && currentValue.answers) {
-      const currentAnswer = currentValue.answers.find((a) => a.index === blankIndex);
+      const currentAnswer = currentValue.answers.filter(isNonNullable).find((a) => a.index === blankIndex);
       const userInput = currentAnswer?.value || '';
 
       // Get the correct answers for this blank
@@ -116,10 +118,14 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
 
       // Call getMinimalChange with case sensitive (false) and no prefixes (empty array)
       const hint = getMinimalChange(userInput, correctAnswers, false, []);
-      console.log('hint', hint);
+      if (userInput === hint) {
+        // No further hint available since user input is the same as correct answer
+        handleRevealAnswer(blankIndex);
+        return;
+      }
 
       // Update the form value with the hint
-      const updatedAnswers = [...currentValue.answers];
+      const updatedAnswers = [...currentValue.answers].filter(isNonNullable);
       const answerIndex = updatedAnswers.findIndex((a) => a.index === blankIndex);
       if (answerIndex !== -1) {
         updatedAnswers[answerIndex] = {
@@ -149,23 +155,17 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
     }
   };
 
-  // Helper function to render text with line breaks
-  const renderTextWithLineBreaks = (text: string) => {
-    return text.split('\n').map((line, index, array) => (
-      <React.Fragment key={index}>
-        {line}
-        {index < array.length - 1 && <br />}
-      </React.Fragment>
-    ));
-  };
-
   let blankCounter = 0;
 
   return (
     <div style={{ lineHeight: 2.2, fontSize: '16px', color: '#e0e0e0' }}>
       {content.items.map((item, itemIndex) => {
         if (item.type === 'text') {
-          return <span key={itemIndex}>{renderTextWithLineBreaks(item.value)}</span>;
+          return (
+            <span key={itemIndex} style={{ verticalAlign: 'middle' }}>
+              {renderTextWithLineBreaks(item.value)}
+            </span>
+          );
         } else if (item.type === 'missing') {
           const blankIndex = blankCounter++;
           const status = getBlankStatus(blankIndex);
@@ -184,13 +184,17 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                 ? previousAnswer
                 : previousAnswer || emptyValue;
 
+            const displayedCorrectAnswer = correctAnswer || item.officialAnswers[0];
+
             const backgroundColor =
               status === AnswerStatus.CORRECT
                 ? '#065f46'
                 : status === AnswerStatus.PARTIAL
                   ? '#1e3a8a'
                   : status === AnswerStatus.INCORRECT || isRevealed
-                    ? '#7f1d1d'
+                    ? displayValue === displayedCorrectAnswer
+                      ? '#186d7b'
+                      : '#7f1d1d'
                     : '#374151';
 
             const borderColor =
@@ -199,7 +203,9 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                 : status === AnswerStatus.PARTIAL
                   ? '#60a5fa'
                   : status === AnswerStatus.INCORRECT || isRevealed
-                    ? '#f87171'
+                    ? displayValue === displayedCorrectAnswer
+                      ? '#4acade'
+                      : '#f87171'
                     : '#6b7280';
 
             const spanStyle = {
@@ -226,19 +232,27 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                 >
                   {status === AnswerStatus.INCORRECT || status === AnswerStatus.UNANSWERED || isRevealed ? (
                     <>
-                      <span
-                        style={{
-                          textDecoration: displayValue !== emptyValue ? 'line-through' : 'none',
-                          color: '#f87171',
-                        }}
-                        datatype='user-incorrect-answer'
-                      >
-                        {displayValue === emptyValue ? '___' : displayValue}
-                      </span>
-                      {' → '}
-                      <span style={{ color: '#4ade80', fontWeight: 'bold' }} datatype='correct-answer'>
-                        {correctAnswer || item.officialAnswers[0]}
-                      </span>
+                      {displayValue === displayedCorrectAnswer ? (
+                        <span style={{ color: 'white', fontWeight: 'bold' }} datatype='correct-answer'>
+                          {displayedCorrectAnswer}
+                        </span>
+                      ) : (
+                        <>
+                          <span
+                            style={{
+                              textDecoration: displayValue !== emptyValue ? 'line-through' : 'none',
+                              color: '#f87171',
+                            }}
+                            datatype='user-incorrect-answer'
+                          >
+                            {displayValue === emptyValue ? '___' : displayValue}
+                          </span>
+                          {' → '}
+                          <span style={{ color: '#4ade80', fontWeight: 'bold' }} datatype='correct-answer'>
+                            {displayedCorrectAnswer}
+                          </span>
+                        </>
+                      )}
                     </>
                   ) : (
                     <span style={{ color: '#e0e0e0' }}>{displayValue === emptyValue ? '___' : displayValue}</span>
@@ -284,7 +298,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                 render={({ field }) => {
                   const isSameAsIncorrect = status === AnswerStatus.INCORRECT && field.value?.value === previousAnswer;
 
-                  const inputStyle = {
+                  const inputStyle: React.CSSProperties = {
                     width: inputWidth,
                     padding: '4px 8px',
                     margin: item.size === FillBlanksInputSize.LARGE ? '4px 0' : '0 4px',
@@ -295,73 +309,101 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                     opacity: 1,
                     fontSize: '14px',
                     display: item.size === FillBlanksInputSize.LARGE ? 'block' : 'inline-block',
+                    verticalAlign: 'middle',
                   };
 
+                  const isLargeInput = item.size === FillBlanksInputSize.LARGE;
+
+                  // Common input element
+                  const inputElement = (
+                    <input
+                      type='text'
+                      value={(field.value as FillBlanksInputItemDTO | undefined)?.value || ''}
+                      onChange={(e) => {
+                        const newValue: FillBlanksInputItemDTO = {
+                          index: blankIndex,
+                          value: e.target.value,
+                          isFirstTrial:
+                            (field.value as FillBlanksInputItemDTO | undefined)?.isFirstTrial ?? !previousAnswer,
+                        };
+                        field.onChange(newValue);
+                      }}
+                      style={isLargeInput ? { ...inputStyle, flex: 1, margin: 0 } : inputStyle}
+                    />
+                  );
+
+                  // Common buttons element
+                  const buttonsElement = (
+                    <div
+                      style={{
+                        gap: '4px',
+                        verticalAlign: 'middle',
+                        ...(isLargeInput ? { flexShrink: 0, display: 'flex' } : { display: 'inline-flex' }),
+                      }}
+                    >
+                      {/* Hint button - shown for all inputs */}
+                      <Tooltip title='Get a hint'>
+                        <button
+                          onClick={() => handleHint(blankIndex, field.onChange)}
+                          style={{
+                            ...(isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }),
+                            padding: '2px 6px',
+                            backgroundColor: '#f59e0b',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            lineHeight: '20px',
+                            minWidth: '24px',
+                          }}
+                          aria-description='Get a hint'
+                        >
+                          💡
+                        </button>
+                      </Tooltip>
+
+                      {/* Reveal button - only for incorrect answers */}
+                      {status === AnswerStatus.INCORRECT && (
+                        <Tooltip title='Reveal answer (forfeit points)'>
+                          <button
+                            onClick={() => handleRevealAnswer(blankIndex)}
+                            style={{
+                              ...(isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }),
+                              padding: '2px 6px',
+                              backgroundColor: '#dc2626',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              lineHeight: '20px',
+                              minWidth: '24px',
+                            }}
+                            aria-description='Reveal answer (forfeit points)'
+                          >
+                            ?
+                          </button>
+                        </Tooltip>
+                      )}
+                    </div>
+                  );
+
+                  // For large inputs, use flexbox layout to keep buttons on the same line
+                  if (isLargeInput) {
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                        {inputElement}
+                        {buttonsElement}
+                      </div>
+                    );
+                  }
+
+                  // For small and medium inputs, use the original layout
                   return (
                     <>
-                      <input
-                        type='text'
-                        value={(field.value as FillBlanksInputItemDTO | undefined)?.value || ''}
-                        onChange={(e) => {
-                          const newValue: FillBlanksInputItemDTO = {
-                            index: blankIndex,
-                            value: e.target.value,
-                            isFirstTrial:
-                              (field.value as FillBlanksInputItemDTO | undefined)?.isFirstTrial ?? !previousAnswer,
-                          };
-                          field.onChange(newValue);
-                        }}
-                        style={inputStyle}
-                      />
-
-                      {/* Hint and Reveal buttons for incorrect answers */}
-                      {status === AnswerStatus.INCORRECT && (
-                        <>
-                          <Tooltip title='Get a hint'>
-                            <button
-                              onClick={() => handleHint(blankIndex, field.onChange)}
-                              style={{
-                                marginLeft: '4px',
-                                padding: '2px 6px',
-                                backgroundColor: '#f59e0b',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                verticalAlign: 'middle',
-                                lineHeight: '20px',
-                                minWidth: '24px',
-                              }}
-                              aria-description='Get a hint'
-                            >
-                              💡
-                            </button>
-                          </Tooltip>
-
-                          <Tooltip title='Reveal answer (forfeit points)'>
-                            <button
-                              onClick={() => handleRevealAnswer(blankIndex)}
-                              style={{
-                                marginLeft: '4px',
-                                padding: '2px 6px',
-                                backgroundColor: '#dc2626',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                verticalAlign: 'middle',
-                                lineHeight: '20px',
-                                minWidth: '24px',
-                              }}
-                              aria-description='Reveal answer (forfeit points)'
-                            >
-                              ?
-                            </button>
-                          </Tooltip>
-                        </>
-                      )}
+                      {inputElement}
+                      {buttonsElement}
                     </>
                   );
                 }}
