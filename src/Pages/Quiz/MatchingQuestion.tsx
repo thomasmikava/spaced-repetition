@@ -311,6 +311,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ questionId, content
   // Watch current form values for this question
   const areCurrentAnswersSet = useWatch({
     name: `answers.${questionId}`,
+    compute: (value) => !!value,
   });
 
   // Setup sensors for drag and drop

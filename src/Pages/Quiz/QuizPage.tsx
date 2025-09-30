@@ -65,7 +65,7 @@ const QuizPage: React.FC = () => {
             }
           }
         });
-        methods.reset({ answers: existingAnswers as UserInputDTO[] });
+        methods.reset({ answers: existingAnswers as UserInputDTO[] }, { keepValues: true });
       }
     } else if (!isLoading && quiz && !attemptId && !isStartingAttempt) {
       // Auto-start quiz if no existing attempt
