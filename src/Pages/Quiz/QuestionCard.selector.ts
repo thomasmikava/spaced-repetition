@@ -5,7 +5,7 @@ export const questionCardSelector = {
     return createTestingQuery.role('button', { name: /Submit Non-Empty/i });
   },
   fullSubmit: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.role('button', { name: /Submit/i });
+    return createTestingQuery.role('button', { name: 'Submit' });
   },
   questionHeaderByQNumber: (questionNumber: number): TestingQueryParams<HTMLElement> => {
     return createTestingQuery.role('heading', { name: new RegExp(`Question ${questionNumber}`) });

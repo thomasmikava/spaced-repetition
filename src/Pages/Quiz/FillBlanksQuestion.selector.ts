@@ -6,10 +6,10 @@ export const fillingBlanksSelector = {
     return createTestingQuery.role('textbox');
   },
   hintButton: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.role('button', { name: '💡' });
+    return createTestingQuery.selector('button[datatype="hint"]');
   },
   revealButton: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.role('button', { name: '?' });
+    return createTestingQuery.selector('button[datatype="reveal-answer"]');
   },
   explanationIcon: (): TestingQueryParams<HTMLButtonElement> => {
     return createTestingQuery.selector('span[datatype="explanation-icon"]');

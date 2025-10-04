@@ -43,8 +43,9 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
   });
 
   // Initialize form values if not present
+  // Skip initialization if processedAnswer exists (means parent will populate it)
   useEffect(() => {
-    if (!areCurrentAnswersSet) {
+    if (!areCurrentAnswersSet && !processedAnswer) {
       const blanks = content.items.filter((e) => e.type === 'missing');
       const answers: FillBlanksInputItemDTO[] = [];
       blanks.forEach((_, index) => {
@@ -57,7 +58,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
       };
       setValue(`answers.${questionId}`, initialAnswer);
     }
-  }, [questionId, content, areCurrentAnswersSet, setValue]);
+  }, [questionId, content, areCurrentAnswersSet, setValue, processedAnswer]);
 
   // Get the status of a specific blank from the processed answer
   const getBlankStatus = (blankIndex: number): AnswerStatus | null => {
@@ -344,6 +345,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                       {/* Hint button - shown for all inputs */}
                       <Tooltip title='Get a hint'>
                         <button
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => handleHint(blankIndex, field.onChange)}
                           style={{
                             ...(isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }),
@@ -356,8 +358,10 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                             cursor: 'pointer',
                             lineHeight: '20px',
                             minWidth: '24px',
+                            userSelect: 'none',
                           }}
                           aria-description='Get a hint'
+                          datatype='hint'
                         >
                           💡
                         </button>
@@ -379,8 +383,10 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                               cursor: 'pointer',
                               lineHeight: '20px',
                               minWidth: '24px',
+                              userSelect: 'none',
                             }}
                             aria-description='Reveal answer (forfeit points)'
+                            datatype='reveal-answer'
                           >
                             ?
                           </button>

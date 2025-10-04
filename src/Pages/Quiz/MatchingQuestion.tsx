@@ -14,6 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { Dropdown, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
+import { CloseOutlined } from '@ant-design/icons';
 import { QuestionType, AnswerStatus } from '../../api/controllers/questions/question-content.schema';
 import type {
   MatchingQuestionDTO,
@@ -236,7 +237,6 @@ const DroppableBlank: React.FC<{
               display: 'inline-block',
               width: '100%',
               padding: '0px 12px',
-              margin: '2px 4px',
               backgroundColor: isOver ? '#1e3a8a' : '#1e40af',
               border: `2px solid ${showIncorrectBorder ? '#f87171' : isOver ? '#60a5fa' : '#3b82f6'}`,
               borderRadius: '4px',
@@ -269,9 +269,10 @@ const DroppableBlank: React.FC<{
               fontSize: '14px',
               transition: 'all 0.2s',
               cursor: 'pointer',
+              userSelect: 'none',
             }}
           >
-            --- Drop here ---
+            --- Drop ---
           </span>
         )}
       </span>
@@ -325,8 +326,9 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ questionId, content
   );
 
   // Initialize form values if not present
+  // Skip initialization if processedAnswer exists (means parent will populate it)
   useEffect(() => {
-    if (!areCurrentAnswersSet) {
+    if (!areCurrentAnswersSet && !processedAnswer) {
       const blanks = content.items.filter((e) => e.type === 'blank');
       const answers: MatchingInputItemDTO[] = [];
       blanks.forEach((_, index) => {
@@ -339,7 +341,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ questionId, content
       };
       setValue(`answers.${questionId}`, initialAnswer);
     }
-  }, [questionId, content, areCurrentAnswersSet, setValue]);
+  }, [questionId, content, areCurrentAnswersSet, setValue, processedAnswer]);
 
   // Calculate usage counts for each option
   const getUsageCounts = (): Map<string, number> => {
@@ -531,6 +533,23 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ questionId, content
         },
       };
     });
+
+    // Add clear option at the bottom
+    if (currentValue) {
+      items.push({
+        key: 'clear',
+        label: (
+          <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <CloseOutlined style={{ fontSize: '12px' }} />
+            Clear selection
+          </span>
+        ),
+        onClick: () => {
+          updateBlankValue(blankIndex, '');
+          setDropdownVisible({ ...dropdownVisible, [blankIndex]: false });
+        },
+      });
+    }
 
     return { items };
   };

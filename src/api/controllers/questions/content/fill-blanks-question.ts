@@ -162,7 +162,7 @@ export class FillBlanksQuestion implements IQuestion {
         }),
       )
       .filter(
-        (answer) => options.isFullSubmission || !answer.isFirstTrial || !answer.isRevealed || answer.value !== '',
+        (answer) => options.isFullSubmission || !answer.isFirstTrial || !!answer.isRevealed || answer.value !== '',
       ); // Filter out empty answers
 
     return {

@@ -8,7 +8,9 @@ import {
   useStartQuizAttempt,
   useSubmitQuestionAnswer,
   useResetQuizAttempt,
+  QuizQueryKeys,
 } from '../../api/controllers/quizzes/quiz.query';
+import { queryClient } from '../../utils/queries';
 import { type UserInputDTO } from '../../api/controllers/questions/question-content.schema';
 import { createQuestion } from '../../api/controllers/questions/content/question-factory';
 import QuestionCard from './QuestionCard';
@@ -16,7 +18,7 @@ import LoadingPage from '../Loading/LoadingPage';
 import { paths } from '../../routes/paths';
 import type { QuizFormData } from './types';
 
-const QuizPage: React.FC = () => {
+const QuizPageInternal: React.FC<{ onResetQuiz: (reset: () => Promise<unknown>) => void }> = ({ onResetQuiz }) => {
   const navigate = useNavigate();
   const params = useParams();
 
@@ -36,7 +38,6 @@ const QuizPage: React.FC = () => {
 
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [submittingQuestionId, setSubmittingQuestionId] = useState<number | null>(null);
-  const [resetCounter, setResetCounter] = useState<number>(0);
 
   const methods = useForm<QuizFormData>({
     defaultValues: {
@@ -53,7 +54,8 @@ const QuizPage: React.FC = () => {
 
       // Pre-populate form with existing answers
       if (userProgress.questionAttempts && userProgress.questionAttempts.length > 0) {
-        const existingAnswers: Record<number, UserInputDTO> = {};
+        const existingAnswers: Record<number, UserInputDTO> =
+          (methods.getValues('answers') as Record<number, UserInputDTO> | undefined) || {};
         userProgress.questionAttempts.forEach((attempt) => {
           if (attempt.userAnswer && quiz?.questions) {
             // Find the corresponding question to get its content
@@ -65,7 +67,7 @@ const QuizPage: React.FC = () => {
             }
           }
         });
-        methods.reset({ answers: existingAnswers as UserInputDTO[] }, { keepValues: true });
+        methods.reset({ answers: existingAnswers as UserInputDTO[] });
       }
     } else if (!isLoading && quiz && !attemptId && !isStartingAttempt) {
       // Auto-start quiz if no existing attempt
@@ -90,7 +92,6 @@ const QuizPage: React.FC = () => {
     const quizQuestion = quiz.questions.find((q) => q.questionId === questionId);
 
     if (!quizQuestion) {
-      console.error('Question not found.');
       return;
     }
 
@@ -117,7 +118,6 @@ const QuizPage: React.FC = () => {
       // Refetch progress to update UI
       await refetchProgress();
     } catch (error) {
-      console.error('Failed to submit answer:', error);
       alert('Failed to submit answer. Please try again.');
     } finally {
       setSubmittingQuestionId(null);
@@ -146,17 +146,11 @@ const QuizPage: React.FC = () => {
         quizAttemptId: attemptId,
       });
 
-      // Reset form data and attempt ID to restart
-      methods.reset({ answers: null as never as [] }, { keepValues: false });
-      setAttemptId(null);
+      // Invalidate progress query
 
-      // Increment reset counter for body key
-      setResetCounter((prev) => prev + 1);
-
-      // Refetch progress to update UI
-      await refetchProgress();
+      // Trigger parent component to remount
+      onResetQuiz(async () => queryClient.removeQueries({ queryKey: QuizQueryKeys.getUserQuizProgress({ quizId }) }));
     } catch (error) {
-      console.error('Failed to reset quiz:', error);
       alert('Failed to reset quiz. Please try again.');
     }
   };
@@ -199,7 +193,7 @@ const QuizPage: React.FC = () => {
 
   return (
     <FormProvider {...methods}>
-      <div className='body' key={resetCounter}>
+      <div className='body'>
         <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
           {/* Header */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: '30px' }}>
@@ -347,6 +341,27 @@ const QuizPage: React.FC = () => {
       </div>
     </FormProvider>
   );
+};
+
+const QuizPage: React.FC = () => {
+  const [remountKey, setRemountKey] = useState<null | number>(0);
+
+  const handleResetQuiz = (reset: () => Promise<unknown>) => {
+    const currentKey = remountKey;
+    setRemountKey(null);
+
+    setTimeout(() => {
+      reset().finally(() => {
+        setRemountKey(currentKey ? currentKey + 1 : 1);
+      });
+    }, 1);
+  };
+
+  if (remountKey === null) {
+    return null;
+  }
+
+  return <QuizPageInternal key={remountKey} onResetQuiz={handleResetQuiz} />;
 };
 
 export default QuizPage;

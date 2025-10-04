@@ -697,6 +697,53 @@ describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
       });
     });
 
+    it('should maintain input focus when hint button is clicked', async () => {
+      const quiz = createFillBlanksQuizDetails();
+      const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+        createQuestionAttempt(1, {
+          type: QuestionType.FILL_BLANKS,
+          answers: [
+            {
+              index: 0,
+              value: 'Par',
+              isFirstTrial: true,
+              status: AnswerStatus.INCORRECT,
+              pointsEarned: 0,
+              correctAnswer: 'Paris',
+            },
+          ],
+        }),
+      ]);
+
+      server.use(
+        quizMocks.requests.getQuizDetails.successResponse(quiz),
+        quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+      );
+
+      const { user } = renderQuizPage();
+
+      await waitFor(() => {
+        const firstInput = getBlankInput(0);
+        expect(firstInput).toHaveValue('Par');
+      });
+
+      const firstInput = getBlankInput(0);
+
+      // Focus the input
+      await user.click(firstInput!);
+      expect(firstInput).toHaveFocus();
+
+      // Click hint button
+      const hintButtons = screen.getAll(fillingBlanksSelector.hintButton());
+      await user.click(hintButtons[0]);
+
+      // Verify input still has focus after hint is applied
+      await waitFor(() => {
+        expect(firstInput).toHaveValue('Pari');
+        expect(firstInput).toHaveFocus();
+      });
+    });
+
     it('should reveal official answer and make blank non-editable when reveal icon is clicked', async () => {
       const quiz = createFillBlanksQuizDetails();
       const attemptWithIncorrect = createUserProgressWithAttempt(1, [

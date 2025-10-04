@@ -168,7 +168,7 @@ export class MatchingQuestion implements IQuestion {
         }),
       )
       .filter(
-        (answer) => options.isFullSubmission || !answer.isFirstTrial || !answer.isRevealed || answer.value !== '',
+        (answer) => options.isFullSubmission || !answer.isFirstTrial || !!answer.isRevealed || answer.value !== '',
       ); // Filter empty answers for matching as well
 
     return {

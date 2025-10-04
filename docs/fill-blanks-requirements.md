@@ -45,6 +45,7 @@
 - Correct and partial answers with explanations have a blue "i" icon showing explanation on hover
 - Revealing an answer makes the field non-editable and sets `isRevealed: true`
 - Hint functionality uses case-sensitive matching without prefix handling to provide the closest valid answer with minimal modifications
+- Clicking the hint button while an input is focused does not cause the input to lose focus
 
 ## Answer Evaluation Requirements
 

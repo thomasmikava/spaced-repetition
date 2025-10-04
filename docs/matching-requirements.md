@@ -47,6 +47,8 @@
   - Lists all unique options with usage counts "(X)" where X = usageLimit - current usage
   - Fully used options are faded and not selectable
   - Selecting an option has the same effect as dropping it into that zone
+  - If a blank has a selected value, a "Clear selection" option with a clear icon appears at the bottom of the dropdown
+  - Selecting the clear option removes the current value from the blank
 - Previously incorrect selections display with red border styling
 - When user changes a previously incorrect selection, red border is immediately removed
 

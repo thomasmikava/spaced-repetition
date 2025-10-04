@@ -46,6 +46,8 @@ export const useQuizDetails = (query: GetQuizDetailsReqDTO) => {
   return useQuery({
     queryFn: () => quizController.getQuizDetails(query),
     queryKey: QuizQueryKeys.getQuizDetails(query),
+    refetchOnMount: 'always',
+    gcTime: 0,
   });
 };
 
@@ -60,6 +62,8 @@ export const useUserQuizProgress = (query: GetUserQuizProgressReqDTO) => {
   return useQuery({
     queryFn: () => quizController.getUserQuizProgress(query),
     queryKey: QuizQueryKeys.getUserQuizProgress(query),
+    refetchOnMount: 'always',
+    gcTime: 0,
   });
 };
 
