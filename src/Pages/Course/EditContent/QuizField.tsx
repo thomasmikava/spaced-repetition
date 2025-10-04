@@ -59,8 +59,10 @@ export const QuizField: FC<QuizFieldProps> = memo(({ onRemove, index, fieldKey }
     setIsQuestionModalOpen(true);
   };
 
-  const handleSaveQuestion = ({ content, points, title }: QuestionJsonOnSaveProps) => {
+  const handleSaveQuestion = ({ questions }: QuestionJsonOnSaveProps) => {
     if (editingQuestion) {
+      // When editing, only use the first question from the array
+      const { content, points, title } = questions[0];
       const existingValue = getValues(`${fieldKey}.questions.${editingQuestion.index}`);
       update(editingQuestion.index, {
         ...existingValue,
@@ -70,16 +72,19 @@ export const QuizField: FC<QuizFieldProps> = memo(({ onRemove, index, fieldKey }
         type: existingValue.questionId ? 'update' : 'new',
       });
     } else {
-      // Add new question
-      const newQuestion: QuizQuestion = {
-        type: 'new',
-        order: fields.length,
-        points,
-        content,
-        fieldUniqueId: Math.random().toString(),
-        title,
-      };
-      append(newQuestion);
+      // Add all questions from the array
+      const currentLength = fields.length;
+      questions.forEach(({ content, points, title }, index) => {
+        const newQuestion: QuizQuestion = {
+          type: 'new',
+          order: currentLength + index,
+          points,
+          content,
+          fieldUniqueId: Math.random().toString(),
+          title,
+        };
+        append(newQuestion);
+      });
     }
     setIsQuestionModalOpen(false);
     setEditingQuestion(null);

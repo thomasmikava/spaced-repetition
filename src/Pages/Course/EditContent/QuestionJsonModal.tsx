@@ -11,9 +11,11 @@ import { createQuestion } from '../../../api/controllers/questions/content/quest
 const { TextArea } = Input;
 
 export interface QuestionJsonOnSaveProps {
-  content: QuestionContentDTO;
-  title: string;
-  points: number;
+  questions: Array<{
+    content: QuestionContentDTO;
+    title: string;
+    points: number;
+  }>;
 }
 
 interface QuestionJsonModalProps {
@@ -22,10 +24,6 @@ interface QuestionJsonModalProps {
   onSave: (content: QuestionJsonOnSaveProps) => void;
   initialContent?: QuestionContentDTO;
   title?: string;
-}
-
-interface AdditionalContentProps {
-  title: string;
 }
 
 const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
@@ -39,7 +37,8 @@ const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
   const [validationStatus, setValidationStatus] = useState<{
     isValid: boolean;
     error?: string;
-    parsedContent?: { content: QuestionContentDTO } & AdditionalContentProps;
+    parsedContent?: Array<{ content: QuestionContentDTO; title: string }>;
+    questionCount?: number;
   }>({ isValid: false });
 
   useEffect(() => {
@@ -70,22 +69,71 @@ const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
       return;
     }
 
-    try {
-      const parsed = JSON.parse(jsonText);
-      const result = QuestionContentSchemaSchema.safeParse(parsed);
-      const title = 'title' in parsed && typeof parsed.title === 'string' ? parsed.title : '';
+    const validateQuestion = (item: unknown, index?: number) => {
+      const result = QuestionContentSchemaSchema.safeParse(item);
+      const title =
+        typeof item === 'object' && item !== null && 'title' in item && typeof item.title === 'string'
+          ? item.title
+          : '';
 
       if (result.success) {
-        setValidationStatus({
-          isValid: true,
-          parsedContent: { content: result.data, title },
-        });
+        return { success: true as const, data: { content: result.data, title } };
       } else {
-        const errors = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
-        setValidationStatus({
-          isValid: false,
-          error: `Validation error: ${errors}`,
+        const itemErrors = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
+        const errorPrefix = index !== undefined ? `Question ${index + 1}: ` : '';
+        return { success: false as const, error: `${errorPrefix}${itemErrors}` };
+      }
+    };
+
+    try {
+      const parsed = JSON.parse(jsonText);
+
+      // Check if it's an array of questions
+      if (Array.isArray(parsed)) {
+        const validatedQuestions: Array<{ content: QuestionContentDTO; title: string }> = [];
+        const errors: string[] = [];
+
+        parsed.forEach((item, index) => {
+          const result = validateQuestion(item, index);
+          if (result.success) {
+            validatedQuestions.push(result.data);
+          } else {
+            errors.push(result.error);
+          }
         });
+
+        if (errors.length > 0) {
+          setValidationStatus({
+            isValid: false,
+            error: `Validation errors:\n${errors.join('\n')}`,
+          });
+        } else if (validatedQuestions.length === 0) {
+          setValidationStatus({
+            isValid: false,
+            error: 'Array is empty, please provide at least one question',
+          });
+        } else {
+          setValidationStatus({
+            isValid: true,
+            parsedContent: validatedQuestions,
+            questionCount: validatedQuestions.length,
+          });
+        }
+      } else {
+        // Single question
+        const result = validateQuestion(parsed);
+        if (result.success) {
+          setValidationStatus({
+            isValid: true,
+            parsedContent: [result.data],
+            questionCount: 1,
+          });
+        } else {
+          setValidationStatus({
+            isValid: false,
+            error: `Validation error: ${result.error}`,
+          });
+        }
       }
     } catch (e) {
       setValidationStatus({
@@ -97,12 +145,16 @@ const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
 
   const handleSave = () => {
     if (validationStatus.isValid && validationStatus.parsedContent) {
-      const q = createQuestion(validationStatus.parsedContent.content);
-      onSave({
-        content: validationStatus.parsedContent.content,
-        points: q.getInputCount(),
-        title: validationStatus.parsedContent.title,
+      const questions = validationStatus.parsedContent.map(({ content, title }) => {
+        const q = createQuestion(content);
+        return {
+          content,
+          points: q.getInputCount(),
+          title,
+        };
       });
+
+      onSave({ questions });
       onClose();
     }
   };
@@ -129,12 +181,25 @@ const QuestionJsonModal: FC<QuestionJsonModalProps> = ({
       </div>
 
       {validationStatus.isValid ? (
-        <Alert message='Valid question content' type='success' showIcon />
+        <Alert
+          message={
+            validationStatus.questionCount && validationStatus.questionCount > 1
+              ? `Valid: ${validationStatus.questionCount} questions will be added`
+              : 'Valid question content'
+          }
+          type='success'
+          showIcon
+        />
       ) : (
         <Alert message='Invalid content' description={validationStatus.error} type='error' showIcon />
       )}
 
       <div style={{ marginTop: 10, fontSize: 12, color: '#666' }}>
+        <strong>Supported formats:</strong>
+        <ul style={{ marginTop: 5 }}>
+          <li>Single question object</li>
+          <li>Array of question objects (for batch import)</li>
+        </ul>
         <strong>Supported question types:</strong>
         <ul style={{ marginTop: 5 }}>
           <li>
