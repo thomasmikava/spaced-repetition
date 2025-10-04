@@ -14,10 +14,12 @@ import type {
   FillBlanksMissingItem,
 } from '../../api/controllers/questions/question-content.schema';
 import type { QuizFormData } from './types';
-import { Tooltip } from 'antd';
 import { getMinimalChange } from '../../utils/hint';
 import { isNonNullable } from '../../utils/array';
 import { renderTextWithLineBreaks } from './common';
+import { AnswerDisplay } from './components/AnswerDisplay';
+import { RevealButton } from './components/RevealButton';
+import { HintButton } from './components/HintButton';
 
 interface FillBlanksQuestionProps {
   questionId: number;
@@ -178,112 +180,26 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
 
           // In read-only mode or if answer is submitted
           if (isReadOnly || (status !== null && !canBeRevealed) || isRevealed) {
-            const emptyValue = Symbol();
-            const displayValue = isRevealed
-              ? previousAnswer || emptyValue
-              : status === AnswerStatus.CORRECT || status === AnswerStatus.PARTIAL
-                ? previousAnswer
-                : previousAnswer || emptyValue;
-
             const displayedCorrectAnswer = correctAnswer || item.officialAnswers[0];
 
-            const backgroundColor =
-              status === AnswerStatus.CORRECT
-                ? '#065f46'
-                : status === AnswerStatus.PARTIAL
-                  ? '#1e3a8a'
-                  : status === AnswerStatus.INCORRECT || isRevealed
-                    ? displayValue === displayedCorrectAnswer
-                      ? '#186d7b'
-                      : '#7f1d1d'
-                    : '#374151';
-
-            const borderColor =
-              status === AnswerStatus.CORRECT
-                ? '#4ade80'
-                : status === AnswerStatus.PARTIAL
-                  ? '#60a5fa'
-                  : status === AnswerStatus.INCORRECT || isRevealed
-                    ? displayValue === displayedCorrectAnswer
-                      ? '#4acade'
-                      : '#f87171'
-                    : '#6b7280';
-
-            const spanStyle = {
-              padding: '2px 4px',
-              margin: '1px 4px',
-              backgroundColor,
-              border: `2px solid ${borderColor}`,
-              borderRadius: '4px',
-              minWidth: item.size === FillBlanksInputSize.LARGE ? 'auto' : '60px',
-              width: item.size === FillBlanksInputSize.LARGE ? '100%' : 'auto',
-              display: item.size === FillBlanksInputSize.LARGE ? 'block' : 'inline-block',
-              textAlign: 'center' as const,
-              wordBreak: 'keep-all' as const,
-            };
-
             return (
-              <span
+              <AnswerDisplay
                 key={itemIndex}
-                style={{ position: 'relative', display: item.size === FillBlanksInputSize.LARGE ? 'block' : 'inline' }}
-              >
-                <span
-                  style={spanStyle}
-                  data-status={isRevealed ? AnswerStatus.REVEALED : status || AnswerStatus.UNANSWERED}
-                >
-                  {status === AnswerStatus.INCORRECT || status === AnswerStatus.UNANSWERED || isRevealed ? (
-                    <>
-                      {displayValue === displayedCorrectAnswer ? (
-                        <span style={{ color: 'white', fontWeight: 'bold' }} datatype='correct-answer'>
-                          {displayedCorrectAnswer}
-                        </span>
-                      ) : (
-                        <>
-                          <span
-                            style={{
-                              textDecoration: displayValue !== emptyValue ? 'line-through' : 'none',
-                              color: '#f87171',
-                            }}
-                            datatype='user-incorrect-answer'
-                          >
-                            {displayValue === emptyValue ? '___' : displayValue}
-                          </span>
-                          {' → '}
-                          <span style={{ color: '#4ade80', fontWeight: 'bold' }} datatype='correct-answer'>
-                            {displayedCorrectAnswer}
-                          </span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <span style={{ color: '#e0e0e0' }}>{displayValue === emptyValue ? '___' : displayValue}</span>
-                  )}
-                </span>
-                {/* Explanation tooltip */}
-                {item.explanation && (status === AnswerStatus.CORRECT || status === AnswerStatus.PARTIAL) && (
-                  <Tooltip title={item.explanation}>
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: '16px',
-                        height: '16px',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        borderRadius: '50%',
-                        fontSize: '12px',
-                        lineHeight: '16px',
-                        textAlign: 'center',
-                        marginLeft: '4px',
-                        cursor: 'help',
-                      }}
-                      aria-description={item.explanation}
-                      datatype='explanation-icon'
-                    >
-                      i
-                    </span>
-                  </Tooltip>
-                )}
-              </span>
+                status={status}
+                isRevealed={isRevealed}
+                userAnswer={previousAnswer}
+                correctAnswer={displayedCorrectAnswer}
+                explanation={item.explanation}
+                containerStyle={{
+                  position: 'relative',
+                  display: item.size === FillBlanksInputSize.LARGE ? 'block' : 'inline',
+                }}
+                displayStyle={{
+                  minWidth: item.size === FillBlanksInputSize.LARGE ? 'auto' : '60px',
+                  width: item.size === FillBlanksInputSize.LARGE ? '100%' : 'auto',
+                  display: item.size === FillBlanksInputSize.LARGE ? 'block' : 'inline-block',
+                }}
+              />
             );
           }
 
@@ -343,54 +259,17 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                       }}
                     >
                       {/* Hint button - shown for all inputs */}
-                      <Tooltip title='Get a hint'>
-                        <button
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleHint(blankIndex, field.onChange)}
-                          style={{
-                            ...(isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }),
-                            padding: '2px 6px',
-                            backgroundColor: '#f59e0b',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            lineHeight: '20px',
-                            minWidth: '24px',
-                            userSelect: 'none',
-                          }}
-                          aria-description='Get a hint'
-                          datatype='hint'
-                        >
-                          💡
-                        </button>
-                      </Tooltip>
+                      <HintButton
+                        onHint={() => handleHint(blankIndex, field.onChange)}
+                        style={isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }}
+                      />
 
                       {/* Reveal button - only for incorrect answers */}
                       {status === AnswerStatus.INCORRECT && (
-                        <Tooltip title='Reveal answer (forfeit points)'>
-                          <button
-                            onClick={() => handleRevealAnswer(blankIndex)}
-                            style={{
-                              ...(isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }),
-                              padding: '2px 6px',
-                              backgroundColor: '#dc2626',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              lineHeight: '20px',
-                              minWidth: '24px',
-                              userSelect: 'none',
-                            }}
-                            aria-description='Reveal answer (forfeit points)'
-                            datatype='reveal-answer'
-                          >
-                            ?
-                          </button>
-                        </Tooltip>
+                        <RevealButton
+                          onReveal={() => handleRevealAnswer(blankIndex)}
+                          style={isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }}
+                        />
                       )}
                     </div>
                   );

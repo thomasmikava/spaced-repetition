@@ -12,7 +12,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { Dropdown, Tooltip } from 'antd';
+import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import { QuestionType, AnswerStatus } from '../../api/controllers/questions/question-content.schema';
@@ -26,6 +26,8 @@ import type {
 import type { QuizFormData } from './types';
 import { isNonNullable } from '../../utils/array';
 import { renderTextWithLineBreaks } from './common';
+import { AnswerDisplay } from './components/AnswerDisplay';
+import { RevealButton } from './components/RevealButton';
 
 interface MatchingQuestionProps {
   questionId: number;
@@ -139,83 +141,20 @@ const DroppableBlank: React.FC<{
 
   // Read-only mode or submitted answer (locked in)
   if (isReadOnly || (status !== null && !canBeRevealed) || isRevealed) {
-    const emptyValue = Symbol();
-    const displayValue = isRevealed
-      ? previousAnswer || emptyValue
-      : status === AnswerStatus.CORRECT || status === AnswerStatus.PARTIAL
-        ? previousAnswer
-        : previousAnswer || emptyValue;
-
-    const backgroundColor =
-      status === AnswerStatus.CORRECT
-        ? '#065f46'
-        : status === AnswerStatus.PARTIAL
-          ? '#1e3a8a'
-          : status === AnswerStatus.INCORRECT || isRevealed
-            ? '#7f1d1d'
-            : '#374151';
-
-    const borderColor =
-      status === AnswerStatus.CORRECT
-        ? '#4ade80'
-        : status === AnswerStatus.PARTIAL
-          ? '#60a5fa'
-          : status === AnswerStatus.INCORRECT || isRevealed
-            ? '#f87171'
-            : '#6b7280';
-
     return (
-      <span style={{ position: 'relative', display: 'inline-block' }}>
-        <span
-          style={{
-            display: 'inline-block',
-            padding: '0px 12px',
-            margin: '2px 4px',
-            backgroundColor,
-            border: `2px solid ${borderColor}`,
-            borderRadius: '4px',
-            minWidth: '120px',
-            textAlign: 'center',
-          }}
-          data-status={isRevealed ? AnswerStatus.REVEALED : status || AnswerStatus.UNANSWERED}
-          datatype='matching-status'
-        >
-          {status === AnswerStatus.INCORRECT || status === AnswerStatus.UNANSWERED || isRevealed ? (
-            <>
-              <span style={{ textDecoration: displayValue !== emptyValue ? 'line-through' : 'none', color: '#f87171' }}>
-                {displayValue === emptyValue ? '___' : displayValue}
-              </span>
-              {' → '}
-              <span style={{ color: '#4ade80', fontWeight: 'bold' }}>{correctAnswer || correctAnswers[0]}</span>
-            </>
-          ) : (
-            <span style={{ color: '#e0e0e0' }}>{displayValue === emptyValue ? '___' : displayValue}</span>
-          )}
-        </span>
-        {explanation && (status === AnswerStatus.CORRECT || status === AnswerStatus.PARTIAL) && (
-          <Tooltip title={explanation}>
-            <span
-              style={{
-                display: 'inline-block',
-                width: '16px',
-                height: '16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                borderRadius: '50%',
-                fontSize: '12px',
-                lineHeight: '16px',
-                textAlign: 'center',
-                marginLeft: '4px',
-                cursor: 'help',
-              }}
-              datatype='explanation-icon'
-              aria-description={explanation}
-            >
-              i
-            </span>
-          </Tooltip>
-        )}
-      </span>
+      <AnswerDisplay
+        status={status}
+        isRevealed={isRevealed}
+        userAnswer={previousAnswer}
+        correctAnswer={correctAnswer || correctAnswers[0]}
+        explanation={explanation}
+        containerStyle={{ position: 'relative', display: 'inline-block' }}
+        displayStyle={{
+          padding: '0px 12px',
+          margin: '2px',
+          minWidth: '120px',
+        }}
+      />
     );
   }
 
@@ -266,7 +205,6 @@ const DroppableBlank: React.FC<{
             style={{
               display: 'inline-block',
               padding: '0px 12px',
-              margin: '2px 4px',
               minWidth: '120px',
               backgroundColor: isOver ? '#1e3a8a' : '#1f1f1f',
               border: `2px solid ${isOver ? '#60a5fa' : '#6b7280'}`,
@@ -284,30 +222,7 @@ const DroppableBlank: React.FC<{
           </span>
         )}
       </span>
-      {canBeRevealed && (
-        <Tooltip title='Reveal answer (forfeit points)'>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onReveal();
-            }}
-            style={{
-              marginLeft: '4px',
-              padding: '2px 6px',
-              backgroundColor: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
-            datatype='reveal-answer'
-            aria-description='Reveal answer (forfeit points)'
-          >
-            ?
-          </button>
-        </Tooltip>
-      )}
+      {canBeRevealed && <RevealButton onReveal={onReveal} style={{ marginLeft: '4px' }} />}
     </span>
   );
 };
