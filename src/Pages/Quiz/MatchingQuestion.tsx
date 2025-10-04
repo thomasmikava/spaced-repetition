@@ -72,6 +72,8 @@ const DraggableOption: React.FC<{
         fontSize: '14px',
         fontWeight: 500,
       }}
+      datatype='draggable-option'
+      data-value={value}
     >
       {value}
       {showCount && (
@@ -175,6 +177,8 @@ const DroppableBlank: React.FC<{
             minWidth: '120px',
             textAlign: 'center',
           }}
+          data-status={isRevealed ? AnswerStatus.REVEALED : status || AnswerStatus.UNANSWERED}
+          datatype='matching-status'
         >
           {status === AnswerStatus.INCORRECT || status === AnswerStatus.UNANSWERED || isRevealed ? (
             <>
@@ -204,6 +208,8 @@ const DroppableBlank: React.FC<{
                 marginLeft: '4px',
                 cursor: 'help',
               }}
+              datatype='explanation-icon'
+              aria-description={explanation}
             >
               i
             </span>
@@ -250,6 +256,7 @@ const DroppableBlank: React.FC<{
               boxSizing: 'border-box',
             }}
             onClick={onClick}
+            datatype='drop-zone'
           >
             {selectedValue}
           </span>
@@ -271,6 +278,7 @@ const DroppableBlank: React.FC<{
               cursor: 'pointer',
               userSelect: 'none',
             }}
+            datatype='drop-zone'
           >
             --- Drop ---
           </span>
@@ -293,6 +301,8 @@ const DroppableBlank: React.FC<{
               fontSize: '12px',
               cursor: 'pointer',
             }}
+            datatype='reveal-answer'
+            aria-description='Reveal answer (forfeit points)'
           >
             ?
           </button>
