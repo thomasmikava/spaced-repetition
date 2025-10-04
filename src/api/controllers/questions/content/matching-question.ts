@@ -61,6 +61,7 @@ export class MatchingQuestion implements IQuestion {
 
       const userValue = userAnswer.value.trim();
       const isFirstTrial = userAnswer.isFirstTrial ?? true;
+      const isRevealed = userAnswer.isRevealed === true;
 
       // Get correct answers
       const correctAnswers = blankItem.correctAnswers.map((a) => a.trim());
@@ -72,27 +73,34 @@ export class MatchingQuestion implements IQuestion {
       attemptedBlanks++;
       pointsAttempted += pointsPerBlank;
 
-      // Check if answer is correct and within usage limits
-      const answerOption = this.content.answerOptions.find((opt) => opt.value === userValue);
-      const currentUsage = optionUsage.get(userValue) || 0;
-      const usageLimit = answerOption?.usageLimit || 1;
-
-      if (correctAnswers.includes(userValue) && currentUsage < usageLimit) {
-        status = AnswerStatus.CORRECT;
-        pointsEarned = pointsPerBlank;
-        correctBlanks++;
-        optionUsage.set(userValue, currentUsage + 1);
-      } else {
-        status = AnswerStatus.INCORRECT;
+      if (isRevealed) {
+        status = AnswerStatus.REVEALED;
         pointsEarned = 0;
-      }
+        // Do not increment correctBlanks or earnedPoints
+      } else {
+        // Check if answer is correct and within usage limits
+        const answerOption = this.content.answerOptions.find((opt) => opt.value === userValue);
+        const currentUsage = optionUsage.get(userValue) || 0;
+        const usageLimit =
+          !!answerOption && answerOption.usageLimit === null ? Infinity : answerOption?.usageLimit ?? 1;
 
-      // Reduce points if not first trial
-      if (!isFirstTrial) {
-        pointsEarned *= 0.8; // 20% penalty for non-first trials
-      }
+        if (correctAnswers.includes(userValue) && currentUsage < usageLimit) {
+          status = AnswerStatus.CORRECT;
+          pointsEarned = pointsPerBlank;
+          correctBlanks++;
+          optionUsage.set(userValue, currentUsage + 1);
+        } else {
+          status = AnswerStatus.INCORRECT;
+          pointsEarned = 0;
+        }
 
-      earnedPoints += pointsEarned;
+        // Reduce points if not first trial
+        if (!isFirstTrial) {
+          pointsEarned *= 0.8; // 20% penalty for non-first trials
+        }
+
+        earnedPoints += pointsEarned;
+      }
 
       answers.push({
         index,
@@ -117,6 +125,16 @@ export class MatchingQuestion implements IQuestion {
         correctAnswer: a.correctAnswer,
       })),
     };
+    // Calculate if every blank is either revealed or correct
+    const isEveryBlankRevealedOrCorrect = blankItems.every((_, index) => {
+      const answer = answers.find((a) => a.index === index);
+      return (
+        answer &&
+        (answer.status === AnswerStatus.REVEALED ||
+          answer.status === AnswerStatus.CORRECT ||
+          answer.status === AnswerStatus.PARTIAL)
+      );
+    });
 
     return {
       totalBlanks,
@@ -127,6 +145,7 @@ export class MatchingQuestion implements IQuestion {
       pointsAttempted: Math.round(pointsAttempted * 100) / 100, // Round to 2 decimals
       answers,
       processedAnswer,
+      isEveryBlankRevealedOrCorrect,
     };
   }
 

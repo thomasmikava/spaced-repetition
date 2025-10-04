@@ -6,9 +6,11 @@ import { QuestionType } from '../../api/controllers/questions/question-content.s
 import type {
   FillBlanksUserAnswerDTO,
   MatchingUserAnswerDTO,
+  MultipleChoiceUserAnswerDTO,
 } from '../../api/controllers/questions/question-content.schema';
 import FillBlanksQuestion from './FillBlanksQuestion';
 import MatchingQuestion from './MatchingQuestion';
+import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import type { QuizQuestionDTO, UserQuestionAttemptDTO } from '../../api/controllers/quizzes/quiz.schema';
 
 interface QuestionCardProps {
@@ -45,6 +47,14 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         return currentAnswer.answers.some((a: any) => a.value && a.value.trim() !== '');
       } else if (currentAnswer.type === QuestionType.MATCHING && currentAnswer.answers) {
         return currentAnswer.answers.some((a: any) => a.value && a.value !== '');
+      } else if (currentAnswer.type === QuestionType.MULTIPLE_CHOICE && currentAnswer.answers) {
+        return currentAnswer.answers.some((a: any) => {
+          const val = a.value;
+          // Check if value is not null/undefined and either a number or non-empty array
+          return (
+            val !== null && val !== undefined && (typeof val === 'number' || (Array.isArray(val) && val.length > 0))
+          );
+        });
       }
 
       return false;
@@ -245,6 +255,15 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             content={content}
             isReadOnly={isReadOnly}
             processedAnswer={processedAnswer as MatchingUserAnswerDTO | undefined}
+          />
+        );
+      case QuestionType.MULTIPLE_CHOICE:
+        return (
+          <MultipleChoiceQuestion
+            questionId={question.questionId}
+            content={content}
+            isReadOnly={isReadOnly}
+            processedAnswer={processedAnswer as MultipleChoiceUserAnswerDTO | undefined}
           />
         );
       default:

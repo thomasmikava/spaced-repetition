@@ -15,6 +15,7 @@ export enum AnswerStatus {
 export enum QuestionType {
   FILL_BLANKS = 'fill-blanks',
   MATCHING = 'matching',
+  MULTIPLE_CHOICE = 'multiple-choice',
 }
 // Base question interface
 export interface BaseQuestionDTO {
@@ -178,17 +179,116 @@ export interface MatchingUserInputDTO {
   answers: MatchingInputItemDTO[];
 }
 
+// =============================================================================
+// MULTIPLE CHOICE QUESTION TYPES
+// =============================================================================
+
+export enum ChoiceDisplayMode {
+  RADIO = 'radio',
+  CHECKBOX = 'checkbox',
+  DROPDOWN = 'dropdown',
+}
+
+// Text item for multiple choice
+const MultipleChoiceTextItemSchema = z.object({
+  type: z.literal('text'),
+  value: z.string().min(1),
+});
+
+export interface MultipleChoiceTextItemDTO {
+  type: 'text';
+  value: string;
+}
+
+// Individual option within a choice group
+const MultipleChoiceOptionSchema = z.object({
+  text: z.string().min(1),
+  isCorrect: z.boolean().optional(),
+});
+
+export interface MultipleChoiceOptionDTO {
+  text: string;
+  isCorrect?: boolean;
+}
+
+// Choice group item (renamed from "options area")
+const MultipleChoiceGroupItemSchema = z.object({
+  type: z.literal('choice-group'),
+  options: z.array(MultipleChoiceOptionSchema).min(1),
+  isMultiSelect: z.boolean().optional(),
+  displayMode: z.nativeEnum(ChoiceDisplayMode).optional(),
+  isInlineDropdown: z.boolean().optional(),
+  explanation: z.string().optional(),
+});
+
+export interface MultipleChoiceGroupItemDTO {
+  type: 'choice-group';
+  options: MultipleChoiceOptionDTO[];
+  isMultiSelect?: boolean; // defaults to false (single select)
+  displayMode?: ChoiceDisplayMode;
+  isInlineDropdown?: boolean;
+  explanation?: string;
+}
+
+const MultipleChoiceContentItemSchema = z.discriminatedUnion('type', [
+  MultipleChoiceTextItemSchema,
+  MultipleChoiceGroupItemSchema,
+]);
+
+export type MultipleChoiceContentItemDTO = MultipleChoiceTextItemDTO | MultipleChoiceGroupItemDTO;
+
+const MultipleChoiceQuestionSchema = z.object({
+  type: z.literal(QuestionType.MULTIPLE_CHOICE),
+  title: z.string().optional(),
+  items: z.array(MultipleChoiceContentItemSchema).min(1),
+});
+
+export interface MultipleChoiceQuestionDTO extends BaseQuestionDTO {
+  type: QuestionType.MULTIPLE_CHOICE;
+  items: MultipleChoiceContentItemDTO[];
+}
+
+// User input item for a single choice group
+const MultipleChoiceInputItemSchema = z.object({
+  index: z.number().min(0),
+  value: z.union([z.number(), z.array(z.number()), z.null()]),
+  isRevealed: z.boolean().optional(),
+  isFirstTrial: z.boolean().optional(),
+});
+
+export interface MultipleChoiceInputItemDTO {
+  index: number; // Index of the choice group item
+  value: number | number[] | null; // Selected option index(es) or null
+  isRevealed?: boolean;
+  isFirstTrial?: boolean;
+}
+
+export const MultipleChoiceUserInputSchema = z.object({
+  type: z.literal(QuestionType.MULTIPLE_CHOICE),
+  answers: z.array(MultipleChoiceInputItemSchema),
+});
+
+export interface MultipleChoiceUserInputDTO {
+  type: QuestionType.MULTIPLE_CHOICE;
+  answers: MultipleChoiceInputItemDTO[];
+}
+
 // Union schema for all question types
 export const QuestionContentSchemaSchema = z.discriminatedUnion('type', [
   FillBlanksQuestionSchema,
   MatchingQuestionSchema,
+  MultipleChoiceQuestionSchema,
 ]);
 
-export type QuestionContentDTO = FillBlanksQuestionDTO | MatchingQuestionDTO;
+export type QuestionContentDTO = FillBlanksQuestionDTO | MatchingQuestionDTO | MultipleChoiceQuestionDTO;
 
-export const UserInputSchema = z.discriminatedUnion('type', [FillBlanksUserInputSchema, MatchingUserInputSchema]);
+export const UserInputSchema = z.discriminatedUnion('type', [
+  FillBlanksUserInputSchema,
+  MatchingUserInputSchema,
+  MultipleChoiceUserInputSchema,
+]);
 
-export type UserInputDTO = FillBlanksUserInputDTO | MatchingUserInputDTO;
+export type UserInputDTO = FillBlanksUserInputDTO | MatchingUserInputDTO | MultipleChoiceUserInputDTO;
 
 // =============================================================================
 // PROCESSED USER ANSWER VALIDATION SCHEMAS
@@ -251,9 +351,42 @@ export interface MatchingUserAnswerDTO {
   answers: MatchingAnswerItemDTO[];
 }
 
-export const UserAnswerSchema = z.discriminatedUnion('type', [FillBlanksUserAnswerSchema, MatchingUserAnswerSchema]);
+// Processed answer item for multiple choice
+const MultipleChoiceAnswerItemSchema = z.object({
+  index: z.number().min(0),
+  value: z.union([z.number(), z.array(z.number()), z.null()]),
+  isFirstTrial: z.boolean(),
+  status: z.nativeEnum(AnswerStatus),
+  pointsEarned: z.number().min(0),
+  correctAnswer: z.union([z.number(), z.array(z.number())]),
+});
 
-export type UserAnswerDTO = FillBlanksUserAnswerDTO | MatchingUserAnswerDTO;
+interface MultipleChoiceAnswerItemDTO {
+  index: number;
+  value: number | number[] | null;
+  isFirstTrial: boolean;
+  status: AnswerStatus;
+  pointsEarned: number;
+  correctAnswer: number | number[];
+}
+
+export const MultipleChoiceUserAnswerSchema = z.object({
+  type: z.literal(QuestionType.MULTIPLE_CHOICE),
+  answers: z.array(MultipleChoiceAnswerItemSchema),
+});
+
+export interface MultipleChoiceUserAnswerDTO {
+  type: QuestionType.MULTIPLE_CHOICE;
+  answers: MultipleChoiceAnswerItemDTO[];
+}
+
+export const UserAnswerSchema = z.discriminatedUnion('type', [
+  FillBlanksUserAnswerSchema,
+  MatchingUserAnswerSchema,
+  MultipleChoiceUserAnswerSchema,
+]);
+
+export type UserAnswerDTO = FillBlanksUserAnswerDTO | MatchingUserAnswerDTO | MultipleChoiceUserAnswerDTO;
 
 // =============================================================================
 // ANSWER CHECKING RESULT TYPES
@@ -278,4 +411,5 @@ export interface QuestionCheckResultDTO {
   pointsAttempted: number;
   answers: AnswerCheckResultDTO[];
   processedAnswer: UserAnswerDTO;
+  isEveryBlankRevealedOrCorrect: boolean;
 }

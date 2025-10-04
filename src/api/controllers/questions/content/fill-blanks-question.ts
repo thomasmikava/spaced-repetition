@@ -55,6 +55,7 @@ export class FillBlanksQuestion implements IQuestion {
 
       const userValue = userAnswer.value.trim().toLowerCase();
       const isFirstTrial = userAnswer.isFirstTrial ?? true;
+      const isRevealed = userAnswer.isRevealed === true;
 
       // Get correct answers
       const officialAnswers = missingItem.officialAnswers.map((a) => a.trim().toLowerCase());
@@ -67,26 +68,32 @@ export class FillBlanksQuestion implements IQuestion {
       attemptedBlanks++;
       pointsAttempted += pointsPerBlank;
 
-      // Check if answer is correct
-      if (officialAnswers.includes(userValue)) {
-        status = AnswerStatus.CORRECT;
-        pointsEarned = pointsPerBlank;
-        correctBlanks++;
-      } else if (additionalAnswers.includes(userValue)) {
-        status = AnswerStatus.PARTIAL;
-        pointsEarned = pointsPerBlank * 0.5; // 50% points for additional answers
-        correctBlanks += 0.5;
-      } else {
-        status = AnswerStatus.INCORRECT;
+      if (isRevealed) {
+        status = AnswerStatus.REVEALED;
         pointsEarned = 0;
-      }
+        // Do not increment correctBlanks or earnedPoints
+      } else {
+        // Check if answer is correct
+        if (officialAnswers.includes(userValue)) {
+          status = AnswerStatus.CORRECT;
+          pointsEarned = pointsPerBlank;
+          correctBlanks++;
+        } else if (additionalAnswers.includes(userValue)) {
+          status = AnswerStatus.PARTIAL;
+          pointsEarned = pointsPerBlank * 0.5; // 50% points for additional answers
+          correctBlanks += 0.5;
+        } else {
+          status = AnswerStatus.INCORRECT;
+          pointsEarned = 0;
+        }
 
-      // Reduce points if not first trial
-      if (!isFirstTrial) {
-        pointsEarned *= 0.8; // 20% penalty for non-first trials
-      }
+        // Reduce points if not first trial
+        if (!isFirstTrial) {
+          pointsEarned *= 0.8; // 20% penalty for non-first trials
+        }
 
-      earnedPoints += pointsEarned;
+        earnedPoints += pointsEarned;
+      }
 
       answers.push({
         index,
@@ -112,6 +119,17 @@ export class FillBlanksQuestion implements IQuestion {
       })),
     };
 
+    // Calculate if every blank is either revealed or correct
+    const isEveryBlankRevealedOrCorrect = missingItems.every((_, index) => {
+      const answer = answers.find((a) => a.index === index);
+      return (
+        answer &&
+        (answer.status === AnswerStatus.REVEALED ||
+          answer.status === AnswerStatus.CORRECT ||
+          answer.status === AnswerStatus.PARTIAL)
+      );
+    });
+
     return {
       totalBlanks,
       attemptedBlanks,
@@ -121,6 +139,7 @@ export class FillBlanksQuestion implements IQuestion {
       pointsAttempted: Math.round(pointsAttempted * 100) / 100, // Round to 2 decimals
       answers,
       processedAnswer,
+      isEveryBlankRevealedOrCorrect,
     };
   }
 

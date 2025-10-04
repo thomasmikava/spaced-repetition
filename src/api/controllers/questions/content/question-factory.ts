@@ -4,6 +4,7 @@ import { QuestionType } from '../question-content.schema';
 import type { IQuestion } from './base-question.interface';
 import { FillBlanksQuestion } from './fill-blanks-question';
 import { MatchingQuestion } from './matching-question';
+import { MultipleChoiceQuestion } from './multiple-choice-question';
 
 /**
  * Factory function to create question instances based on question content
@@ -17,6 +18,9 @@ export function createQuestion(questionContent: QuestionContentDTO): IQuestion {
 
     case QuestionType.MATCHING:
       return new MatchingQuestion(questionContent);
+
+    case QuestionType.MULTIPLE_CHOICE:
+      return new MultipleChoiceQuestion(questionContent);
 
     default:
       // This should never happen with proper typing, but provides a safety net
