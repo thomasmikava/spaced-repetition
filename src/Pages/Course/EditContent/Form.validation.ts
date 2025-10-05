@@ -4,6 +4,7 @@ import { WordWithTranslationSchema } from '../../../api/controllers/words/words.
 import { QuestionContentSchemaSchema } from '../../../api/controllers/questions/question-content.schema';
 import type { LessonInfo } from './Form';
 import { zodAddShape } from '../../../utils/z';
+import { QuizModeSchema } from '../../../api/controllers/quizzes/quiz.schema';
 
 export const useValidation = (translationLangs: string[]) => {
   const { createObjectResolver } = useValidators();
@@ -84,6 +85,7 @@ export const useValidation = (translationLangs: string[]) => {
       id: z.number().optional(),
       title: z.string().min(1, 'Quiz title is required'),
       description: z.string(),
+      mode: QuizModeSchema.optional(),
       priority: z.number().optional(),
       isHidden: z.boolean().optional(),
       questions: z.array(QuizQuestionSchema),

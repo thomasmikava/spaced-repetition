@@ -12,6 +12,7 @@ import type {
   GetQuizDetailsResDTO,
   GetUserQuizProgressResDTO,
 } from '../../api/controllers/quizzes/quiz.schema';
+import { QuizMode } from '../../api/controllers/quizzes/quiz.schema';
 import type { MatchingUserAnswerDTO } from '../../api/controllers/questions/question-content.schema';
 import { quizMocks } from '../../api/controllers/quizzes/quiz.cache';
 import { screen, within } from '../../test';
@@ -36,6 +37,7 @@ const createMatchingQuizDetails = (overrides?: Partial<QuizDTO>): GetQuizDetails
   questionCount: 2,
   isHidden: false,
   priority: 0,
+  mode: QuizMode.PRACTICE,
   isDeleted: false,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -199,6 +201,20 @@ const hasIncorrectBorder = (element: HTMLElement | null): boolean => {
   if (!element) return false;
   const style = window.getComputedStyle(element);
   return style.borderColor === 'rgb(248, 113, 113)' || style.borderColor === '#f87171';
+};
+
+// Helper to check if drop zone has correct border (green)
+const hasCorrectBorder = (element: HTMLElement | null): boolean => {
+  if (!element) return false;
+  const style = window.getComputedStyle(element);
+  return style.borderColor === 'rgb(74, 222, 128)' || style.borderColor === '#4ade80';
+};
+
+// Helper to check if drop zone has default border
+const hasDefaultBorder = (element: HTMLElement | null): boolean => {
+  if (!element) return false;
+  const style = window.getComputedStyle(element);
+  return style.borderColor === 'rgb(107, 114, 128)' || style.borderColor === '#6b7280';
 };
 
 describe('Section B.2: Matching Question Type', () => {
@@ -1461,6 +1477,216 @@ describe('Section B.2: Matching Question Type', () => {
       });
 
       expect(attemptWithPartial.questionAttempts[0].pointsEarned).toBe(0);
+    });
+  });
+
+  describe('B.2.5 Quiz Modes', () => {
+    describe('Live Feedback Mode (default)', () => {
+      it('should show green border when correct option is selected', async () => {
+        const quiz = createMatchingQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const dropZones = screen.getAll(matchingSelector.dropZone());
+          expect(dropZones).toHaveLength(4);
+        });
+
+        const firstDropZone = getDropZone(0);
+        await user.click(firstDropZone!);
+
+        const dropdown = await screen.find(matchingSelector.dropdown());
+        await user.click(within(dropdown).getByText('Paris'));
+
+        await waitFor(() => {
+          expect(hasCorrectBorder(firstDropZone)).toBe(true);
+        });
+      });
+
+      it('should show red border when incorrect option is selected', async () => {
+        const quiz = createMatchingQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const dropZones = screen.getAll(matchingSelector.dropZone());
+          expect(dropZones).toHaveLength(4);
+        });
+
+        const firstDropZone = getDropZone(0);
+        await user.click(firstDropZone!);
+
+        const dropdown = await screen.find(matchingSelector.dropdown());
+        await user.click(within(dropdown).getByText('London'));
+
+        await waitFor(() => {
+          expect(hasIncorrectBorder(firstDropZone)).toBe(true);
+        });
+      });
+
+      it('should show reveal button for incorrect answers', async () => {
+        const quiz = createMatchingQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+          createQuestionAttempt(1, {
+            type: QuestionType.MATCHING,
+            answers: [
+              {
+                index: 0,
+                value: 'London',
+                isFirstTrial: true,
+                status: AnswerStatus.INCORRECT,
+                pointsEarned: 0,
+                correctAnswer: 'Paris',
+              },
+            ],
+          }),
+        ]);
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+        );
+
+        renderQuizPage();
+
+        const revealButton = await screen.find(matchingSelector.revealButton());
+        expect(revealButton).toBeInTheDocument();
+      });
+    });
+
+    describe('Assessment Mode', () => {
+      it('should not show reveal button in assessment mode', async () => {
+        const quiz = createMatchingQuizDetails({ mode: QuizMode.ASSESSMENT });
+        const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+          createQuestionAttempt(1, {
+            type: QuestionType.MATCHING,
+            answers: [
+              {
+                index: 0,
+                value: 'London',
+                isFirstTrial: true,
+                status: AnswerStatus.INCORRECT,
+                pointsEarned: 0,
+                correctAnswer: 'Paris',
+              },
+            ],
+          }),
+        ]);
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+        );
+
+        renderQuizPage();
+
+        await waitFor(() => {
+          const dropZones = screen.getAll(matchingSelector.dropZone());
+          expect(dropZones).toHaveLength(4);
+        });
+
+        const revealButton = screen.query(matchingSelector.revealButton());
+        expect(revealButton).toBeNull();
+      });
+
+      it('should not show real-time validation in assessment mode', async () => {
+        const quiz = createMatchingQuizDetails({ mode: QuizMode.ASSESSMENT });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const dropZones = screen.getAll(matchingSelector.dropZone());
+          expect(dropZones).toHaveLength(4);
+        });
+
+        const firstDropZone = getDropZone(0);
+
+        // Select incorrect option
+        await user.click(firstDropZone!);
+        const dropdown = await screen.find(matchingSelector.dropdown());
+        await user.click(within(dropdown).getByText('London'));
+
+        await waitFor(() => {
+          // Should not show red border, should have default border
+          expect(hasDefaultBorder(firstDropZone)).toBe(true);
+        });
+
+        // Select correct option
+        await user.click(firstDropZone!);
+        const dropdown2 = await screen.find(matchingSelector.dropdown());
+        await user.click(within(dropdown2).getByText('Paris'));
+
+        await waitFor(() => {
+          // Should not show green border, should stay default
+          expect(hasDefaultBorder(firstDropZone)).toBe(true);
+        });
+      });
     });
   });
 });

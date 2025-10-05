@@ -12,6 +12,7 @@ import type {
   GetQuizDetailsResDTO,
   GetUserQuizProgressResDTO,
 } from '../../api/controllers/quizzes/quiz.schema';
+import { QuizMode } from '../../api/controllers/quizzes/quiz.schema';
 import type { FillBlanksUserAnswerDTO } from '../../api/controllers/questions/question-content.schema';
 import { quizMocks } from '../../api/controllers/quizzes/quiz.cache';
 import { screen, within } from '../../test';
@@ -36,6 +37,7 @@ const createFillBlanksQuizDetails = (overrides?: Partial<QuizDTO>): GetQuizDetai
   questionCount: 2,
   isHidden: false,
   priority: 0,
+  mode: QuizMode.PRACTICE,
   isDeleted: false,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -176,6 +178,20 @@ const isInputIncorrect = (input: HTMLInputElement | null): boolean => {
   if (!input) return false;
   const style = window.getComputedStyle(input);
   return style.borderColor === 'rgb(248, 113, 113)' || style.borderColor === '#f87171';
+};
+
+// Helper to check if blank input has green border (correct match)
+const isInputCorrect = (input: HTMLInputElement | null): boolean => {
+  if (!input) return false;
+  const style = window.getComputedStyle(input);
+  return style.borderColor === 'rgb(74, 222, 128)' || style.borderColor === '#4ade80';
+};
+
+// Helper to check if blank input has default border
+const hasDefaultBorder = (input: HTMLInputElement | null): boolean => {
+  if (!input) return false;
+  const style = window.getComputedStyle(input);
+  return style.borderColor === 'rgb(107, 114, 128)' || style.borderColor === '#6b7280';
 };
 
 describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
@@ -744,6 +760,92 @@ describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
       });
     });
 
+    it('should trigger hint when Ctrl+Space is pressed in input field', async () => {
+      const quiz = createFillBlanksQuizDetails();
+      const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+        createQuestionAttempt(1, {
+          type: QuestionType.FILL_BLANKS,
+          answers: [
+            {
+              index: 0,
+              value: 'Par',
+              isFirstTrial: true,
+              status: AnswerStatus.INCORRECT,
+              pointsEarned: 0,
+              correctAnswer: 'Paris',
+            },
+          ],
+        }),
+      ]);
+
+      server.use(
+        quizMocks.requests.getQuizDetails.successResponse(quiz),
+        quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+      );
+
+      const { user } = renderQuizPage();
+
+      await waitFor(() => {
+        const firstInput = getBlankInput(0);
+        expect(firstInput).toHaveValue('Par');
+      });
+
+      const firstInput = getBlankInput(0);
+
+      // Focus the input
+      await user.click(firstInput!);
+
+      // Press Ctrl+Space (on Windows/Linux) or Cmd+Space (on Mac)
+      await user.keyboard('{Control>} {Space}{/Control}');
+
+      await waitFor(() => {
+        expect(firstInput).toHaveValue('Pari'); // getMinimalChange should add one character
+      });
+    });
+
+    it('should trigger hint when Cmd+Space is pressed in input field', async () => {
+      const quiz = createFillBlanksQuizDetails();
+      const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+        createQuestionAttempt(1, {
+          type: QuestionType.FILL_BLANKS,
+          answers: [
+            {
+              index: 0,
+              value: 'Par',
+              isFirstTrial: true,
+              status: AnswerStatus.INCORRECT,
+              pointsEarned: 0,
+              correctAnswer: 'Paris',
+            },
+          ],
+        }),
+      ]);
+
+      server.use(
+        quizMocks.requests.getQuizDetails.successResponse(quiz),
+        quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+      );
+
+      const { user } = renderQuizPage();
+
+      await waitFor(() => {
+        const firstInput = getBlankInput(0);
+        expect(firstInput).toHaveValue('Par');
+      });
+
+      const firstInput = getBlankInput(0);
+
+      // Focus the input
+      await user.click(firstInput!);
+
+      // Press Cmd+Space (on Mac)
+      await user.keyboard('{Meta>} {Space}{/Meta}');
+
+      await waitFor(() => {
+        expect(firstInput).toHaveValue('Pari'); // getMinimalChange should add one character
+      });
+    });
+
     it('should reveal official answer and make blank non-editable when reveal icon is clicked', async () => {
       const quiz = createFillBlanksQuizDetails();
       const attemptWithIncorrect = createUserProgressWithAttempt(1, [
@@ -920,6 +1022,364 @@ describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
         fillingBlanksSelector.byStatusWithText(AnswerStatus.PARTIAL, 'jupiter'),
       );
       expect(partialSpan).toBeInTheDocument();
+    });
+  });
+
+  describe('B.1.4 Quiz Modes', () => {
+    describe('Live Feedback Mode (default)', () => {
+      it('should show real-time validation with red border for invalid input', async () => {
+        const quiz = createFillBlanksQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const firstInput = getBlankInput(0);
+        // Type "X" which is not a prefix of "Paris"
+        await user.type(firstInput!, 'X');
+
+        await waitFor(() => {
+          expect(isInputIncorrect(firstInput)).toBe(true);
+        });
+      });
+
+      it('should show green border when input exactly matches correct answer', async () => {
+        const quiz = createFillBlanksQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const firstInput = getBlankInput(0);
+        await user.type(firstInput!, 'Paris');
+
+        await waitFor(() => {
+          expect(isInputCorrect(firstInput)).toBe(true);
+        });
+      });
+
+      it('should show default border for valid prefix that is not exact match', async () => {
+        const quiz = createFillBlanksQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const firstInput = getBlankInput(0);
+        // Type "Par" which is a valid prefix of "Paris"
+        await user.type(firstInput!, 'Par');
+
+        await waitFor(() => {
+          expect(hasDefaultBorder(firstInput)).toBe(true);
+        });
+      });
+
+      it('should show hint and reveal buttons', async () => {
+        const quiz = createFillBlanksQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+          createQuestionAttempt(1, {
+            type: QuestionType.FILL_BLANKS,
+            answers: [
+              {
+                index: 0,
+                value: 'London',
+                isFirstTrial: true,
+                status: AnswerStatus.INCORRECT,
+                pointsEarned: 0,
+                correctAnswer: 'Paris',
+              },
+            ],
+          }),
+        ]);
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+        );
+
+        renderQuizPage();
+
+        await waitFor(() => {
+          const hintButtons = screen.getAll(fillingBlanksSelector.hintButton());
+          expect(hintButtons).toHaveLength(2);
+
+          const revealButton = screen.get(fillingBlanksSelector.revealButton());
+          expect(revealButton).toBeInTheDocument();
+        });
+      });
+
+      it('should show partial submit button', async () => {
+        const quiz = createFillBlanksQuizDetails({
+          mode: QuizMode.LIVE_FEEDBACK,
+        });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const firstInput = getBlankInput(0);
+        await user.type(firstInput!, 'P');
+
+        await waitFor(() => {
+          const partialSubmitButton = screen.get(questionCardSelector.partialSubmit());
+          expect(partialSubmitButton).toBeInTheDocument();
+        });
+      });
+    });
+
+    describe('Assessment Mode', () => {
+      it('should not show hint buttons in assessment mode', async () => {
+        const quiz = createFillBlanksQuizDetails({ mode: QuizMode.ASSESSMENT });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const hintButtons = screen.queryAll(fillingBlanksSelector.hintButton());
+        expect(hintButtons).toHaveLength(0);
+      });
+
+      it('should not show reveal button in assessment mode', async () => {
+        const quiz = createFillBlanksQuizDetails({ mode: QuizMode.ASSESSMENT });
+        const attemptWithIncorrect = createUserProgressWithAttempt(1, [
+          createQuestionAttempt(1, {
+            type: QuestionType.FILL_BLANKS,
+            answers: [
+              {
+                index: 0,
+                value: 'London',
+                isFirstTrial: true,
+                status: AnswerStatus.INCORRECT,
+                pointsEarned: 0,
+                correctAnswer: 'Paris',
+              },
+            ],
+          }),
+        ]);
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(attemptWithIncorrect),
+        );
+
+        renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const revealButton = screen.query(fillingBlanksSelector.revealButton());
+        expect(revealButton).toBeNull();
+      });
+
+      it('should not show partial submit button in assessment mode', async () => {
+        const quiz = createFillBlanksQuizDetails({ mode: QuizMode.ASSESSMENT });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const firstInput = getBlankInput(0);
+        await user.type(firstInput!, 'P');
+
+        await waitFor(() => {
+          const partialSubmitButton = screen.query(questionCardSelector.partialSubmit());
+          expect(partialSubmitButton).toBeNull();
+        });
+      });
+
+      it('should not show real-time validation in assessment mode', async () => {
+        const quiz = createFillBlanksQuizDetails({ mode: QuizMode.ASSESSMENT });
+        const userProgress = createEmptyUserProgress();
+        const newAttempt = quizMocks.requests.startQuizAttempt.createResponsePayload({
+          id: 1,
+          userId: 1,
+          quizId: 1,
+          lessonId: 1,
+          courseId: 1,
+          pointsAttempted: 0,
+          pointsEarned: 0,
+          isCompleted: false,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        server.use(
+          quizMocks.requests.getQuizDetails.successResponse(quiz),
+          quizMocks.requests.getUserQuizProgress.successResponse(userProgress),
+          quizMocks.requests.startQuizAttempt.successResponse(newAttempt),
+        );
+
+        const { user } = renderQuizPage();
+
+        await waitFor(() => {
+          const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
+          expect(inputs).toHaveLength(2);
+        });
+
+        const firstInput = getBlankInput(0);
+
+        // Type invalid input
+        await user.type(firstInput!, 'X');
+        await waitFor(() => {
+          expect(hasDefaultBorder(firstInput)).toBe(true); // Should stay default, not turn red
+        });
+
+        // Type valid input
+        await user.clear(firstInput!);
+        await user.type(firstInput!, 'Paris');
+        await waitFor(() => {
+          expect(hasDefaultBorder(firstInput)).toBe(true); // Should stay default, not turn green
+        });
+      });
     });
   });
 });

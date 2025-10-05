@@ -186,6 +186,9 @@ const QuizPageInternal: React.FC<{ onResetQuiz: (reset: () => Promise<unknown>) 
   const isCompleted = userProgress?.attempt?.isCompleted || false;
   const hasAttempt = !!attemptId;
 
+  // Default to LIVE_FEEDBACK mode if mode is null
+  const quizMode = quiz.mode;
+
   // Show loading while starting quiz automatically
   if (!hasAttempt && (isStartingAttempt || (!userProgress?.attempt && !attemptId))) {
     return <LoadingPage />;
@@ -275,6 +278,7 @@ const QuizPageInternal: React.FC<{ onResetQuiz: (reset: () => Promise<unknown>) 
                     questionNumber={index + 1}
                     isCompleted={isCompleted}
                     questionAttempt={questionAttempt}
+                    quizMode={quizMode}
                     onPartialSubmit={() => handlePartialSubmit(question.questionId)}
                     onFinalSubmit={() => handleFinalSubmit(question.questionId)}
                     isSubmitting={submittingQuestionId === question.questionId}

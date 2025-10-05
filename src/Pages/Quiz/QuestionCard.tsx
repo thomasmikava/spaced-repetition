@@ -12,12 +12,14 @@ import FillBlanksQuestion from './FillBlanksQuestion';
 import MatchingQuestion from './MatchingQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import type { QuizQuestionDTO, UserQuestionAttemptDTO } from '../../api/controllers/quizzes/quiz.schema';
+import { QuizMode } from '../../api/controllers/quizzes/quiz.schema';
 
 interface QuestionCardProps {
   question: QuizQuestionDTO;
   questionNumber: number;
   isCompleted: boolean;
   questionAttempt?: UserQuestionAttemptDTO;
+  quizMode: QuizMode | null;
   onPartialSubmit: () => void;
   onFinalSubmit: () => void;
   isSubmitting: boolean;
@@ -29,6 +31,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   questionNumber,
   isCompleted,
   questionAttempt,
+  quizMode,
   onPartialSubmit,
   onFinalSubmit,
   isSubmitting,
@@ -96,8 +99,9 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     }
   };
 
-  // Should show Submit Non-Empty button
-  const shouldShowPartialSubmit = !isReadOnly && (hasNonEmptyInputs || status === 'in-progress');
+  // Should show Submit Non-Empty button (hidden in Assessment mode)
+  const shouldShowPartialSubmit =
+    !isReadOnly && (hasNonEmptyInputs || status === 'in-progress') && quizMode !== 'ASSESSMENT';
 
   return (
     <div
@@ -245,6 +249,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             questionId={question.questionId}
             content={content}
             isReadOnly={isReadOnly}
+            quizMode={quizMode ?? QuizMode.LIVE_FEEDBACK}
             processedAnswer={processedAnswer as FillBlanksUserAnswerDTO | undefined}
           />
         );
@@ -254,6 +259,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             questionId={question.questionId}
             content={content}
             isReadOnly={isReadOnly}
+            quizMode={quizMode ?? QuizMode.PRACTICE}
             processedAnswer={processedAnswer as MatchingUserAnswerDTO | undefined}
           />
         );
@@ -263,6 +269,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             questionId={question.questionId}
             content={content}
             isReadOnly={isReadOnly}
+            quizMode={quizMode ?? QuizMode.PRACTICE}
             processedAnswer={processedAnswer as MultipleChoiceUserAnswerDTO | undefined}
           />
         );

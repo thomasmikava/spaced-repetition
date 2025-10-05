@@ -14,6 +14,7 @@ import type {
   FillBlanksMissingItem,
 } from '../../api/controllers/questions/question-content.schema';
 import type { QuizFormData } from './types';
+import { QuizMode } from '../../api/controllers/quizzes/quiz.schema';
 import { getMinimalChange } from '../../utils/hint';
 import { isNonNullable } from '../../utils/array';
 import { renderTextWithLineBreaks } from './common';
@@ -25,6 +26,7 @@ interface FillBlanksQuestionProps {
   questionId: number;
   content: FillBlanksQuestionDTO;
   isReadOnly: boolean;
+  quizMode: QuizMode;
   processedAnswer?: FillBlanksUserAnswerDTO;
 }
 
@@ -32,6 +34,7 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
   questionId,
   content,
   isReadOnly,
+  quizMode,
   processedAnswer,
 }) => {
   const { control, setValue, getValues } = useFormContext<QuizFormData>();
@@ -158,6 +161,39 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
     }
   };
 
+  // Helper function to check if current input is a valid prefix of any correct answer
+  const isValidPrefix = (userInput: string, correctAnswers: string[]): boolean => {
+    if (userInput === '') return true; // Empty is valid (no validation yet)
+    return correctAnswers.some((answer) => answer.startsWith(userInput));
+  };
+
+  // Helper function to check if current input exactly matches any correct answer
+  const isExactMatch = (userInput: string, blankItem: FillBlanksMissingItem): boolean => {
+    const allAnswers = [...blankItem.officialAnswers, ...(blankItem.additionalAnswers || [])];
+    return allAnswers.includes(userInput);
+  };
+
+  // Determine border color based on validation (for Live Feedback mode only)
+  const getValidationBorderColor = (userInput: string, blankItem: FillBlanksMissingItem): string => {
+    if (quizMode !== QuizMode.LIVE_FEEDBACK) {
+      return '#6b7280'; // Default gray when not in Live Feedback mode
+    }
+
+    if (userInput === '') {
+      return '#6b7280'; // Default gray for empty input
+    }
+
+    if (isExactMatch(userInput, blankItem)) {
+      return '#4ade80'; // Green for exact match
+    }
+
+    if (!isValidPrefix(userInput, blankItem.officialAnswers)) {
+      return '#f87171'; // Red if not a valid prefix
+    }
+
+    return '#6b7280'; // Default gray for valid prefix but not exact match
+  };
+
   let blankCounter = 0;
 
   return (
@@ -214,12 +250,22 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                 control={control}
                 render={({ field }) => {
                   const isSameAsIncorrect = status === AnswerStatus.INCORRECT && field.value?.value === previousAnswer;
+                  const currentValue = (field.value as FillBlanksInputItemDTO | undefined)?.value || '';
+
+                  // Determine border color: incorrect submission takes priority, then real-time validation
+                  let borderColor = '#6b7280'; // default
+                  if (isSameAsIncorrect) {
+                    borderColor = '#f87171'; // red for previously incorrect
+                  } else {
+                    borderColor = getValidationBorderColor(currentValue, item);
+                  }
 
                   const inputStyle: React.CSSProperties = {
                     width: inputWidth,
                     padding: '4px 8px',
                     margin: item.size === FillBlanksInputSize.LARGE ? '4px 0' : '0 4px',
-                    border: `2px solid ${isSameAsIncorrect ? '#f87171' : '#6b7280'}`,
+                    border: `2px solid ${borderColor}`,
+                    outline: borderColor === '#6b7280' ? undefined : 'none',
                     borderRadius: '4px',
                     backgroundColor: '#1f1f1f',
                     color: '#e0e0e0',
@@ -230,6 +276,16 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                   };
 
                   const isLargeInput = item.size === FillBlanksInputSize.LARGE;
+                  const showHintButton = quizMode !== QuizMode.ASSESSMENT;
+                  const showRevealButton = quizMode !== QuizMode.ASSESSMENT && status === AnswerStatus.INCORRECT;
+
+                  // Handle keyboard shortcut for hint (Ctrl+Space or Cmd+Space) - only in non-assessment mode
+                  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (showHintButton && e.key === ' ' && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      handleHint(blankIndex, field.onChange);
+                    }
+                  };
 
                   // Common input element
                   const inputElement = (
@@ -245,34 +301,38 @@ const FillBlanksQuestion: React.FC<FillBlanksQuestionProps> = ({
                         };
                         field.onChange(newValue);
                       }}
+                      onKeyDown={handleKeyDown}
                       style={isLargeInput ? { ...inputStyle, flex: 1, margin: 0 } : inputStyle}
                     />
                   );
 
-                  // Common buttons element
-                  const buttonsElement = (
-                    <div
-                      style={{
-                        gap: '4px',
-                        verticalAlign: 'middle',
-                        ...(isLargeInput ? { flexShrink: 0, display: 'flex' } : { display: 'inline-flex' }),
-                      }}
-                    >
-                      {/* Hint button - shown for all inputs */}
-                      <HintButton
-                        onHint={() => handleHint(blankIndex, field.onChange)}
-                        style={isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }}
-                      />
+                  // Common buttons element (hidden in Assessment mode)
+                  const buttonsElement =
+                    showHintButton || showRevealButton ? (
+                      <div
+                        style={{
+                          gap: '4px',
+                          verticalAlign: 'middle',
+                          ...(isLargeInput ? { flexShrink: 0, display: 'flex' } : { display: 'inline-flex' }),
+                        }}
+                      >
+                        {/* Hint button - shown for all inputs (except Assessment mode) */}
+                        {showHintButton && (
+                          <HintButton
+                            onHint={() => handleHint(blankIndex, field.onChange)}
+                            style={isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }}
+                          />
+                        )}
 
-                      {/* Reveal button - only for incorrect answers */}
-                      {status === AnswerStatus.INCORRECT && (
-                        <RevealButton
-                          onReveal={() => handleRevealAnswer(blankIndex)}
-                          style={isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }}
-                        />
-                      )}
-                    </div>
-                  );
+                        {/* Reveal button - only for incorrect answers (except Assessment mode) */}
+                        {showRevealButton && (
+                          <RevealButton
+                            onReveal={() => handleRevealAnswer(blankIndex)}
+                            style={isLargeInput ? {} : { marginLeft: '4px', verticalAlign: 'middle' }}
+                          />
+                        )}
+                      </div>
+                    ) : null;
 
                   // For large inputs, use flexbox layout to keep buttons on the same line
                   if (isLargeInput) {

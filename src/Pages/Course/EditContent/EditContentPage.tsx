@@ -188,6 +188,7 @@ const calculateInitialData = ({
           description: quiz.description || '',
           priority: quiz.priority,
           isHidden: quiz.isHidden,
+          mode: quiz.mode ?? undefined,
           questions:
             quiz.questions?.map(
               (q): QuizQuestion => ({
@@ -317,6 +318,7 @@ const convertLessonUpdates = (
         description: quiz.description || null,
         // priority: quiz.priority,
         isHidden: quiz.isHidden,
+        mode: quiz.mode,
         questions: quiz.questions.map((q, idx) => {
           if (q.type === 'existing' && q.questionId) {
             return {
@@ -354,6 +356,7 @@ const convertLessonUpdates = (
       description: quiz.description || null,
       // priority: quiz.priority,
       isHidden: quiz.isHidden,
+      mode: quiz.mode,
       questions: quiz.questions.map((q, idx) => ({
         type: 'new' as const,
         order: idx,

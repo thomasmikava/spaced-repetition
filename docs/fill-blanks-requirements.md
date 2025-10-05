@@ -27,7 +27,11 @@
 
 - Text items render as inline text
 - Missing items render as text input fields
-- Previously incorrect inputs display with red border styling
+- **Real-time validation feedback** (Live Feedback mode only): As user types, input border changes color based on validation:
+  - **Red border**: Current input is not a valid prefix of any correct answer
+  - **Green border**: Current input exactly matches one of the correct answers (from `officialAnswers` or `additionalAnswers`)
+  - **Default border**: Current input is a valid prefix of at least one correct answer but not a complete match, not in Live Feedback mode, or in Assessment mode
+- Previously incorrect inputs (after submission) display with red border styling
 - When user types in a previously incorrect field, red border is immediately removed
 
 ### Review Mode (Post-Submission)
@@ -40,12 +44,13 @@
 
 ### Interactive Elements
 
-- All input fields have an amber "💡" hint button that provides a minimal change suggestion to guide toward the correct answer
-- Incorrect answers have a red "?" button that reveals the correct answer
+- All input fields have an amber "💡" hint button that provides a minimal change suggestion to guide toward the correct answer (hidden in Assessment mode)
+- Incorrect answers (after submission) have a red "?" button that reveals the correct answer (hidden in Assessment mode)
 - Correct and partial answers with explanations have a blue "i" icon showing explanation on hover
 - Revealing an answer makes the field non-editable and sets `isRevealed: true`
 - Hint functionality uses case-sensitive matching without prefix handling to provide the closest valid answer with minimal modifications
 - Clicking the hint button while an input is focused does not cause the input to lose focus
+- Pressing Ctrl+Space (Windows/Linux) or Cmd+Space (Mac) while an input field is focused triggers the hint functionality (not available in Assessment mode)
 
 ## Answer Evaluation Requirements
 
@@ -76,6 +81,7 @@
 - Empty blanks remain unchanged and editable
 - If all blanks become correct after partial submission, automatically finalize the quiz
 - Button is enabled only when at least one blank contains text
+- **Note**: This button is hidden in Assessment mode
 
 ### Final Submission ("Submit" button)
 

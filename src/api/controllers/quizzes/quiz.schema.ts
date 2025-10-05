@@ -2,6 +2,14 @@ import type { QuestionContentDTO, UserAnswerDTO, UserInputDTO } from '../questio
 import { QuestionContentSchemaSchema, UserInputSchema } from '../questions/question-content.schema';
 import { booleanSchema, z } from '../../../utils/z';
 
+// Quiz mode enum
+export enum QuizMode {
+  ASSESSMENT = 'ASSESSMENT',
+  PRACTICE = 'PRACTICE',
+  LIVE_FEEDBACK = 'LIVE_FEEDBACK',
+}
+export const QuizModeSchema = z.nativeEnum(QuizMode);
+
 // Question input schemas for quiz creation/updating
 const QuizQuestionByIdSchema = z.object({
   type: z.literal('existing'),
@@ -70,6 +78,7 @@ export const CreateQuizReq = z.object({
   description: z.string().optional(),
   priority: z.number().optional().default(0),
   isHidden: z.boolean().optional().default(false),
+  mode: QuizModeSchema.optional(),
   questions: z.array(QuizQuestionSchema).optional().default([]),
 });
 
@@ -80,6 +89,7 @@ export interface CreateQuizReqDTO {
   description?: string;
   priority?: number;
   isHidden?: boolean;
+  mode?: QuizMode;
   questions?: QuizQuestionInput[];
 }
 
@@ -90,6 +100,7 @@ export const UpdateQuizReq = z.object({
   description: z.string().optional(),
   priority: z.number().optional(),
   isHidden: z.boolean().optional(),
+  mode: QuizModeSchema.optional(),
   questions: z.array(QuizQuestionSchema).optional(),
 });
 
@@ -100,6 +111,7 @@ export interface UpdateQuizReqDTO {
   description?: string;
   priority?: number;
   isHidden?: boolean;
+  mode?: QuizMode;
   questions?: QuizQuestionInput[];
 }
 
@@ -185,7 +197,7 @@ export interface GetCourseQuizzesReqDTO {
 }
 
 export const GetUserQuizProgressReq = z.object({
-  quizId: z.number(),
+  quizId: z.coerce.number(),
 });
 
 export interface GetUserQuizProgressReqDTO {
@@ -221,6 +233,7 @@ export interface QuizDTO {
   questionCount: number;
   isHidden: boolean;
   priority: number;
+  mode: QuizMode | null;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -40,7 +40,11 @@ d# Multiple Choice Question Type Requirements
   - **Checkbox**: vertical list of checkboxes with labels
   - **Dropdown** (non-inline): dropdown on its own line
   - **Dropdown** (inline): dropdown rendered inline with surrounding text
-- Previously incorrect selections display with red border/highlight
+- **Real-time validation feedback** (Live Feedback mode only): When user selects an option, visual feedback is provided:
+  - **Red border/highlight**: Current selection is incorrect
+  - **Green border/highlight**: Current selection is correct
+  - **Default styling**: No selection made, not in Live Feedback mode, or in Assessment mode
+- Previously incorrect selections (after submission) display with red border/highlight
 - When user changes a previously incorrect selection, red styling is immediately removed
 
 ### Review Mode (Post-Submission)
@@ -53,7 +57,7 @@ d# Multiple Choice Question Type Requirements
 
 ### Interactive Elements
 
-- Incorrect choice groups have a red "?" reveal button that shows the correct answer(s)
+- Incorrect choice groups (after submission) have a red "?" reveal button that shows the correct answer(s) (hidden in Assessment mode)
 - Correct and partial choice groups with explanations have a blue "i" icon showing explanation on hover
 - Revealing an answer makes the choice group non-editable and sets `isRevealed: true`
 
@@ -97,6 +101,7 @@ For **multiple selection** choice groups:
 - Unselected choice groups remain unchanged and editable
 - If all choice groups become correct after partial submission, automatically finalize the quiz
 - Button is enabled only when at least one choice group has a selection
+- **Note**: This button is hidden in Assessment mode
 
 ### Final Submission ("Submit" button)
 

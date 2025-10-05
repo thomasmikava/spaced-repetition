@@ -3,8 +3,10 @@ import { EditOutlined, MinusOutlined, PlusOutlined } from '@ant-design/icons';
 import { memo, useState, type FC } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import type { QuestionContentDTO } from '../../../api/controllers/questions/question-content.schema';
+import { QuizMode } from '../../../api/controllers/quizzes/quiz.schema';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
+import Select from '../../../ui/Select';
 import type { FormBaseInfo, FormData } from './Form';
 import styles from './styles.module.css';
 import type { QuestionJsonOnSaveProps } from './QuestionJsonModal';
@@ -29,6 +31,7 @@ export interface QuizInfo {
   description: string;
   priority?: number;
   isHidden?: boolean;
+  mode?: QuizMode;
   questions: QuizQuestion[];
 }
 
@@ -104,6 +107,25 @@ export const QuizField: FC<QuizFieldProps> = memo(({ onRemove, index, fieldKey }
           name={`${fieldKey}.description`}
           control={control}
           render={({ field }) => <Input placeholder='Quiz description (optional)' fullWidth {...field} size='large' />}
+        />
+        <Controller
+          name={`${fieldKey}.mode`}
+          control={control}
+          render={({ field }) => (
+            <Select
+              placeholder='Quiz mode (optional)'
+              size='large'
+              style={{ width: '100%' }}
+              value={field.value ?? null}
+              onChange={field.onChange}
+              allowClear
+              options={[
+                { label: 'Assessment Mode', value: QuizMode.ASSESSMENT },
+                { label: 'Practice Mode', value: QuizMode.PRACTICE },
+                { label: 'Live Feedback Mode', value: QuizMode.LIVE_FEEDBACK },
+              ]}
+            />
+          )}
         />
         <MinusOutlined className={styles.clickableIcon} onClick={() => onRemove(index)} />
       </div>

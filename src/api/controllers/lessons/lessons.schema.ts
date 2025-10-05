@@ -2,6 +2,7 @@
 import { QuestionContentSchemaSchema, type QuestionContentDTO } from '../questions/question-content.schema';
 import { booleanSchema, numberSchema, z } from '../../../utils/z';
 import { TranslationObjSchema, type TranslationObjDTO } from '../words/words.schema';
+import { QuizModeSchema, type QuizMode } from '../quizzes/quiz.schema';
 
 export const Lesson = z.object({
   id: z.number(),
@@ -61,6 +62,7 @@ export const LessonUpdateAction = z.discriminatedUnion('type', [
     description: z.string().nullable().optional(),
     priority: z.number().optional(),
     isHidden: z.boolean().optional(),
+    mode: QuizModeSchema.optional(),
     questions: z
       .array(
         z.discriminatedUnion('type', [
@@ -89,6 +91,7 @@ export const LessonUpdateAction = z.discriminatedUnion('type', [
     description: z.string().nullable().optional(),
     priority: z.number().optional(),
     isHidden: z.boolean().optional(),
+    mode: QuizModeSchema.optional(),
     questions: z
       .array(
         z.discriminatedUnion('type', [
@@ -160,6 +163,7 @@ export type LessonUpdateActionDTO =
       description?: string | null;
       priority?: number;
       isHidden?: boolean;
+      mode?: QuizMode;
       questions?: Array<
         | {
             type: 'existing';
@@ -184,6 +188,7 @@ export type LessonUpdateActionDTO =
       description?: string | null;
       priority?: number;
       isHidden?: boolean;
+      mode?: QuizMode;
       questions?: Array<
         | {
             type: 'existing';

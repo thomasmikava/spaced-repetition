@@ -24,6 +24,7 @@ import type {
   MatchingAnswerOptionDTO,
 } from '../../api/controllers/questions/question-content.schema';
 import type { QuizFormData } from './types';
+import { QuizMode } from '../../api/controllers/quizzes/quiz.schema';
 import { isNonNullable } from '../../utils/array';
 import { renderTextWithLineBreaks } from './common';
 import { AnswerDisplay } from './components/AnswerDisplay';
@@ -33,6 +34,7 @@ interface MatchingQuestionProps {
   questionId: number;
   content: MatchingQuestionDTO;
   isReadOnly: boolean;
+  quizMode: QuizMode;
   processedAnswer?: MatchingUserAnswerDTO;
 }
 
@@ -105,6 +107,7 @@ const DroppableBlank: React.FC<{
   correctAnswers: string[];
   explanation?: string;
   isReadOnly: boolean;
+  quizMode: QuizMode;
   onReveal: () => void;
   onClick: () => void;
 }> = ({
@@ -118,6 +121,7 @@ const DroppableBlank: React.FC<{
   correctAnswers,
   explanation,
   isReadOnly,
+  quizMode,
   onReveal,
   onClick,
 }) => {
@@ -163,6 +167,18 @@ const DroppableBlank: React.FC<{
   // Only show red border if status is incorrect AND value hasn't changed
   const showIncorrectBorder = status === AnswerStatus.INCORRECT && selectedValue === previousAnswer;
 
+  // Real-time validation (Live Feedback mode only)
+  const isCorrect = hasValue && correctAnswers.includes(selectedValue);
+  const showValidationBorder = quizMode === QuizMode.LIVE_FEEDBACK && hasValue && !showIncorrectBorder;
+
+  // Determine border color
+  let borderColor = '#6b7280'; // default
+  if (showIncorrectBorder) {
+    borderColor = '#f87171'; // red for previously incorrect
+  } else if (showValidationBorder) {
+    borderColor = isCorrect ? '#4ade80' : '#f87171'; // green if correct, red if incorrect
+  }
+
   return (
     <span style={{ position: 'relative', display: 'inline-block' }}>
       <span
@@ -183,7 +199,7 @@ const DroppableBlank: React.FC<{
               width: '100%',
               padding: '0px 12px',
               backgroundColor: isOver ? '#1e3a8a' : '#1e40af',
-              border: `2px solid ${showIncorrectBorder ? '#f87171' : isOver ? '#60a5fa' : '#3b82f6'}`,
+              border: `2px solid ${isOver ? '#60a5fa' : borderColor}`,
               borderRadius: '4px',
               color: '#e0e0e0',
               textAlign: 'center',
@@ -222,12 +238,20 @@ const DroppableBlank: React.FC<{
           </span>
         )}
       </span>
-      {canBeRevealed && <RevealButton onReveal={onReveal} style={{ marginLeft: '4px' }} />}
+      {canBeRevealed && quizMode !== QuizMode.ASSESSMENT && (
+        <RevealButton onReveal={onReveal} style={{ marginLeft: '4px' }} />
+      )}
     </span>
   );
 };
 
-const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ questionId, content, isReadOnly, processedAnswer }) => {
+const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
+  questionId,
+  content,
+  isReadOnly,
+  quizMode,
+  processedAnswer,
+}) => {
   const { setValue, getValues } = useFormContext<QuizFormData>();
   const [revealedAnswers, setRevealedAnswers] = useState<Set<number>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -522,6 +546,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ questionId, content
                       correctAnswers={item.correctAnswers}
                       explanation={item.explanation}
                       isReadOnly={isReadOnly}
+                      quizMode={quizMode}
                       onReveal={() => handleRevealAnswer(blankIndex)}
                       onClick={() => {
                         if (!isReadOnly && !isRevealed && (status === null || canBeRevealed)) {

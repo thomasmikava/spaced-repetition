@@ -33,6 +33,10 @@
 
 - Text items render as inline text
 - Blank items render as droppable zones that can accept dragged answer options
+- **Real-time validation feedback** (Live Feedback mode only): When user selects an answer, the drop zone border changes color based on validation:
+  - **Red border**: Current selection is incorrect
+  - **Green border**: Current selection is correct
+  - **Default border**: No selection made, not in Live Feedback mode, or in Assessment mode
 - **Draggable Options Area**: After the main text, display all unique answer options as draggable items
 - **Usage Count Display**:
   - Options with `usageLimit` > 1 show count tag "(X)" where X = usageLimit - current usage
@@ -62,7 +66,7 @@
 
 ### Interactive Elements
 
-- Incorrect answers have a red "?" button that reveals the correct answer
+- Incorrect answers (after submission) have a red "?" button that reveals the correct answer (hidden in Assessment mode)
 - Correct and partial answers with explanations have a blue "i" icon showing explanation on hover
 - Revealing an answer replaces the drop zone with non-editable text and sets `isRevealed: true`
 
@@ -95,6 +99,7 @@
 - Empty blanks remain unchanged and editable
 - If all blanks become correct after partial submission, automatically finalize the quiz
 - Button is enabled only when at least one blank has a selected option
+- **Note**: This button is hidden in Assessment mode
 
 ### Final Submission ("Submit" button)
 

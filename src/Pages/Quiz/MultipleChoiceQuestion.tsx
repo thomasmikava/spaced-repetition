@@ -11,6 +11,7 @@ import type {
   MultipleChoiceGroupItemDTO,
 } from '../../api/controllers/questions/question-content.schema';
 import type { QuizFormData } from './types';
+import { QuizMode } from '../../api/controllers/quizzes/quiz.schema';
 import { renderTextWithLineBreaks } from './common';
 import { AnswerDisplay } from './components/AnswerDisplay';
 import { RevealButton } from './components/RevealButton';
@@ -20,6 +21,7 @@ interface MultipleChoiceQuestionProps {
   questionId: number;
   content: MultipleChoiceQuestionDTO;
   isReadOnly: boolean;
+  quizMode: QuizMode;
   processedAnswer?: MultipleChoiceUserAnswerDTO;
 }
 
@@ -27,6 +29,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({
   questionId,
   content,
   isReadOnly,
+  quizMode,
   processedAnswer,
 }) => {
   const { control, setValue, getValues } = useFormContext<QuizFormData>();
@@ -117,6 +120,28 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({
     return options[value]?.text || '';
   };
 
+  // Helper function to check if a selection is correct
+  const isSelectionCorrect = (
+    value: number | number[] | null,
+    choiceGroup: MultipleChoiceGroupItemDTO,
+  ): boolean | null => {
+    if (value === null) return null; // No selection
+
+    const correctIndices = choiceGroup.options
+      .map((opt, idx) => (opt.isCorrect ? idx : -1))
+      .filter((idx) => idx !== -1);
+
+    if (Array.isArray(value)) {
+      // Multi-select: all correct options selected and no incorrect ones
+      const sortedValue = [...value].sort();
+      const sortedCorrect = [...correctIndices].sort();
+      return JSON.stringify(sortedValue) === JSON.stringify(sortedCorrect);
+    } else {
+      // Single-select: selected option is correct
+      return correctIndices.includes(value);
+    }
+  };
+
   let choiceGroupCounter = 0;
 
   return (
@@ -196,6 +221,9 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({
                     status === AnswerStatus.INCORRECT &&
                     JSON.stringify(currentValue) === JSON.stringify(previousAnswer);
 
+                  // Determine if we should show reveal button
+                  const showRevealButton = quizMode !== QuizMode.ASSESSMENT && canBeRevealed;
+
                   // Render based on display mode
                   if (displayMode === ChoiceDisplayMode.DROPDOWN) {
                     const dropdownOptions = item.options.map((opt, idx) => ({
@@ -222,10 +250,18 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({
                             minWidth: isInlineDropdown ? '150px' : '100%',
                             maxWidth: isInlineDropdown ? '250px' : '100%',
                           }}
-                          status={isSameAsIncorrect ? 'error' : undefined}
+                          status={
+                            isSameAsIncorrect
+                              ? 'error'
+                              : quizMode === QuizMode.LIVE_FEEDBACK &&
+                                  currentValue !== null &&
+                                  !isSelectionCorrect(currentValue, item)
+                                ? 'error'
+                                : undefined
+                          }
                           dropdownStyle={{ backgroundColor: '#1f1f1f', color: '#e0e0e0' }}
                         />
-                        {canBeRevealed && (
+                        {showRevealButton && (
                           <RevealButton
                             onReveal={() => handleRevealAnswer(groupIndex)}
                             style={{ marginLeft: '8px', verticalAlign: 'middle' }}
@@ -240,10 +276,21 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({
                   const selectedSet = Array.isArray(currentValue) ? new Set(currentValue) : new Set<number>();
                   const selectedSingle = typeof currentValue === 'number' ? currentValue : null;
 
+                  // Determine if current selection is correct (for real-time validation in Live Feedback mode)
+                  const isCorrect = isSelectionCorrect(currentValue, item);
+
                   return (
                     <div style={{ marginTop: '8px', marginBottom: '8px' }}>
                       {item.options.map((option, optIndex) => {
                         const isSelected = isCheckbox ? selectedSet.has(optIndex) : selectedSingle === optIndex;
+
+                        // Determine border color for this option
+                        let borderColor = '#6b7280'; // default
+                        if (isSameAsIncorrect && isSelected) {
+                          borderColor = '#f87171'; // red for previously incorrect
+                        } else if (quizMode === QuizMode.LIVE_FEEDBACK && isSelected && isCorrect !== null) {
+                          borderColor = isCorrect ? '#4ade80' : '#f87171'; // green/red based on correctness
+                        }
 
                         return (
                           <div
@@ -285,7 +332,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({
                               style={{
                                 width: '20px',
                                 height: '20px',
-                                border: `2px solid ${isSameAsIncorrect && isSelected ? '#f87171' : '#6b7280'}`,
+                                border: `2px solid ${borderColor}`,
                                 borderRadius: isCheckbox ? '4px' : '50%',
                                 backgroundColor: isSelected ? '#3b82f6' : 'transparent',
                                 marginRight: '8px',
@@ -310,7 +357,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({
                           </div>
                         );
                       })}
-                      {canBeRevealed && (
+                      {showRevealButton && (
                         <div style={{ marginTop: '8px' }}>
                           <RevealButton onReveal={() => handleRevealAnswer(groupIndex)} />
                         </div>
