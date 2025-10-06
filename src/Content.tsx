@@ -19,6 +19,7 @@ import { Colors } from './functions/texts';
 import { useTranslationLangSettings } from './contexts/TranslationLangs';
 import { TranslationLangSelector } from './components/Lang/TranslationLangSelector';
 import { getMinimalChange } from './utils/hint';
+import { useLatestCallback } from './utils/hooks';
 
 const renderContent = (
   content: string | number | null | undefined | AnyContent | (AnyContent | null | undefined)[],
@@ -226,10 +227,9 @@ const Input = ({
     const isCorrect = checkIfCorrect(ref.current?.value ?? '');
     return { isCorrect, value };
   });
-  useOnHintListener(inputId, () => {
+  const handleHint = useLatestCallback(() => {
     if (!ref.current) return;
     const inputValue = ref.current.value ?? '';
-    // TODO: receive prefixes from props
     const newValue = getMinimalChange(inputValue, correctValues || [], caseInsensitive, hintPrefixes);
 
     ref.current.value = newValue;
@@ -241,10 +241,23 @@ const Input = ({
     }
   });
 
+  useOnHintListener(inputId, handleHint);
+
   const audio = useMemo(() => {
     if (!audioProps) return undefined;
     return <Content content={{ type: 'voice', ...audioProps }} />;
   }, [audioProps]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Handle Ctrl+Space or Cmd+Space for hint
+      if (e.key === ' ' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleHint();
+      }
+    },
+    [handleHint],
+  );
 
   const handleAutoCheck = (e: KeyboardEvent) => {
     const element = ref.current;
@@ -275,6 +288,7 @@ const Input = ({
         spellCheck={false}
         autoCapitalize='none'
         readOnly={mode === 'readonly'}
+        onKeyDown={handleKeyDown}
         onKeyUp={autoCheck ? handleAutoCheck : undefined}
       />
       {lastResult && lastResult.isCorrect && !shouldNotReplaceWithCorrectAnswer && (
