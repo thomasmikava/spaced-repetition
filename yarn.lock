@@ -7570,6 +7570,11 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
+testing-library-queries@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/testing-library-queries/-/testing-library-queries-1.0.0.tgz#712239517ee631bfec20a8a1d2080da6476aac74"
+  integrity sha512-53o/51HG1PFbW2ITymoxMQGI71HO/Rc7+HNqyLhGVit37W7qGWXItOfN48fMd8a0lSQvNKmGmY3M1+lmwWKBHw==
+
 text-table@^0.2.0:
   version "0.2.0"
   resolved "https://registry.npmjs.org/text-table/-/text-table-0.2.0.tgz"

@@ -1,23 +1,23 @@
 import type { AnswerStatus } from '../../api/controllers/questions/question-content.schema';
-import { createTestingQuery, createSelector, type TestingQueryParams } from '../../test/query-extension';
+import { by, buildSelector, type ByParams } from 'testing-library-queries';
 
 export const fillingBlanksSelector = {
-  blankInputs: (): TestingQueryParams<HTMLInputElement> => {
-    return createTestingQuery.role('textbox');
+  blankInputs: (): ByParams<HTMLInputElement> => {
+    return by.role('textbox');
   },
-  hintButton: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.selector('button[datatype="hint"]');
+  hintButton: (): ByParams<HTMLButtonElement> => {
+    return by.selector('button[datatype="hint"]');
   },
-  revealButton: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.selector('button[datatype="reveal-answer"]');
+  revealButton: (): ByParams<HTMLButtonElement> => {
+    return by.selector('button[datatype="reveal-answer"]');
   },
-  explanationIcon: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.selector('span[datatype="explanation-icon"]');
+  explanationIcon: (): ByParams<HTMLButtonElement> => {
+    return by.selector('span[datatype="explanation-icon"]');
   },
-  byStatus: (status: AnswerStatus): TestingQueryParams<HTMLElement> => {
-    return createTestingQuery.selector(`span[data-status="${status}"]`);
+  byStatus: (status: AnswerStatus): ByParams<HTMLElement> => {
+    return by.selector(`span[data-status="${status}"]`);
   },
-  byStatusWithText: createSelector.withText((status: string) => `span[data-status="${status}"]`, {
+  byStatusWithText: buildSelector.withText((status: string) => `span[data-status="${status}"]`, {
     name: 'status span',
     textMatcher: 'partial',
   }),

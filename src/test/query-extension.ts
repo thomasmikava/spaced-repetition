@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { screen } from '@testing-library/react';
-import {
-  within as extendedWithin,
-  screen as extendedScreen,
-  enhanceQueries,
-  // @ts-ignore
-} from 'query-extensions';
+import { screen as originalScreen, within as originalWithin } from '@testing-library/dom';
+import { buildQueries, waitFor } from '@testing-library/dom';
 import type { BoundFunctions, Queries, queries } from '@testing-library/dom';
 
 export interface SelectorQueries {
@@ -23,7 +18,7 @@ type WithPrefix<Key extends PropertyKey, prefix extends string> = Key extends `$
 type RemovePrefix<Key extends string, prefix extends string> = Key extends `${prefix}${infer Rest}` ? Rest : never;
 type Filter = Uncapitalize<RemovePrefix<WithPrefix<keyof AllBoundFunctions, 'getBy'>, 'getBy'>>;
 
-export interface TestingQueryParams<T extends HTMLElement = HTMLElement, F extends Filter = Filter> {
+export interface ByParams<T extends HTMLElement = HTMLElement, F extends Filter = Filter> {
   filter: F;
   params: Parameters<AllBoundFunctions[`getBy${Capitalize<F>}`]>;
   _element?: T;
@@ -44,7 +39,7 @@ export type CustomQueryFunction<T extends HTMLElement = HTMLElement> = {
 
 // Extend the existing types to support custom queries
 export type ExtendedTestingQueryParams<T extends HTMLElement = HTMLElement, F extends Filter = Filter> =
-  | TestingQueryParams<T, F>
+  | ByParams<T, F>
   | CustomQueryParams<T>;
 
 export type GetFn = {
@@ -110,32 +105,174 @@ export interface QueryFns {
   findAll: FindAllFn;
 }
 
-export type ExtendedTypes = QueryFns & SelectorQueries;
+export type ExtendedScreenMethods = QueryFns & SelectorQueries;
 
 export type ExtendedWithin = <QueriesToBind extends Queries = typeof queries, T extends QueriesToBind = QueriesToBind>(
   element: HTMLElement,
   queriesToBind?: T,
-) => BoundFunctions<T> & ExtendedTypes;
+) => BoundFunctions<T> & ExtendedScreenMethods;
 
-type EnhanceQueries = <T>(queries: T) => T & ExtendedTypes;
+type EnhanceQueries = <T>(queries: T) => T & ExtendedScreenMethods;
 
-const extendedEnhanceQueries = <T extends { container: HTMLElement }>(queries: T): T & ExtendedTypes => {
-  const withA = (extendedWithin as ExtendedWithin)(queries.container);
-  return enhanceQueries({ ...withA, ...queries });
+// ============= SELECTOR QUERIES IMPLEMENTATION =============
+
+// The queryAllBy function signature that buildQueries expects
+const queryAllBySelector = (container: HTMLElement, selector: string): HTMLElement[] => {
+  return Array.from(container.querySelectorAll(selector));
+};
+
+// Error functions with correct signatures
+const getMultipleSelectorError = (_container: Element | null, selector: string): string => {
+  return `Found multiple elements with selector: ${selector}`;
+};
+
+const getMissingSelectorError = (_container: Element | null, selector: string): string => {
+  return `Unable to find element with selector: ${selector}`;
+};
+
+const [queryBySelector, getAllBySelector, getBySelector, findAllBySelector, findBySelector] = buildQueries(
+  queryAllBySelector,
+  getMultipleSelectorError,
+  getMissingSelectorError,
+);
+
+const createSelectorQueries = (container: HTMLElement): SelectorQueries => ({
+  getBySelector: (selector: string) => getBySelector(container, selector) as any,
+  getAllBySelector: (selector: string) => getAllBySelector(container, selector) as any,
+  queryBySelector: (selector: string) => queryBySelector(container, selector) as any,
+  queryAllBySelector: (selector: string) => queryAllBySelector(container, selector) as any,
+  findBySelector: (selector: string) => findBySelector(container, selector) as any,
+  findAllBySelector: (selector: string) => findAllBySelector(container, selector) as any,
+});
+
+// ============= ENHANCE QUERIES IMPLEMENTATION =============
+
+const createQueryHandlers = (getContainer: () => HTMLElement, getBoundQueries: () => any) => {
+  const get: GetFn = (args: any) => {
+    const { filter, params } = args;
+    const container = getContainer();
+
+    if (filter === 'selector') {
+      const selectorQueries = createSelectorQueries(container);
+      return selectorQueries.getBySelector(...(params as [string]));
+    }
+    if (filter === 'custom') {
+      return handleCustomQuery({ container }, 'get', args);
+    }
+    const methodName = `getBy${filter.charAt(0).toUpperCase()}${filter.slice(1)}`;
+    return getBoundQueries()[methodName](...params);
+  };
+
+  const getAll: GetAllFn = (args: any) => {
+    const { filter, params } = args;
+    const container = getContainer();
+
+    if (filter === 'selector') {
+      const selectorQueries = createSelectorQueries(container);
+      return selectorQueries.getAllBySelector(...(params as [string]));
+    }
+    if (filter === 'custom') {
+      return handleCustomQuery({ container }, 'getAll', args);
+    }
+    const methodName = `getAllBy${filter.charAt(0).toUpperCase()}${filter.slice(1)}`;
+    return getBoundQueries()[methodName](...params);
+  };
+
+  const query: QueryFn = (args: any) => {
+    const { filter, params } = args;
+    const container = getContainer();
+
+    if (filter === 'selector') {
+      const selectorQueries = createSelectorQueries(container);
+      return selectorQueries.queryBySelector(...(params as [string]));
+    }
+    if (filter === 'custom') {
+      return handleCustomQuery({ container }, 'query', args);
+    }
+    const methodName = `queryBy${filter.charAt(0).toUpperCase()}${filter.slice(1)}`;
+    return getBoundQueries()[methodName](...params);
+  };
+
+  const queryAll: QueryAllFn = (args: any) => {
+    const { filter, params } = args;
+    const container = getContainer();
+
+    if (filter === 'selector') {
+      const selectorQueries = createSelectorQueries(container);
+      return selectorQueries.queryAllBySelector(...(params as [string]));
+    }
+    if (filter === 'custom') {
+      return handleCustomQuery({ container }, 'queryAll', args);
+    }
+    const methodName = `queryAllBy${filter.charAt(0).toUpperCase()}${filter.slice(1)}`;
+    return getBoundQueries()[methodName](...params);
+  };
+
+  const find: FindFn = (args: any) => {
+    const { filter, params } = args;
+    const container = getContainer();
+
+    if (filter === 'selector') {
+      const selectorQueries = createSelectorQueries(container);
+      return selectorQueries.findBySelector(...(params as [string]));
+    }
+    if (filter === 'custom') {
+      return handleCustomQuery({ container }, 'find', args);
+    }
+    const methodName = `findBy${filter.charAt(0).toUpperCase()}${filter.slice(1)}`;
+    return getBoundQueries()[methodName](...params);
+  };
+
+  const findAll: FindAllFn = (args: any) => {
+    const { filter, params } = args;
+    const container = getContainer();
+
+    if (filter === 'selector') {
+      const selectorQueries = createSelectorQueries(container);
+      return selectorQueries.findAllBySelector(...(params as [string]));
+    }
+    if (filter === 'custom') {
+      return handleCustomQuery({ container }, 'findAll', args);
+    }
+    const methodName = `findAllBy${filter.charAt(0).toUpperCase()}${filter.slice(1)}`;
+    return getBoundQueries()[methodName](...params);
+  };
+
+  return { get, getAll, query, queryAll, find, findAll };
+};
+
+const createEnhancedQueries = (boundQueries: any, container: HTMLElement): ExtendedScreenMethods => {
+  const selectorQueries = createSelectorQueries(container);
+  const queryHandlers = createQueryHandlers(
+    () => container,
+    () => boundQueries,
+  );
+
+  return {
+    ...selectorQueries,
+    ...queryHandlers,
+  };
+};
+
+const enhanceQueries = <T extends { container: HTMLElement }>(queries: T): T & ExtendedScreenMethods => {
+  const enhanced = createEnhancedQueries(queries, queries.container);
+  return { ...queries, ...enhanced };
+};
+
+const extendedEnhanceQueries = <T extends { container: HTMLElement }>(queries: T): T & ExtendedScreenMethods => {
+  return enhanceQueries(queries);
 };
 
 export const typedEnhanceQueries = extendedEnhanceQueries as EnhanceQueries;
 
 type TestingQuery = {
-  [F in Filter]: <T extends HTMLElement = HTMLElement>(
-    ...params: TestingQueryParams<T, F>['params']
-  ) => TestingQueryParams<T, F>;
+  [F in Filter]: <T extends HTMLElement = HTMLElement>(...params: ByParams<T, F>['params']) => ByParams<T, F>;
 };
 
-export const createTestingQuery: TestingQuery = new Proxy({} as never, {
+export const by: TestingQuery = new Proxy({} as never, {
   get<F extends Filter>(_target: any, prop: F) {
     if (prop in _target) return _target[prop];
-    const fn = (...params: TestingQueryParams<HTMLElement, F>['params']) => ({
+    const fn = (...params: ByParams<HTMLElement, F>['params']) => ({
       filter: prop,
       params,
     });
@@ -145,8 +282,6 @@ export const createTestingQuery: TestingQuery = new Proxy({} as never, {
 });
 
 // ============= CUSTOM QUERY HELPERS =============
-
-// Custom query types
 
 /**
  * Creates a custom query that can be used with all query variants (get, query, find, getAll, queryAll, findAll)
@@ -203,7 +338,7 @@ function fromQueryAll<T extends HTMLElement = HTMLElement>(
  *
  * screen.get(byDataStatus('active', 'Hello'));
  */
-function createCustomQueryBuilder<TParams extends any[], T extends HTMLElement = HTMLElement>(
+function createCustomQueryBuilder<TParams extends readonly any[], T extends HTMLElement = HTMLElement>(
   builder: (...params: TParams) => CustomQueryParams<T>,
 ): (...params: TParams) => CustomQueryParams<T> {
   return (...params: TParams) => builder(...params);
@@ -313,15 +448,15 @@ function combineQueries<T extends HTMLElement = HTMLElement>(
  *
  * screen.get(statusWithText('active', 'Hello'));
  */
-function withTextFilter(
-  selectorBuilder: (primaryParam: string) => string,
+function withTextFilter<T extends readonly any[]>(
+  selectorBuilder: (...primaryParam: T) => string,
   options?: {
     name?: string;
     textMatcher?: 'exact' | 'partial' | 'regex';
   },
 ) {
-  return createCustomQueryBuilder((primaryParam: string, text?: string | RegExp) => {
-    const selector = selectorBuilder(primaryParam);
+  return createCustomQueryBuilder((text: string | RegExp, ...primaryParam: T) => {
+    const selector = selectorBuilder(...primaryParam);
     const name = options?.name || 'element';
 
     return fromQueryAll<HTMLElement>(
@@ -347,34 +482,39 @@ function withTextFilter(
   });
 }
 
-export const createSelector = {
+export const buildSelector = {
   from: fromQueryAll,
   transform: createTransformQuery,
   combine: combineQueries,
   withText: withTextFilter,
 };
 
-import { buildQueries, waitFor } from '@testing-library/dom';
-
 // Helper to handle custom queries
 const handleCustomQuery = (queries: any, api: string, args: CustomQueryParams<any>): unknown => {
   const customFn = args.params[0];
 
   if (api === 'get' || api === 'getAll' || api === 'query' || api === 'queryAll') {
-    const [queryByCustom, getAllByCustom, getByCustom] = buildQueries(
-      customFn.queryAll,
-      customFn.getMultipleError || (() => 'Found multiple elements'),
-      customFn.getMissingError || (() => 'Unable to find element'),
-    );
+    // Create a queryAllBy function with the correct signature for buildQueries
+    const queryAllBy = (container: HTMLElement) => customFn.queryAll(container);
+
+    const getMultipleError = (_container: Element | null) =>
+      customFn.getMultipleError?.(_container) || 'Found multiple elements';
+
+    const getMissingError = (_container: Element | null) =>
+      customFn.getMissingError?.(_container) || 'Unable to find element';
+
+    const [queryBy, getAllBy, getBy] = buildQueries(queryAllBy, getMultipleError, getMissingError);
+
+    const container = queries.container || document.body;
 
     const fns = {
-      get: getByCustom,
-      getAll: getAllByCustom,
-      query: queryByCustom,
-      queryAll: customFn.queryAll,
+      get: () => getBy(container),
+      getAll: () => getAllBy(container),
+      query: () => queryBy(container),
+      queryAll: () => queryAllBy(container),
     };
 
-    return fns[api](queries.container || document.body);
+    return fns[api]();
   }
 
   if (api === 'find' || api === 'findAll') {
@@ -436,9 +576,35 @@ const wrapQueryFns = (queries: any) => {
   };
 };
 
+// Create extended screen with all query methods
+const createExtendedScreen = () => {
+  const selectorQueries = {
+    getBySelector: (selector: string) => getBySelector(document.body, selector),
+    getAllBySelector: (selector: string) => getAllBySelector(document.body, selector),
+    queryBySelector: (selector: string) => queryBySelector(document.body, selector),
+    queryAllBySelector: (selector: string) => queryAllBySelector(document.body, selector),
+    findBySelector: (selector: string) => findBySelector(document.body, selector),
+    findAllBySelector: (selector: string) => findAllBySelector(document.body, selector),
+  };
+
+  const queryHandlers = createQueryHandlers(
+    () => document.body,
+    () => originalScreen,
+  );
+
+  return {
+    ...originalScreen,
+    ...selectorQueries,
+    ...queryHandlers,
+  };
+};
+
 // Export wrapped versions
-export const typedExtendedScreen = wrapQueryFns(extendedScreen) as typeof screen & ExtendedTypes;
-export const typedExtendedWithin = ((element: HTMLElement, ...rest: any[]) => {
-  const queries = (extendedWithin as ExtendedWithin)(element, ...rest);
-  return wrapQueryFns(queries);
+export const screen = createExtendedScreen() as typeof originalScreen & ExtendedScreenMethods;
+
+export const within = ((element: HTMLElement, queriesToBind?: any) => {
+  const boundQueries = originalWithin(element, queriesToBind);
+  const withContainer = { ...boundQueries, container: element };
+  const enhanced = enhanceQueries(withContainer);
+  return wrapQueryFns(enhanced);
 }) as ExtendedWithin;

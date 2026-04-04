@@ -262,7 +262,7 @@ Create `src/Pages/Quiz/{QuestionType}Question.selector.ts`:
 
 ```typescript
 import type { AnswerStatus } from '../../api/controllers/questions/question-content.schema';
-import { createTestingQuery, createSelector, type TestingQueryParams } from '../../test/query-extension';
+import { createTestingQuery, createSelector, type TestingQueryParams } from 'testing-library-queries';
 
 export const yourQuestionSelector = {
   // Add selectors for your question's interactive elements

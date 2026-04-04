@@ -1,16 +1,15 @@
 import { render, renderHook, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
-import { createTestingQuery, typedEnhanceQueries, typedExtendedScreen, typedExtendedWithin } from './query-extension';
+import { by, screen, within } from 'testing-library-queries';
 import userEvent from '@testing-library/user-event';
-export type { TestingQueryParams } from './query-extension';
+export type { ByParams as TestingQueryParams } from 'testing-library-queries';
 
 export {
-  createTestingQuery,
-  typedEnhanceQueries as enhanceQueries,
+  by as by,
   render,
   renderHook,
-  typedExtendedScreen as screen,
+  screen as screen,
   userEvent,
   waitFor,
   waitForElementToBeRemoved,
-  typedExtendedWithin as within,
+  within as within,
 };

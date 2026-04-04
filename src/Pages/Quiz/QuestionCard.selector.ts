@@ -1,17 +1,17 @@
-import { createTestingQuery, createSelector, type TestingQueryParams } from '../../test/query-extension';
+import { by, buildSelector } from 'testing-library-queries';
 
 export const questionCardSelector = {
-  partialSubmit: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.role('button', { name: /Submit Non-Empty/i });
+  partialSubmit: () => {
+    return by.role<HTMLButtonElement>('button', { name: /Submit Non-Empty/i });
   },
-  fullSubmit: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.role('button', { name: 'Submit' });
+  fullSubmit: () => {
+    return by.role<HTMLButtonElement>('button', { name: 'Submit' });
   },
-  questionHeaderByQNumber: (questionNumber: number): TestingQueryParams<HTMLElement> => {
-    return createTestingQuery.role('heading', { name: new RegExp(`Question ${questionNumber}`) });
+  questionHeaderByQNumber: (questionNumber: number) => {
+    return by.role('heading', { name: new RegExp(`Question ${questionNumber}`) });
   },
   questionCard: (questionNumber: number) =>
-    createSelector.transform<HTMLElement, HTMLElement>(
+    buildSelector.transform<HTMLElement, HTMLElement>(
       // Find headers with the question number
       (container) => {
         const regex = new RegExp(`Question ${questionNumber}`);

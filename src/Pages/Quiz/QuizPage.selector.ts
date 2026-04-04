@@ -1,7 +1,7 @@
-import { createTestingQuery, type TestingQueryParams } from '../../test/query-extension';
+import { by } from 'testing-library-queries';
 
 export const quizPageSelector = {
-  reset: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.role('button', { name: /Reset Quiz/i });
+  reset: () => {
+    return by.role<HTMLButtonElement>('button', { name: /Reset Quiz/i });
   },
 };

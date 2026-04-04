@@ -418,7 +418,7 @@ describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
       renderQuizPage();
       const questionCard = await screen.find(questionCardSelector.questionCard(1));
 
-      await within(questionCard).find(fillingBlanksSelector.byStatusWithText(AnswerStatus.CORRECT, 'Paris'));
+      await within(questionCard).find(fillingBlanksSelector.byStatusWithText('Paris', AnswerStatus.CORRECT));
 
       const inputs = screen.getAll(fillingBlanksSelector.blankInputs());
       expect(inputs).toHaveLength(1); // Only second question input remains
@@ -1019,7 +1019,7 @@ describe('Section B.1: Fill-in-the-Blanks Test Type', () => {
 
       const questionCard = await screen.find(questionCardSelector.questionCard(2));
       const partialSpan = within(questionCard).get(
-        fillingBlanksSelector.byStatusWithText(AnswerStatus.PARTIAL, 'jupiter'),
+        fillingBlanksSelector.byStatusWithText('jupiter', AnswerStatus.PARTIAL),
       );
       expect(partialSpan).toBeInTheDocument();
     });

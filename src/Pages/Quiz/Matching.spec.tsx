@@ -497,7 +497,7 @@ describe('Section B.2: Matching Question Type', () => {
       renderQuizPage();
 
       const questionCard = await screen.find(questionCardSelector.questionCard(1));
-      await within(questionCard).find(matchingSelector.byStatusWithText(AnswerStatus.CORRECT, 'Paris'));
+      await within(questionCard).find(matchingSelector.byStatusWithText('Paris', AnswerStatus.CORRECT));
 
       const dropZones = screen.getAll(matchingSelector.dropZone());
       expect(dropZones).toHaveLength(2); // Only 2 remaining editable drop zones (one from each question, since first blank in Q1 is correct)
@@ -1238,7 +1238,7 @@ describe('Section B.2: Matching Question Type', () => {
       await user.click(submitButton);
 
       const questionCard = await screen.find(questionCardSelector.questionCard(1));
-      await within(questionCard).find(matchingSelector.byStatusWithText(AnswerStatus.CORRECT, 'Paris'));
+      await within(questionCard).find(matchingSelector.byStatusWithText('Paris', AnswerStatus.CORRECT));
     });
 
     it('should mark answer as partial when matches correctAnswers but isFirstTrial is false', async () => {
@@ -1321,7 +1321,7 @@ describe('Section B.2: Matching Question Type', () => {
       await user.click(submitButton);
 
       const questionCard = await screen.find(questionCardSelector.questionCard(1));
-      await within(questionCard).find(matchingSelector.byStatusWithText(AnswerStatus.PARTIAL, 'Paris'));
+      await within(questionCard).find(matchingSelector.byStatusWithText('Paris', AnswerStatus.PARTIAL));
     });
 
     it('should mark answer as incorrect when does not match correctAnswers', async () => {

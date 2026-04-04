@@ -1,26 +1,26 @@
 import type { AnswerStatus } from '../../api/controllers/questions/question-content.schema';
-import { createTestingQuery, createSelector, type TestingQueryParams } from '../../test/query-extension';
+import { by, buildSelector } from 'testing-library-queries';
 
 export const matchingSelector = {
-  draggableOptions: (): TestingQueryParams<HTMLDivElement> => {
-    return createTestingQuery.selector('div[datatype="draggable-option"]');
+  draggableOptions: () => {
+    return by.selector<HTMLDivElement>('div[datatype="draggable-option"]');
   },
-  dropZone: (): TestingQueryParams<HTMLDivElement> => {
-    return createTestingQuery.selector('[datatype="drop-zone"]');
+  dropZone: () => {
+    return by.selector<HTMLDivElement>('[datatype="drop-zone"]');
   },
-  dropdown: (): TestingQueryParams<HTMLElement> => {
-    return createTestingQuery.selector('[role="menu"]');
+  dropdown: () => {
+    return by.selector<HTMLElement>('[role="menu"]');
   },
-  revealButton: (): TestingQueryParams<HTMLButtonElement> => {
-    return createTestingQuery.selector('button[datatype="reveal-answer"]');
+  revealButton: () => {
+    return by.selector<HTMLButtonElement>('button[datatype="reveal-answer"]');
   },
-  explanationIcon: (): TestingQueryParams<HTMLSpanElement> => {
-    return createTestingQuery.selector('span[datatype="explanation-icon"]');
+  explanationIcon: () => {
+    return by.selector<HTMLSpanElement>('span[datatype="explanation-icon"]');
   },
-  byStatus: (status: AnswerStatus): TestingQueryParams<HTMLElement> => {
-    return createTestingQuery.selector(`span[data-status="${status}"]`);
+  byStatus: (status: AnswerStatus) => {
+    return by.selector(`span[data-status="${status}"]`);
   },
-  byStatusWithText: createSelector.withText((status: string) => `span[data-status="${status}"]`, {
+  byStatusWithText: buildSelector.withText((status: string) => `span[data-status="${status}"]`, {
     name: 'status span',
     textMatcher: 'partial',
   }),
