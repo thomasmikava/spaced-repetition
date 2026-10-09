@@ -7,7 +7,7 @@ target="$root/releases/$release"
 [[ -f "$target/index.html" && -f "$target/release.json" ]] || exit 2
 curl --fail --silent --max-time 5 http://127.0.0.1:5567/api/health/ready >/dev/null
 previous=$(readlink "$root/current" || true)
-if [[ -n "$previous" && -d "$previous/assets" ]]; then
+if [[ -n "$previous" && "$previous" != "$target" && -d "$previous/assets" ]]; then
   mkdir -p "$target/assets"
   cp -n "$previous"/assets/* "$target/assets/"
 fi
