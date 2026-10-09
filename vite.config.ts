@@ -10,6 +10,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
+      workbox: { maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, navigateFallbackDenylist: [/^\/api(?:\/|$)/] },
       manifest: {
         name: 'Memoriko - Space Repetition',
         short_name: 'Memoriko',
@@ -42,5 +43,6 @@ export default defineConfig({
     }),
     svgr(),
   ],
-  base: '/spaced-repetition/',
+  base: '/',
+  server: { proxy: { '/api': 'http://127.0.0.1:5567' } },
 });

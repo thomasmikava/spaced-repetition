@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     globals: true,
+    env: { VITE_API_URL: 'http://localhost/api' },
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,

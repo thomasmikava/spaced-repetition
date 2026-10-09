@@ -196,7 +196,7 @@ const router = createBrowserRouter(
     },
   ],
   {
-    basename: '/spaced-repetition',
+    basename: '/',
   },
 );
 

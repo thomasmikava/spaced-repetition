@@ -3,7 +3,7 @@ import { addAuthInterceptor } from './interceptors/auth.interceptor';
 import { Request } from './request';
 
 const mainAxios = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || '/api',
 });
 
 export const apiRequest = new Request(mainAxios);
