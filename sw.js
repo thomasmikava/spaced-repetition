@@ -1,1 +1,20 @@
-if(!self.define){let e,i={};const s=(s,n)=>(s=new URL(s+".js",n).href,i[s]||new Promise((i=>{if("document"in self){const e=document.createElement("script");e.src=s,e.onload=i,document.head.appendChild(e)}else e=s,importScripts(s),i()})).then((()=>{let e=i[s];if(!e)throw new Error(`Module ${s} didn’t register its module`);return e})));self.define=(n,r)=>{const d=e||("document"in self?document.currentScript.src:"")||location.href;if(i[d])return;let o={};const t=e=>s(e,d),l={module:{uri:d},exports:o,require:t};i[d]=Promise.all(n.map((e=>l[e]||t(e)))).then((e=>(r(...e),o)))}}define(["./workbox-3e911b1d"],(function(e){"use strict";self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"404.html",revision:"a85b9e1e081321d396b966192ee290e2"},{url:"assets/index-BdxK8pGG.css",revision:null},{url:"assets/ScriptsPage-D4CUmsu7.js",revision:null},{url:"assets/TestingThings-CChkqrfB.js",revision:null},{url:"index.html",revision:"a5b466b0afe165f3de9b14fe70c246db"},{url:"registerSW.js",revision:"d4ebd21ead4a23d2dd6e3b56adb3bf24"},{url:"favicon.ico",revision:"93043cdfd4b45d61fa94dd3c6e849c54"},{url:"pwa-64x64.png",revision:"b9b479f8ff06c80294ebc1651bf6196b"},{url:"pwa-192x192.png",revision:"2387f2a6f0aa64bef1dfef43cdb2fd71"},{url:"pwa-512x512.png",revision:"2ee5bd8cbb3d0224940224f9dba5a776"},{url:"maskable-icon-512x512.png",revision:"a9cb278ca1d580053748c14dd12885a9"},{url:"manifest.webmanifest",revision:"e95c4110349494ca1cf7ea7a45b233b2"}],{}),e.cleanupOutdatedCaches(),e.registerRoute(new e.NavigationRoute(e.createHandlerBoundToURL("index.html")))}));
+function memorikoTarget(href) {
+  const url = new URL(href);
+  let route = url.pathname.replace(/^\/spaced-repetition(?=\/|$)/, '') || '/';
+  let query = url.search;
+  if (query.startsWith('?/')) {
+    const decoded = query.slice(1).split('&').map(s => s.replace(/~and~/g, '&')).join('?');
+    const split = decoded.indexOf('?');
+    route = split === -1 ? decoded : decoded.slice(0, split);
+    query = split === -1 ? '' : decoded.slice(split);
+  }
+  return 'https://memoriko.com' + (route.startsWith('/') ? route : '/' + route) + query + url.hash;
+}
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  for(const name of await caches.keys())if(name.includes('/spaced-repetition/'))await caches.delete(name);
+  await self.clients.claim();
+  await self.registration.unregister();
+  for(const client of await self.clients.matchAll({type:'window'}))if(new URL(client.url).pathname.startsWith('/spaced-repetition/'))await client.navigate(client.url);
+})()));
+self.addEventListener('fetch', event => {if(event.request.mode==='navigate')event.respondWith(Response.redirect(memorikoTarget(event.request.url),302));});
