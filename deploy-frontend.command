@@ -10,7 +10,7 @@ if [[ ${1:-} == --rollback ]]; then
 fi
 [[ $# == 0 ]] || { echo 'Usage: deploy-frontend.command [--rollback RELEASE_ID]' >&2; exit 2; }
 yarn install --frozen-lockfile --non-interactive
-yarn build
+VITE_API_URL=/api yarn build
 release="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short=12 HEAD)"
 [[ -z $(git status --porcelain) ]] || release="$release-dirty"
 tmp=$(mktemp -d)
